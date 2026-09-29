@@ -57,7 +57,20 @@ function MapController({ center }) {
 export function MapView({ markers = [], center, height = 400 }) {
   // Default center: a central demo location
   const defaultCenter = [28.6139, 77.2090];
-  const mapCenter = center || defaultCenter;
+  const isValidCenter =
+    Array.isArray(center) &&
+    center.length === 2 &&
+    typeof center[0] === 'number' &&
+    !isNaN(center[0]) &&
+    typeof center[1] === 'number' &&
+    !isNaN(center[1]);
+
+  const mapCenter = isValidCenter ? center : defaultCenter;
+
+  // Filter out any markers missing valid lat/lng coordinates to avoid Leaflet NaN crashes
+  const validMarkers = (Array.isArray(markers) ? markers : []).filter(
+    (m) => m && typeof m.lat === 'number' && !isNaN(m.lat) && typeof m.lng === 'number' && !isNaN(m.lng)
+  );
 
   return (
     <div className="map-container" style={{ height }}>
@@ -75,10 +88,10 @@ export function MapView({ markers = [], center, height = 400 }) {
         />
 
         {/* Smooth re-centering when center prop changes */}
-        {center && <MapController center={center} />}
+        {isValidCenter && <MapController center={center} />}
 
-        {/* Render each marker */}
-        {markers.map((m, idx) => (
+        {/* Render each valid marker */}
+        {validMarkers.map((m, idx) => (
           <Marker
             key={idx}
             position={[m.lat, m.lng]}

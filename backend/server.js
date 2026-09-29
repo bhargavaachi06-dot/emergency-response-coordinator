@@ -88,12 +88,12 @@ app.post("/api/emergencies", async (req, res) => {
       });
     }
 
-    const countResult = await pool.query(
-      "SELECT COUNT(*) FROM emergencies"
+    const maxResult = await pool.query(
+      "SELECT COALESCE(MAX(id), 0) + 1 AS next_id FROM emergencies"
     );
 
     const nextNumber =
-      1001 + Number(countResult.rows[0].count);
+      1000 + Number(maxResult.rows[0].next_id);
 
     const emergencyCode = `ER-${nextNumber}`;
 
@@ -175,7 +175,7 @@ app.get("/api/emergencies", async (req, res) => {
       if (typeof ai === "string") {
         try {
           ai = JSON.parse(ai);
-        } catch (e) {
+        } catch {
           // ignore
         }
       }
@@ -222,7 +222,7 @@ app.get("/api/emergencies/:id", async (req, res) => {
     if (typeof ai === "string") {
       try {
         ai = JSON.parse(ai);
-      } catch (e) {
+      } catch {
         // ignore
       }
     }
@@ -327,6 +327,99 @@ app.get("/api/emergencies/:id/memory-context", async (req, res) => {
     res.status(500).json({
       message: "Failed to retrieve memory context",
       error: error.message
+    });
+  }
+});
+
+// ==========================================
+// UPDATE EMERGENCY STATUS (Coordinator / Lifecycle)
+// ==========================================
+app.patch("/api/emergencies/:id/status", async (req, res) => {
+  try {
+    const { status, reason } = req.body;
+    const allowedStatuses = [
+      "REPORTED",
+      "ANALYZING",
+      "VERIFIED",
+      "DISPATCHED",
+      "RESPONDERS_EN_ROUTE",
+      "ARRIVED",
+      "RESOLVED",
+      "CANCELLED",
+    ];
+
+    if (!status || !allowedStatuses.includes(status)) {
+      return res.status(400).json({
+        message: `Invalid status. Allowed statuses: ${allowedStatuses.join(", ")}`,
+      });
+    }
+
+    const emergencyResult = await pool.query(
+      `SELECT * FROM emergencies WHERE emergency_code = $1 OR id::text = $1`,
+      [req.params.id]
+    );
+
+    if (emergencyResult.rows.length === 0) {
+      return res.status(404).json({ message: "Emergency not found" });
+    }
+
+    const emergency = emergencyResult.rows[0];
+
+    await pool.query(
+      `UPDATE emergencies SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`,
+      [status, emergency.id]
+    );
+
+    // If marked RESOLVED or CANCELLED, release responders and complete assignments
+    if (status === "RESOLVED" || status === "CANCELLED") {
+      await pool.query(
+        `UPDATE responders SET status = 'AVAILABLE' WHERE id IN (
+           SELECT responder_id FROM assignments WHERE emergency_id = $1
+         )`,
+        [emergency.id]
+      );
+      await pool.query(
+        `UPDATE assignments SET status = 'COMPLETED', updated_at = CURRENT_TIMESTAMP WHERE emergency_id = $1`,
+        [emergency.id]
+      );
+    }
+
+    // Timeline event
+    await pool.query(
+      `INSERT INTO incident_events (emergency_id, event_type, description) VALUES ($1, $2, $3)`,
+      [
+        emergency.id,
+        "EMERGENCY_STATUS",
+        reason ? `Status changed to ${status}: ${reason}` : `Emergency status updated to ${status}`,
+      ]
+    );
+
+    // Retain resolution in Hindsight if resolved
+    if (status === "RESOLVED") {
+      hindsightService.retainEmergencyMemory(
+        {
+          emergency_code: emergency.emergency_code,
+          id: emergency.id,
+          type: emergency.type,
+          description: emergency.description,
+          location_text: emergency.location_text,
+        },
+        "RESOLVED",
+        { outcome: reason || "Coordinator closed incident. All responders cleared." }
+      ).catch(err => console.warn(`[Status] Background retain failed: ${err.message}`));
+    }
+
+    res.json({
+      message: `Emergency status updated to ${status}`,
+      status,
+      emergency_code: emergency.emergency_code,
+      id: emergency.id,
+    });
+  } catch (error) {
+    console.error("Update emergency status error:", error);
+    res.status(500).json({
+      message: "Failed to update emergency status",
+      error: error.message,
     });
   }
 });
@@ -688,7 +781,12 @@ app.patch(
          JOIN responders r
          ON a.responder_id = r.id
          WHERE a.emergency_id = $1
-         AND LOWER(r.name) = LOWER($2)
+         AND (
+           LOWER(r.name) = LOWER($2)
+           OR LOWER(r.type) = LOWER($2)
+           OR LOWER(r.name) LIKE LOWER('%' || $2 || '%')
+           OR LOWER($2) LIKE LOWER('%' || r.type || '%')
+         )
          LIMIT 1`,
         [
           emergency.id,
@@ -945,8 +1043,8 @@ app.post(
       const helperResult = await pool.query(
         `SELECT *
          FROM helpers
-         WHERE helper_code = $1`,
-        [helperId]
+         WHERE helper_code = $1 OR id::text = $1`,
+        [String(helperId)]
       );
 
       if (helperResult.rows.length === 0) {
