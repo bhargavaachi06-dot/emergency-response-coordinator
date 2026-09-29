@@ -115,26 +115,26 @@ export function TopNavbar({ title, subtitle }) {
         {subtitle && <div style={{ fontSize: 12, color: '#64748b', marginTop: 1 }}>{subtitle}</div>}
       </div>
       <div className="d-flex align-items-center gap-3">
-        {/* Role indicator */}
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 6,
-          background: '#f8fafc', border: '1px solid #e2e8f0',
-          borderRadius: 20, padding: '5px 12px', fontSize: '12.5px', fontWeight: 600,
-          color: '#475569',
-        }}>
-          <i className={`bi ${roleInfo?.icon}`} style={{ color: roleInfo?.color }}></i>
-          {roleInfo?.label}
-        </div>
+        {/* Role indicator — rendered only when valid roleInfo is present */}
+        {roleInfo?.label && (
+          <div
+            className="role-pill-badge"
+            title={`Active Mode: ${roleInfo.label}`}
+            aria-label={`Active role: ${roleInfo.label}`}
+          >
+            <i className={`bi ${roleInfo.icon}`} style={{ color: roleInfo.color }} aria-hidden="true"></i>
+            <span>{roleInfo.label}</span>
+          </div>
+        )}
 
         {/* Emergency button shortcut */}
         <button
-          className="btn-emergency"
-          style={{ fontSize: 13, padding: '8px 16px' }}
+          className="btn-emergency btn-emergency-nav"
           onClick={() => navigate('/citizen/report')}
-          aria-label="Report emergency"
+          aria-label="Report emergency incident"
         >
-          <i className="bi bi-exclamation-triangle-fill"></i>
-          Report
+          <i className="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+          <span>Report</span>
         </button>
       </div>
     </header>

@@ -1,7 +1,7 @@
 // Stat summary card component
 export function StatCard({ value, label, icon, color = 'blue', trend }) {
   return (
-    <div className="stat-card">
+    <div className={`stat-card stat-accent-${color}`}>
       <div className={`stat-icon ${color}`}>
         <i className={`bi ${icon}`}></i>
       </div>

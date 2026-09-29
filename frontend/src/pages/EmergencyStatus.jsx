@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { AppLayout } from '../layouts/AppLayout';
 import { PriorityBadge, StatusBadge } from '../components/Badges';
+import { BackButton } from '../components/BackButton';
 import { AIAnalysisCard } from '../components/AIAnalysisCard';
 import { EmergencyTimeline } from '../components/EmergencyTimeline';
 import { MapView } from '../components/MapView';
@@ -39,6 +40,8 @@ export default function EmergencyStatus() {
 
   return (
     <AppLayout title="Emergency Status" subtitle={`Tracking #${emergencyCode}`}>
+      <BackButton fallback="/citizen" />
+
       {/* Header card */}
       <div className="section-card mb-4">
         <div className="section-card-body">
@@ -55,14 +58,6 @@ export default function EmergencyStatus() {
                 <StatusBadge status={emergency.status} />
               </div>
             </div>
-            <button
-              className="btn-outline-custom"
-              style={{ fontSize: 12 }}
-              onClick={() => navigate('/citizen')}
-            >
-              <i className="bi bi-arrow-left"></i>
-              Dashboard
-            </button>
           </div>
         </div>
       </div>

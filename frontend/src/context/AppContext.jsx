@@ -827,6 +827,8 @@ export function AppProvider({ children }) {
 
   const value = {
     currentUser,
+    currentRole: currentUser?.role || ROLES.COORDINATOR,
+    setCurrentRole: switchRole,
     switchRole,
 
     emergencies,

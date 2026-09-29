@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext";
 import { AppLayout } from "../layouts/AppLayout";
+import { BackButton } from "../components/BackButton";
 import { EMERGENCY_TYPES } from "../data/demoData";
 
 const INITIAL_FORM = {
@@ -233,6 +234,7 @@ export default function ReportEmergency() {
     >
       <div className="row justify-content-center">
         <div className="col-lg-7 col-xl-6">
+          <BackButton fallback="/citizen" />
 
           {/* Header */}
           <div className="page-header">

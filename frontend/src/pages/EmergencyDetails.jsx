@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { AppLayout } from '../layouts/AppLayout';
-import { PriorityBadge, StatusBadge } from '../components/Badges';
+import { PriorityBadge, StatusBadge, SeverityBadge } from '../components/Badges';
 import { AIAnalysisCard } from '../components/AIAnalysisCard';
 import { EmergencyTimeline } from '../components/EmergencyTimeline';
 import { MapView } from '../components/MapView';
+import { BackButton } from '../components/BackButton';
 import HindsightMemoryPanel from '../components/HindsightMemoryPanel';
 import emergencyService from '../services/emergencyService';
 
@@ -162,41 +163,37 @@ export default function EmergencyDetails() {
       title={`Emergency #${emergencyCode}`}
       subtitle={`${emergency.type || 'Incident'} · ${(emergency.priority || 'PENDING').toUpperCase()}`}
     >
-      {/* Back */}
-      <button
-        className="btn-outline-custom mb-3"
-        style={{ fontSize: 12 }}
-        onClick={() => navigate('/coordinator')}
-      >
-        <i className="bi bi-arrow-left"></i>
-        Back to Command Center
-      </button>
+      {/* Back button */}
+      <BackButton fallback="/coordinator" />
 
       {/* Header card */}
       <div style={{
-        background: emergency.priority === 'critical'
+        background: emergency.priority?.toLowerCase() === 'critical'
           ? 'linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%)'
           : 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-        borderRadius: 14, padding: '20px 24px',
+        borderRadius: 16, padding: '22px 26px',
         marginBottom: 24, color: '#fff',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        flexWrap: 'wrap', gap: 12,
+        flexWrap: 'wrap', gap: 14,
+        boxShadow: '0 4px 20px rgba(15, 23, 42, 0.12)',
+        border: '1px solid rgba(255, 255, 255, 0.1)',
       }}>
         <div>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 4 }}>
-            Emergency #{emergency.id}
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 4, fontWeight: 700 }}>
+            Incident Reference #{emergencyCode}
           </div>
-          <h1 style={{ fontSize: 22, fontWeight: 800, color: '#fff', marginBottom: 8 }}>
+          <h1 style={{ fontSize: 24, fontWeight: 800, color: '#fff', marginBottom: 10, letterSpacing: '-0.3px' }}>
             {emergency.type}
           </h1>
-          <div className="d-flex gap-2 flex-wrap">
+          <div className="d-flex gap-2 flex-wrap align-items-center">
+            {emergency.severity && <SeverityBadge severity={emergency.severity} />}
             <PriorityBadge priority={emergency.priority} />
             <StatusBadge status={emergency.status} />
           </div>
         </div>
-        <div style={{ textAlign: 'right', fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>
-          <div>Reported {new Date(emergency.reportedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-          <div>{emergency.location?.area}</div>
+        <div style={{ textAlign: 'right', fontSize: 12.5, color: 'rgba(255,255,255,0.7)' }}>
+          <div><i className="bi bi-clock me-1"></i>Reported {new Date(emergency.created_at || emergency.createdAt || emergency.reportedAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+          <div className="mt-1"><i className="bi bi-geo-alt me-1"></i>{emergency.location_text || emergency.location?.area || emergency.location?.address || 'Location registered'}</div>
         </div>
       </div>
 
@@ -245,6 +242,12 @@ export default function EmergencyDetails() {
                   {new Date(emergency.created_at || emergency.createdAt || emergency.reportedAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>
+              {emergency.severity && (
+                <div className="info-row">
+                  <span className="info-label">Severity</span>
+                  <span className="info-value"><SeverityBadge severity={emergency.severity} /></span>
+                </div>
+              )}
               <div className="info-row">
                 <span className="info-label">Priority</span>
                 <span className="info-value"><PriorityBadge priority={emergency.priority} /></span>

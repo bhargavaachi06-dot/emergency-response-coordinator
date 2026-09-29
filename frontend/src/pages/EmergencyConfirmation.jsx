@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext";
 import { AppLayout } from "../layouts/AppLayout";
+import { BackButton } from "../components/BackButton";
 import { AIAnalysisCard } from "../components/AIAnalysisCard";
 
 export default function EmergencyConfirmation() {
@@ -219,6 +220,7 @@ export default function EmergencyConfirmation() {
     >
       <div className="row justify-content-center">
         <div className="col-lg-7 col-xl-6">
+          <BackButton fallback="/citizen" />
 
           {/* =================================================
               Success Banner

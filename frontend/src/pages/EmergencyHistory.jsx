@@ -1,5 +1,6 @@
 import { AppLayout } from '../layouts/AppLayout';
 import { EmergencyRow } from '../components/EmergencyCard';
+import { BackButton } from '../components/BackButton';
 import { useApp } from '../context/AppContext';
 import { EmptyState } from '../components/States';
 
@@ -8,6 +9,8 @@ export default function EmergencyHistory() {
 
   return (
     <AppLayout title="Emergency History" subtitle="All your past emergency reports">
+      <BackButton fallback="/citizen" />
+
       <div className="page-header">
         <h1 className="page-title">My Emergency History</h1>
         <p className="page-subtitle">A complete record of all emergency reports submitted by you.</p>

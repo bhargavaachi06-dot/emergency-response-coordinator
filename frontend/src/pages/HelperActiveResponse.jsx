@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppLayout } from '../layouts/AppLayout';
+import { BackButton } from '../components/BackButton';
 import { EmergencyTimeline } from '../components/EmergencyTimeline';
 import { StatusBadge } from '../components/Badges';
 import { DEMO_EMERGENCIES } from '../data/demoData';
@@ -29,6 +30,8 @@ export default function HelperActiveResponse() {
 
   return (
     <AppLayout title="Active Response" subtitle="You are currently assisting">
+      <BackButton fallback="/helper" />
+
       {/* Active status banner */}
       <div style={{
         background: 'linear-gradient(135deg, #854d0e 0%, #d97706 100%)',

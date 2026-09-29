@@ -52,10 +52,10 @@ export function EmergencyCard({ emergency, selected, onClick }) {
       <div className="d-flex align-items-center justify-content-between">
         <div style={{ fontSize: '12px', color: '#64748b', display: 'flex', alignItems: 'center', gap: 4 }}>
           <i className="bi bi-geo-alt"></i>
-          {emergency.location?.area || emergency.location?.address || 'Unknown location'}
+          {emergency.location?.area || emergency.location?.address || emergency.location_text || 'Unknown location'}
         </div>
         <div style={{ fontSize: '11.5px', color: '#94a3b8' }}>
-          {timeAgo(emergency.reportedAt)}
+          {timeAgo(emergency.reportedAt || emergency.created_at || emergency.createdAt)}
         </div>
       </div>
 
@@ -83,14 +83,14 @@ export function EmergencyRow({ emergency }) {
     <tr>
       <td>
         <span style={{ fontWeight: 700, color: '#1e293b', fontSize: '13px' }}>
-          #{emergency.id}
+          #{emergency.emergency_code || emergency.id}
         </span>
       </td>
       <td>{emergency.type}</td>
       <td><PriorityBadge priority={emergency.priority} /></td>
       <td><StatusBadge status={emergency.status} /></td>
       <td style={{ fontSize: '12.5px', color: '#64748b' }}>
-        {timeAgo(emergency.reportedAt)}
+        {timeAgo(emergency.reportedAt || emergency.created_at || emergency.createdAt)}
       </td>
     </tr>
   );

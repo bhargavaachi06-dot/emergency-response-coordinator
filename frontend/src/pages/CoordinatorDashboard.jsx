@@ -60,16 +60,18 @@ export default function CoordinatorDashboard() {
     >
       {/* Live indicator */}
       <div style={{
-        display: 'flex', alignItems: 'center', gap: 8,
-        marginBottom: 20, fontSize: 13, color: '#64748b',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        flexWrap: 'wrap', gap: 12, marginBottom: 20,
       }}>
-        <span style={{
-          width: 8, height: 8, borderRadius: '50%', background: '#16a34a',
-          display: 'inline-block', boxShadow: '0 0 0 3px rgba(22,163,74,0.2)',
-        }}></span>
-        Live Monitoring Active
-        <span style={{ color: '#cbd5e1', margin: '0 4px' }}>·</span>
-        Last updated: just now
+        <div className="live-monitoring-badge">
+          <span className="live-indicator-dot" aria-hidden="true"></span>
+          <span>Live Monitoring Active</span>
+          <span style={{ opacity: 0.6, fontSize: 11.5 }}>· Real-time sync</span>
+        </div>
+        <div style={{ fontSize: 12.5, color: '#64748b', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <i className="bi bi-clock-history" aria-hidden="true"></i>
+          <span>Updated: just now</span>
+        </div>
       </div>
 
       {/* Stats row */}
@@ -122,7 +124,7 @@ export default function CoordinatorDashboard() {
                 <EmergencyCard
                   emergency={e}
                   selected={selected?.id === e.id}
-                  onClick={handleSelect}
+                  onClick={handleViewIncident}
                 />
                 {/* Quick actions shown when selected */}
                 {selected?.id === e.id && (
