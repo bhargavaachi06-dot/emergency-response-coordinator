@@ -3,6 +3,7 @@ const cors = require("cors");
 const pool = require("./db");
 const { analyzeEmergency } = require("./services/aiService");
 const hindsightService = require("./services/hindsightService");
+const initDatabase = require("./services/databaseInit");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -1149,8 +1150,16 @@ app.post(
 // ==========================================
 // START SERVER
 // ==========================================
-app.listen(PORT, () => {
-  console.log(
-    `Backend running at http://localhost:${PORT}`
-  );
-});
+async function startServer() {
+  try {
+    await initDatabase();
+  } catch (error) {
+    console.error("⚠️ Database initialization warning:", error.message);
+  }
+
+  app.listen(PORT, () => {
+    console.log(`🚨 Emergency Response Coordinator backend running on port ${PORT}`);
+  });
+}
+
+startServer();
