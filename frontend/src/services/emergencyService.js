@@ -78,7 +78,8 @@ export const emergencyService = {
       longitude: reportData.longitude,
       locationText:
         reportData.locationText ||
-        reportData.location ||
+        reportData.location_text ||
+        (typeof reportData.location === "string" ? reportData.location : reportData.location?.address) ||
         "",
     };
 

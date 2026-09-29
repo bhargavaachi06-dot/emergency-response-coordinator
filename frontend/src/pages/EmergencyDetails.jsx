@@ -6,6 +6,7 @@ import { PriorityBadge, StatusBadge } from '../components/Badges';
 import { AIAnalysisCard } from '../components/AIAnalysisCard';
 import { EmergencyTimeline } from '../components/EmergencyTimeline';
 import { MapView } from '../components/MapView';
+import HindsightMemoryPanel from '../components/HindsightMemoryPanel';
 import emergencyService from '../services/emergencyService';
 
 export default function EmergencyDetails() {
@@ -256,61 +257,8 @@ export default function EmergencyDetails() {
             <AIAnalysisCard ai={ai} />
           </div>
 
-          {/* Situational Memory Card (Hindsight Episodic Memory) */}
-          <div className="section-card mb-4" style={{ border: '1px solid rgba(168, 85, 247, 0.25)' }}>
-            <div className="section-card-header d-flex align-items-center justify-content-between">
-              <h2 className="section-card-title mb-0">
-                <span style={{ marginRight: 6 }}>🧠</span>
-                Situational Memory
-              </h2>
-              {memoryContext?.available ? (
-                <span className="badge" style={{
-                  background: (memoryContext.memoryCount > 0) ? 'rgba(168, 85, 247, 0.2)' : 'rgba(148, 163, 184, 0.15)',
-                  color: (memoryContext.memoryCount > 0) ? '#d8b4fe' : '#94a3b8',
-                  border: '1px solid rgba(168, 85, 247, 0.3)'
-                }}>
-                  {memoryContext.memoryCount} relevant {memoryContext.memoryCount === 1 ? 'memory' : 'memories'}
-                </span>
-              ) : (
-                <span className="badge" style={{ background: 'rgba(148, 163, 184, 0.15)', color: '#94a3b8' }}>
-                  Standby
-                </span>
-              )}
-            </div>
-            <div className="section-card-body">
-              {memoryContext?.memories && memoryContext.memories.length > 0 ? (
-                <ul className="mb-3" style={{ paddingLeft: '18px', fontSize: '12.5px', color: '#cbd5e1' }}>
-                  {memoryContext.memories.map((mem, idx) => (
-                    <li key={idx} className="mb-2" style={{ lineHeight: 1.5 }}>
-                      {mem}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-muted mb-3" style={{ fontSize: '12.5px' }}>
-                  {memoryContext?.available
-                    ? 'No prior historical incidents or scene constraints recorded near this location.'
-                    : 'Hindsight episodic memory is operating in standby mode.'}
-                </p>
-              )}
-
-              {/* Advisory Disclaimer */}
-              <div style={{
-                padding: '8px 12px',
-                background: 'rgba(251, 191, 36, 0.08)',
-                border: '1px solid rgba(251, 191, 36, 0.2)',
-                borderRadius: 8,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                fontSize: '11.5px',
-                color: '#fde68a',
-              }}>
-                <i className="bi bi-info-circle text-warning" style={{ fontSize: 13, flexShrink: 0 }}></i>
-                <span>Historical memory is advisory context. Current incident information and coordinator verification take priority.</span>
-              </div>
-            </div>
-          </div>
+          {/* Hindsight Episodic Memory Panel */}
+          <HindsightMemoryPanel memoryContext={memoryContext} ai={ai} />
 
           {/* Professional Responders */}
           <div className="section-card mb-4">

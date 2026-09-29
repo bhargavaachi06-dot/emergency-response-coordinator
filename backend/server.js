@@ -76,8 +76,9 @@ app.post("/api/emergencies", async (req, res) => {
     const {
       type,
       description,
-      locationText,  // sent by frontend emergencyService.submit()
-      location,      // fallback alias
+      locationText,   // camelCase sent by frontend emergencyService.submit()
+      location_text,  // snake_case database field alias
+      location,       // fallback alias
       latitude,
       longitude
     } = req.body;
@@ -97,9 +98,13 @@ app.post("/api/emergencies", async (req, res) => {
 
     const emergencyCode = `ER-${nextNumber}`;
 
-    // Accept locationText (frontend field name) or location (alias)
+    // Accept locationText, location_text, or location (string or object with address)
     const resolvedLocationText =
-      locationText || location || "Unknown";
+      (locationText && typeof locationText === "string" && locationText.trim()) ||
+      (location_text && typeof location_text === "string" && location_text.trim()) ||
+      (location && typeof location === "string" && location.trim()) ||
+      (location?.address && typeof location.address === "string" && location.address.trim()) ||
+      "Unknown";
 
     const result = await pool.query(
       `INSERT INTO emergencies
