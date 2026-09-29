@@ -72,7 +72,10 @@ Required JSON Schema:
 // ----------------------------------------------------------
 
 async function callGemini(type, description, locationText, memoryContext = null) {
-  const apiKey = process.env.AI_API_KEY;
+  const apiKey =
+    process.env.AI_API_KEY ||
+    process.env.GEMINI_API_KEY ||
+    process.env.GOOGLE_API_KEY;
 
   if (!apiKey || apiKey === "YOUR_GEMINI_API_KEY_HERE" || apiKey.trim() === "") {
     throw new Error("AI_API_KEY is not configured or is a placeholder in .env");
@@ -408,7 +411,10 @@ function keywordFallback(type, description) {
 async function analyzeEmergency(incident, memoryContext = null) {
   const { type, description, locationText } = incident;
 
-  const apiKey = process.env.AI_API_KEY;
+  const apiKey =
+    process.env.AI_API_KEY ||
+    process.env.GEMINI_API_KEY ||
+    process.env.GOOGLE_API_KEY;
   const isApiKeyConfigured =
     apiKey &&
     apiKey !== "YOUR_GEMINI_API_KEY_HERE" &&
