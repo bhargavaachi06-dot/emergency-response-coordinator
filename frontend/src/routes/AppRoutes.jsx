@@ -30,6 +30,8 @@ export default function AppRoutes() {
       {/* Citizen routes */}
       <Route path="/citizen"                     element={<CitizenDashboard />} />
       <Route path="/citizen/report"              element={<ReportEmergency />} />
+      <Route path="/report"                      element={<Navigate to="/citizen/report" replace />} />
+      <Route path="/report-emergency"            element={<Navigate to="/citizen/report" replace />} />
       <Route path="/citizen/confirmation"        element={<EmergencyConfirmation />} />
       <Route path="/citizen/status"              element={<EmergencyStatus />} />
       <Route path="/citizen/history"             element={<EmergencyHistory />} />

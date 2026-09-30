@@ -1,0 +1,627 @@
+/* =====================================================
+   Report Emergency Page — Premium Navy Operations Theme
+   Color System:
+   - Page background:               #0B1220
+   - Secondary page/section surface: #0F172A
+   - Card surface:                  #151F35
+   - Elevated card:                 #18243B
+   - Input surface:                 #111A2E
+   - Border:                        #26344D
+   - Primary text:                  #F8FAFC
+   - Secondary text:                #94A3B8
+   - Muted text:                    #64748B
+   - Emergency red:                 #DC2626
+   - Emergency red hover:           #B91C1C
+   - Warning amber:                 #F59E0B
+   - Success green:                 #22C55E
+   - Information blue:              #38BDF8
+   ===================================================== */
+
+/* Full Viewport Navy Background Wrapper with Subtle Depth */
+.report-page-wrapper {
+  background-color: #0B1220;
+  background-image:
+    radial-gradient(circle at 50% 0%, rgba(30, 58, 138, 0.08) 0%, transparent 60%),
+    radial-gradient(circle at 100% 100%, rgba(15, 23, 42, 0.4) 0%, transparent 50%);
+  min-height: calc(100vh - 65px);
+  margin: -24px;
+  padding: 24px;
+}
+
+/* Centered Form Container */
+.report-page-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 4px 0 40px;
+  color: #F8FAFC;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Custom BackButton styling on Navy theme */
+.report-page-wrapper .back-button {
+  background: #151F35;
+  border: 1px solid #26344D;
+  color: #94A3B8;
+  border-radius: 8px;
+  padding: 7px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.report-page-wrapper .back-button:hover {
+  background: #18243B;
+  color: #F8FAFC;
+  border-color: #38BDF8;
+}
+
+/* Header Panel — Lighter against navy background */
+.report-header-card {
+  background: linear-gradient(145deg, #151F35 0%, #18243B 100%);
+  border: 1px solid #26344D;
+  border-radius: 14px;
+  padding: 22px 26px;
+  margin-bottom: 22px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+.report-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.report-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.report-title-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: #F8FAFC;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.35);
+}
+
+.report-main-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #F8FAFC;
+  letter-spacing: -0.3px;
+  margin: 0;
+}
+
+.report-subtitle {
+  font-size: 14px;
+  color: #94A3B8;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* System Status Indicator */
+.report-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: 9999px;
+  padding: 5px 14px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #22C55E;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.report-pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22C55E;
+  position: relative;
+  display: inline-block;
+}
+
+.report-pulse-dot::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 2px solid #22C55E;
+  animation: reportPulse 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+  opacity: 0.75;
+}
+
+@keyframes reportPulse {
+  0% { transform: scale(0.9); opacity: 0.8; }
+  70% { transform: scale(2.2); opacity: 0; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+
+/* Step Progress Indicator */
+.report-steps-bar {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.report-step-item {
+  background: #0F172A;
+  border: 1px solid #26344D;
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.2s ease;
+}
+
+.report-step-item.active {
+  background: #18243B;
+  border-color: #38BDF8;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.12);
+}
+
+.report-step-item.completed {
+  border-color: rgba(34, 197, 94, 0.4);
+  background: rgba(34, 197, 94, 0.08);
+}
+
+.report-step-num {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #151F35;
+  border: 1px solid #26344D;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #94A3B8;
+}
+
+.report-step-item.active .report-step-num {
+  background: #38BDF8;
+  color: #0B1220;
+  border-color: #38BDF8;
+}
+
+.report-step-item.completed .report-step-num {
+  background: #22C55E;
+  color: #FFFFFF;
+  border-color: #22C55E;
+}
+
+.report-step-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: #F8FAFC;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Card Sections */
+.report-section-card {
+  background: #151F35;
+  border: 1px solid #26344D;
+  border-radius: 14px;
+  margin-bottom: 20px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  transition: border-color 0.2s ease;
+}
+
+.report-section-card:focus-within {
+  border-color: #38BDF8;
+}
+
+.report-section-header {
+  padding: 14px 20px;
+  background: #18243B;
+  border-bottom: 1px solid #26344D;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.report-section-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #F8FAFC;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.report-section-body {
+  padding: 20px;
+}
+
+/* Emergency Type Select Cards Grid */
+.report-types-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.emergency-type-card {
+  background: #151F35;
+  border: 2px solid #26344D;
+  border-radius: 12px;
+  padding: 16px 14px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  position: relative;
+  outline: none;
+}
+
+.emergency-type-card:hover {
+  background: #18243B;
+  border-color: #38BDF8;
+  transform: translateY(-2px);
+}
+
+.emergency-type-card:focus-visible {
+  border-color: #38BDF8;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.25);
+}
+
+.emergency-type-card.selected {
+  background: #18243B;
+  border-color: #38BDF8;
+  box-shadow: 0 0 0 1px #38BDF8, 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.type-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.type-card-icon-wrap {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 19px;
+  background: #18243B;
+  border: 1px solid #26344D;
+}
+
+.type-check-badge {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #22C55E;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+}
+
+.type-card-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: #F8FAFC;
+  margin-bottom: 4px;
+}
+
+.type-card-desc {
+  font-size: 11.5px;
+  color: #94A3B8;
+  line-height: 1.4;
+  margin: 0;
+}
+
+/* Location Card & Actions */
+.btn-detect-gps {
+  background: #18243B;
+  border: 1px solid #26344D;
+  color: #38BDF8;
+  border-radius: 10px;
+  padding: 12px 18px;
+  font-weight: 700;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 14px;
+}
+
+.btn-detect-gps:hover:not(:disabled) {
+  background: #1e2e4a;
+  border-color: #38BDF8;
+  color: #F8FAFC;
+  transform: translateY(-1px);
+}
+
+.btn-detect-gps:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* Location Status Banners */
+.location-status-banner {
+  border-radius: 8px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 14px;
+}
+
+.location-status-success {
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.35);
+  color: #22C55E;
+}
+
+.location-status-error {
+  background: rgba(220, 38, 38, 0.12);
+  border: 1px solid rgba(220, 38, 38, 0.35);
+  color: #F87171;
+}
+
+.location-status-detecting {
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  color: #38BDF8;
+}
+
+/* Inputs on Elevated Surface #111A2E */
+.report-input-group {
+  margin-bottom: 14px;
+}
+
+.report-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #94A3B8;
+  margin-bottom: 6px;
+}
+
+.report-label-required {
+  color: #DC2626;
+  margin-left: 2px;
+}
+
+.report-input-dark {
+  width: 100%;
+  background: #111A2E;
+  border: 1px solid #26344D;
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: #F8FAFC;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.report-input-dark::placeholder {
+  color: #64748B;
+}
+
+.report-input-dark:focus {
+  border-color: #38BDF8;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.25);
+  background: #111A2E;
+}
+
+.report-textarea-dark {
+  width: 100%;
+  background: #111A2E;
+  border: 1px solid #26344D;
+  border-radius: 8px;
+  padding: 12px 14px;
+  color: #F8FAFC;
+  font-size: 14px;
+  line-height: 1.5;
+  outline: none;
+  transition: all 0.15s ease;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.report-textarea-dark::placeholder {
+  color: #64748B;
+}
+
+.report-textarea-dark:focus {
+  border-color: #38BDF8;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.25);
+  background: #111A2E;
+}
+
+.report-char-count {
+  font-size: 11.5px;
+  color: #94A3B8;
+  text-align: right;
+  margin-top: 4px;
+}
+
+/* Image Upload Area */
+.report-upload-box {
+  border: 2px dashed #26344D;
+  border-radius: 10px;
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  background: #111A2E;
+  transition: all 0.2s ease;
+}
+
+.report-upload-box:hover {
+  border-color: #38BDF8;
+  background: rgba(56, 189, 248, 0.04);
+}
+
+.report-preview-container {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  max-height: 220px;
+  border: 1px solid #26344D;
+}
+
+.report-preview-img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  display: block;
+}
+
+.report-remove-img-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: #151F35;
+  border: 1px solid #26344D;
+  color: #F8FAFC;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.report-remove-img-btn:hover {
+  background: #18243B;
+  border-color: #DC2626;
+}
+
+/* Inline Validation Errors */
+.report-inline-error {
+  font-size: 12.5px;
+  color: #F87171;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+/* Submit Primary Button — Strongest Action */
+.btn-submit-emergency {
+  background: #DC2626;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #F8FAFC;
+  padding: 16px 28px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  box-shadow: 0 3px 12px rgba(220, 38, 38, 0.35);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  margin-top: 10px;
+}
+
+.btn-submit-emergency:hover:not(:disabled) {
+  background: #B91C1C;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 18px rgba(220, 38, 38, 0.45);
+}
+
+.btn-submit-emergency:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* AI / Memory Explanatory Panel — Background #111D33, Border #28415F */
+.report-ai-info-panel {
+  background: #111D33;
+  border: 1px solid #28415F;
+  border-radius: 12px;
+  padding: 18px 20px;
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.report-ai-info-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #38BDF8;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.report-ai-info-text {
+  font-size: 13px;
+  color: #94A3B8;
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* Responsive Queries */
+@media (max-width: 768px) {
+  .report-page-wrapper {
+    margin: -16px;
+    padding: 16px;
+  }
+  .report-types-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .report-steps-bar {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .report-header-top {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .report-types-grid {
+    grid-template-columns: 1fr;
+  }
+}
