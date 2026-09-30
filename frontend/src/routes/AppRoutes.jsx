@@ -34,10 +34,13 @@ export default function AppRoutes() {
       <Route path="/citizen/status"              element={<EmergencyStatus />} />
       <Route path="/citizen/history"             element={<EmergencyHistory />} />
 
-      {/* Coordinator routes */}
+      {/* Coordinator routes & aliases */}
       <Route path="/coordinator"                 element={<CoordinatorDashboard />} />
       <Route path="/coordinator/emergency/:id"   element={<EmergencyDetails />} />
       <Route path="/coordinator/emergencies"     element={<CoordinatorDashboard />} />
+      <Route path="/command-center"              element={<Navigate to="/coordinator" replace />} />
+      <Route path="/dashboard"                   element={<Navigate to="/coordinator" replace />} />
+      <Route path="/emergency/:id"               element={<EmergencyDetails />} />
 
       {/* Responder routes */}
       <Route path="/responder"                   element={<ResponderDashboard />} />
