@@ -72,3 +72,14 @@ CREATE TABLE IF NOT EXISTS incident_events (
     description TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS emergency_media (
+    id SERIAL PRIMARY KEY,
+    emergency_id INTEGER REFERENCES emergencies(id) ON DELETE CASCADE,
+    media_type VARCHAR(20) NOT NULL,
+    file_name VARCHAR(255),
+    mime_type VARCHAR(100),
+    file_size INTEGER,
+    data_url TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

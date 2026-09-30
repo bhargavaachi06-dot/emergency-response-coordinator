@@ -9,7 +9,8 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 // ==========================================
 // HOME
@@ -137,6 +138,34 @@ app.post("/api/emergencies", async (req, res) => {
 
     const emergency = result.rows[0];
 
+    // Handle optional media attachments (max 3 files, 10MB photo, 50MB video)
+    let attachedMedia = [];
+    if (Array.isArray(req.body.media) && req.body.media.length > 0) {
+      for (const m of req.body.media.slice(0, 3)) {
+        if (m && (m.data_url || m.dataUrl)) {
+          const mediaType = m.media_type || m.mediaType || (m.mime_type?.startsWith("video") ? "video" : "image");
+          const fileName = m.file_name || m.fileName || (mediaType === "video" ? "evidence.mp4" : "evidence.jpg");
+          const mimeType = m.mime_type || m.mimeType || (mediaType === "video" ? "video/mp4" : "image/jpeg");
+          const fileSize = Number(m.file_size || m.fileSize || 0);
+          const dataUrl = m.data_url || m.dataUrl;
+
+          if (mediaType === "image" && fileSize > 10 * 1024 * 1024) continue;
+          if (mediaType === "video" && fileSize > 50 * 1024 * 1024) continue;
+
+          const mediaRes = await pool.query(
+            `INSERT INTO emergency_media
+             (emergency_id, media_type, file_name, mime_type, file_size, data_url)
+             VALUES ($1, $2, $3, $4, $5, $6)
+             RETURNING id, emergency_id, media_type, file_name, mime_type, file_size, created_at`,
+            [emergency.id, mediaType, fileName, mimeType, fileSize, dataUrl]
+          );
+          if (mediaRes.rows[0]) {
+            attachedMedia.push(mediaRes.rows[0]);
+          }
+        }
+      }
+    }
+
     await pool.query(
       `INSERT INTO incident_events
       (emergency_id,event_type,description)
@@ -144,7 +173,9 @@ app.post("/api/emergencies", async (req, res) => {
       [
         emergency.id,
         "REPORTED",
-        "Emergency reported by citizen"
+        attachedMedia.length > 0
+          ? `Emergency reported with ${attachedMedia.length} visual evidence item(s)`
+          : "Emergency reported by citizen"
       ]
     );
 
@@ -152,7 +183,11 @@ app.post("/api/emergencies", async (req, res) => {
     // createResult.data.emergency_code directly (not nested under .emergency)
     res.status(201).json({
       message: "Emergency reported successfully",
-      ...emergency
+      ...emergency,
+      media: attachedMedia,
+      media_count: attachedMedia.length,
+      photos_count: attachedMedia.filter((m) => m.media_type === "image").length,
+      videos_count: attachedMedia.filter((m) => m.media_type === "video").length,
     });
 
   } catch (error) {
@@ -166,14 +201,128 @@ app.post("/api/emergencies", async (req, res) => {
 });
 
 // ==========================================
+// UPLOAD / ATTACH MEDIA TO EMERGENCY
+// ==========================================
+app.post("/api/emergencies/:id/media", async (req, res) => {
+  try {
+    const emergencyResult = await pool.query(
+      `SELECT id, emergency_code FROM emergencies WHERE emergency_code = $1 OR id::text = $1`,
+      [req.params.id]
+    );
+
+    if (emergencyResult.rows.length === 0) {
+      return res.status(404).json({ message: "Emergency not found" });
+    }
+
+    const emergency = emergencyResult.rows[0];
+    const incoming = Array.isArray(req.body.media)
+      ? req.body.media
+      : req.body.data_url || req.body.dataUrl
+      ? [req.body]
+      : [];
+
+    if (incoming.length === 0) {
+      return res.status(400).json({ message: "No media data provided" });
+    }
+
+    // Check count constraint (max 3 per emergency)
+    const existingCountRes = await pool.query(
+      `SELECT COUNT(*) FROM emergency_media WHERE emergency_id = $1`,
+      [emergency.id]
+    );
+    const existingCount = parseInt(existingCountRes.rows[0].count, 10);
+    const availableSlots = Math.max(0, 3 - existingCount);
+
+    if (availableSlots <= 0) {
+      return res.status(400).json({ message: "Maximum of 3 media files already reached for this emergency." });
+    }
+
+    const inserted = [];
+    for (const m of incoming.slice(0, availableSlots)) {
+      const dataUrl = m.data_url || m.dataUrl;
+      if (!dataUrl) continue;
+
+      const mediaType = m.media_type || m.mediaType || (m.mime_type?.startsWith("video") ? "video" : "image");
+      const fileName = m.file_name || m.fileName || (mediaType === "video" ? "evidence.mp4" : "evidence.jpg");
+      const mimeType = m.mime_type || m.mimeType || (mediaType === "video" ? "video/mp4" : "image/jpeg");
+      const fileSize = Number(m.file_size || m.fileSize || 0);
+
+      // Validate constraints: Images <= 10MB, Videos <= 50MB
+      if (mediaType === "image" && fileSize > 10 * 1024 * 1024) {
+        return res.status(400).json({ message: "Image exceeds 10MB limit." });
+      }
+      if (mediaType === "video" && fileSize > 50 * 1024 * 1024) {
+        return res.status(400).json({ message: "Video exceeds 50MB limit." });
+      }
+
+      const insRes = await pool.query(
+        `INSERT INTO emergency_media
+         (emergency_id, media_type, file_name, mime_type, file_size, data_url)
+         VALUES ($1, $2, $3, $4, $5, $6)
+         RETURNING id, emergency_id, media_type, file_name, mime_type, file_size, created_at`,
+        [emergency.id, mediaType, fileName, mimeType, fileSize, dataUrl]
+      );
+      if (insRes.rows[0]) inserted.push(insRes.rows[0]);
+    }
+
+    res.status(201).json({
+      message: `${inserted.length} media item(s) attached successfully`,
+      media: inserted,
+    });
+  } catch (error) {
+    console.error("Upload media error:", error);
+    res.status(500).json({
+      message: "Failed to upload evidence media",
+      error: error.message,
+    });
+  }
+});
+
+// ==========================================
+// GET MEDIA FOR EMERGENCY
+// ==========================================
+app.get("/api/emergencies/:id/media", async (req, res) => {
+  try {
+    const emergencyResult = await pool.query(
+      `SELECT id FROM emergencies WHERE emergency_code = $1 OR id::text = $1`,
+      [req.params.id]
+    );
+
+    if (emergencyResult.rows.length === 0) {
+      return res.status(404).json({ message: "Emergency not found" });
+    }
+
+    const mediaResult = await pool.query(
+      `SELECT id, emergency_id, media_type, file_name, mime_type, file_size, data_url, created_at
+       FROM emergency_media
+       WHERE emergency_id = $1
+       ORDER BY created_at ASC`,
+      [emergencyResult.rows[0].id]
+    );
+
+    res.json(mediaResult.rows);
+  } catch (error) {
+    console.error("Get emergency media error:", error);
+    res.status(500).json({
+      message: "Failed to fetch emergency media",
+      error: error.message,
+    });
+  }
+});
+
+// ==========================================
 // GET ALL EMERGENCIES
 // ==========================================
 app.get("/api/emergencies", async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT *
-       FROM emergencies
-       ORDER BY created_at DESC`
+      `SELECT
+         e.*,
+         COALESCE((SELECT COUNT(*) FROM emergency_media em WHERE em.emergency_id = e.id), 0)::int AS media_count,
+         COALESCE((SELECT COUNT(*) FROM emergency_media em WHERE em.emergency_id = e.id AND em.media_type = 'image'), 0)::int AS photos_count,
+         COALESCE((SELECT COUNT(*) FROM emergency_media em WHERE em.emergency_id = e.id AND em.media_type = 'video'), 0)::int AS videos_count
+       FROM emergencies e
+       ORDER BY e.created_at DESC`
     );
 
     const emergencies = result.rows.map((row) => {
@@ -284,13 +433,30 @@ app.get("/api/emergencies/:id", async (req, res) => {
       [emergency.id]
     );
 
+    // ------------------------------------------
+    // Get attached evidence media
+    // ------------------------------------------
+    const mediaResult = await pool.query(
+      `SELECT id, emergency_id, media_type, file_name, mime_type, file_size, data_url, created_at
+       FROM emergency_media
+       WHERE emergency_id = $1
+       ORDER BY created_at ASC`,
+      [emergency.id]
+    );
+
+    const mediaRows = mediaResult.rows || [];
+
     res.json({
       ...emergency,
       ai_analysis: ai,
       ai: ai,
       responders: assignments.rows,
       helperResponses: helperResponses.rows,
-      timeline: events.rows
+      timeline: events.rows,
+      media: mediaRows,
+      media_count: mediaRows.length,
+      photos_count: mediaRows.filter((m) => m.media_type === "image").length,
+      videos_count: mediaRows.filter((m) => m.media_type === "video").length,
     });
 
   } catch (error) {
@@ -469,7 +635,19 @@ app.post("/api/emergencies/:id/analyze", async (req, res) => {
     }
 
     // ------------------------------------------
-    // 2. Call AI service (Gemini + Memory → fallback)
+    // 2. Fetch citizen-attached visual evidence
+    // ------------------------------------------
+    const mediaResult = await pool.query(
+      `SELECT id, emergency_id, media_type, file_name, mime_type, file_size, data_url, created_at
+       FROM emergency_media
+       WHERE emergency_id = $1
+       ORDER BY created_at ASC`,
+      [emergency.id]
+    );
+    const mediaItems = mediaResult.rows || [];
+
+    // ------------------------------------------
+    // 3. Call AI service (Gemini + Memory + Evidence → fallback)
     // ------------------------------------------
     const analysis = await analyzeEmergency({
       type:         emergency.type,
@@ -477,7 +655,7 @@ app.post("/api/emergencies/:id/analyze", async (req, res) => {
       locationText: emergency.location_text,
       latitude:     emergency.latitude,
       longitude:    emergency.longitude,
-    }, memoryContext);
+    }, memoryContext, mediaItems);
 
     // ------------------------------------------
     // 3. Map priority to severity columns

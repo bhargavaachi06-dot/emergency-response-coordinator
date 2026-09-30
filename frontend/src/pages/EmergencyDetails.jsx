@@ -29,6 +29,9 @@ export default function EmergencyDetails() {
   const [actionMsg, setActionMsg]     = useState('');
 
   const [memoryContext, setMemoryContext] = useState(null);
+  const [activeMediaIndex, setActiveMediaIndex] = useState(0);
+  const [coordinatorVerdict, setCoordinatorVerdict] = useState('');
+  const [verdictNotice, setVerdictNotice] = useState('');
 
   // Fetch fresh emergency data from backend by emergency code or ID
   useEffect(() => {
@@ -90,7 +93,7 @@ export default function EmergencyDetails() {
         <div className="section-card text-center py-5">
           <i className="bi bi-exclamation-triangle text-danger" style={{ fontSize: 48 }}></i>
           <h3 className="mt-3 fw-bold">Emergency Not Found</h3>
-          <p className="text-muted">Could not find an incident with code or ID: {id}</p>
+          <p className="text-muted">{error || `Could not find an incident with code or ID: ${id}`}</p>
           <button className="btn-primary-custom" onClick={() => navigate('/coordinator')}>
             Back to Command Center
           </button>
@@ -107,10 +110,14 @@ export default function EmergencyDetails() {
   if (typeof ai === 'string') {
     try {
       ai = JSON.parse(ai);
-    } catch (e) {
+    } catch {
       // ignore
     }
   }
+
+  const mediaList = Array.isArray(emergency.media) ? emergency.media : [];
+  const activeMedia = mediaList[activeMediaIndex] || mediaList[0] || null;
+  const evidenceAssessment = ai?.evidenceAssessment || null;
 
   const handleDispatch = async (responderType) => {
     setDispatching((prev) => ({ ...prev, [responderType]: true }));
@@ -192,7 +199,7 @@ export default function EmergencyDetails() {
           </div>
         </div>
         <div style={{ textAlign: 'right', fontSize: 12.5, color: 'rgba(255,255,255,0.7)' }}>
-          <div><i className="bi bi-clock me-1"></i>Reported {new Date(emergency.created_at || emergency.createdAt || emergency.reportedAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+          <div><i className="bi bi-clock me-1"></i>Reported {(emergency.created_at || emergency.createdAt || emergency.reportedAt) ? new Date(emergency.created_at || emergency.createdAt || emergency.reportedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recently'}</div>
           <div className="mt-1"><i className="bi bi-geo-alt me-1"></i>{emergency.location_text || emergency.location?.area || emergency.location?.address || 'Location registered'}</div>
         </div>
       </div>
@@ -239,7 +246,7 @@ export default function EmergencyDetails() {
               <div className="info-row">
                 <span className="info-label">Reported At</span>
                 <span className="info-value">
-                  {new Date(emergency.created_at || emergency.createdAt || emergency.reportedAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  {(emergency.created_at || emergency.createdAt || emergency.reportedAt) ? new Date(emergency.created_at || emergency.createdAt || emergency.reportedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recently'}
                 </span>
               </div>
               {emergency.severity && (
@@ -251,6 +258,298 @@ export default function EmergencyDetails() {
               <div className="info-row">
                 <span className="info-label">Priority</span>
                 <span className="info-value"><PriorityBadge priority={emergency.priority} /></span>
+              </div>
+            </div>
+          </div>
+
+          {/* =====================================================
+              Photo + Video Evidence Verification Section
+              ===================================================== */}
+          <div className="section-card mb-4" id="evidence-verification-section">
+            <div className="section-card-header d-flex align-items-center justify-content-between">
+              <h2 className="section-card-title m-0">
+                <i className="bi bi-camera-reels-fill text-info"></i>
+                Visual Evidence Inspection
+              </h2>
+              <span className={`badge ${mediaList.length > 0 ? 'bg-success' : 'bg-secondary'}`} style={{ fontSize: '11.5px' }}>
+                {mediaList.length > 0 ? `${mediaList.length} File${mediaList.length > 1 ? 's' : ''} Attached` : 'No Media Attached'}
+              </span>
+            </div>
+
+            <div className="section-card-body">
+              {mediaList.length > 0 ? (
+                <div>
+                  {/* Active Media Viewer */}
+                  {activeMedia && (
+                    <div className="p-2 rounded-3 mb-3" style={{ background: '#0b1220', border: '1px solid #26344D' }}>
+                      <div className="d-flex align-items-center justify-content-between px-2 py-1 mb-2 text-secondary" style={{ fontSize: '12px' }}>
+                        <span className="fw-semibold text-light text-truncate" style={{ maxWidth: '70%' }}>
+                          {activeMedia.media_type === 'video' ? '🎥 ' : '📷 '}
+                          {activeMedia.file_name || `Evidence File #${activeMediaIndex + 1}`}
+                        </span>
+                        <span className="badge bg-dark border border-secondary text-info">
+                          {activeMedia.media_type?.toUpperCase() || 'MEDIA'}
+                        </span>
+                      </div>
+
+                      <div className="text-center" style={{ maxHeight: '340px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {activeMedia.media_type === 'video' ? (
+                          <video
+                            key={activeMedia.data_url || activeMedia.id}
+                            src={activeMedia.data_url}
+                            controls
+                            muted
+                            playsInline
+                            preload="metadata"
+                            style={{ maxWidth: '100%', maxHeight: '320px', borderRadius: '6px', outline: 'none' }}
+                          />
+                        ) : (
+                          <img
+                            key={activeMedia.data_url || activeMedia.id}
+                            src={activeMedia.data_url}
+                            alt={activeMedia.file_name || 'Emergency visual evidence'}
+                            style={{ maxWidth: '100%', maxHeight: '320px', objectFit: 'contain', borderRadius: '6px' }}
+                          />
+                        )}
+                      </div>
+
+                      <div className="d-flex align-items-center justify-content-between px-2 pt-2 text-muted" style={{ fontSize: '11px' }}>
+                        <span>Size: {activeMedia.file_size ? `${(activeMedia.file_size / 1024).toFixed(1)} KB` : 'Standard'}</span>
+                        <span>MIME: {activeMedia.mime_type || (activeMedia.media_type === 'video' ? 'video/mp4' : 'image/jpeg')}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Thumbnail Selector Strip if multiple media */}
+                  {mediaList.length > 1 && (
+                    <div className="d-flex gap-2 mb-3 overflow-auto pb-1">
+                      {mediaList.map((m, idx) => (
+                        <div
+                          key={m.id || idx}
+                          onClick={() => setActiveMediaIndex(idx)}
+                          role="button"
+                          tabIndex={0}
+                          style={{
+                            width: '70px',
+                            height: '56px',
+                            borderRadius: '6px',
+                            overflow: 'hidden',
+                            border: activeMediaIndex === idx ? '2px solid #38bdf8' : '1px solid #26344D',
+                            background: '#0f172a',
+                            cursor: 'pointer',
+                            flexShrink: 0,
+                            position: 'relative',
+                          }}
+                        >
+                          {m.media_type === 'video' ? (
+                            <div className="w-100 h-100 d-flex align-items-center justify-content-center text-danger" style={{ fontSize: '18px' }}>
+                              🎥
+                            </div>
+                          ) : (
+                            <img
+                              src={m.data_url}
+                              alt={`Thumbnail ${idx + 1}`}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            />
+                          )}
+                          <span
+                            style={{
+                              position: 'absolute',
+                              bottom: '1px',
+                              right: '2px',
+                              fontSize: '9px',
+                              background: 'rgba(0,0,0,0.7)',
+                              color: '#fff',
+                              padding: '1px 3px',
+                              borderRadius: '3px',
+                            }}
+                          >
+                            #{idx + 1}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="p-3 rounded-2 text-center" style={{ background: 'rgba(15, 23, 42, 0.6)', border: '1px dashed #26344D' }}>
+                  <i className="bi bi-camera-video-off fs-4 text-muted mb-2 d-block" aria-hidden="true"></i>
+                  <div className="text-light fw-semibold" style={{ fontSize: '13.5px' }}>
+                    No Photo or Video Evidence Provided
+                  </div>
+                  <p className="text-secondary small m-0 mt-1">
+                    Visual evidence was not submitted with this report. Do not delay emergency response solely for missing media.
+                  </p>
+                </div>
+              )}
+
+              {/* Supporting Evidence Note */}
+              <div className="p-2 rounded-2 mt-3" style={{ background: 'rgba(56, 189, 248, 0.08)', border: '1px solid rgba(56, 189, 248, 0.2)', fontSize: '12px', color: '#93c5fd' }}>
+                <i className="bi bi-info-circle-fill me-1" aria-hidden="true"></i>
+                <strong>Notice:</strong> Visual media serves as supporting evidence for situational awareness, not automatic proof.
+              </div>
+            </div>
+          </div>
+
+          {/* =====================================================
+              AI Evidence Assessment (Visually Labeled)
+              ===================================================== */}
+          <div className="section-card mb-4" id="ai-evidence-assessment-section" style={{ borderLeft: '4px solid #38bdf8' }}>
+            <div className="section-card-header d-flex align-items-center justify-content-between">
+              <h2 className="section-card-title m-0">
+                <i className="bi bi-robot text-info"></i>
+                AI Evidence Assessment
+              </h2>
+              <span className="badge bg-dark border border-info text-info" style={{ fontSize: '11px' }}>
+                Decision Support
+              </span>
+            </div>
+
+            <div className="section-card-body">
+              {evidenceAssessment ? (
+                <div>
+                  <div className="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+                    <div>
+                      <span className="text-secondary small d-block">Consistency Evaluation</span>
+                      <span
+                        className={`badge ${
+                          evidenceAssessment.consistency === 'Consistent'
+                            ? 'bg-success text-white'
+                            : evidenceAssessment.consistency === 'Partially consistent'
+                            ? 'bg-warning text-dark'
+                            : evidenceAssessment.consistency === 'Potentially inconsistent'
+                            ? 'bg-danger text-white'
+                            : 'bg-secondary text-light'
+                        }`}
+                        style={{ fontSize: '12px', padding: '5px 10px' }}
+                      >
+                        {evidenceAssessment.consistency || 'Under Review'}
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-secondary small d-block">Evidence Quality</span>
+                      <span className="badge bg-dark border border-secondary text-light" style={{ fontSize: '12px', padding: '5px 10px' }}>
+                        {evidenceAssessment.evidenceQuality || 'Moderate'}
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-secondary small d-block">AI Confidence</span>
+                      <span className="badge bg-info bg-opacity-25 text-info border border-info border-opacity-50" style={{ fontSize: '12px', padding: '5px 10px' }}>
+                        {evidenceAssessment.confidence || 'Medium'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Observations */}
+                  {Array.isArray(evidenceAssessment.visualObservations) && evidenceAssessment.visualObservations.length > 0 && (
+                    <div className="mb-3">
+                      <div className="text-secondary small fw-bold text-uppercase mb-1">Visual Observations</div>
+                      <ul className="m-0 ps-3" style={{ fontSize: '13px', color: '#cbd5e1', lineHeight: 1.5 }}>
+                        {evidenceAssessment.visualObservations.map((obs, oIdx) => (
+                          <li key={oIdx} className="mb-1">{obs}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Video analysis status disclaimer if present */}
+                  {evidenceAssessment.videoAnalysisStatus && (
+                    <div className="p-2 rounded-2 mb-2" style={{ background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.25)', fontSize: '12px', color: '#fde68a' }}>
+                      <i className="bi bi-camera-video me-1" aria-hidden="true"></i>
+                      <strong>Video Assessment Note:</strong> {evidenceAssessment.videoAnalysisStatus}
+                    </div>
+                  )}
+
+                  {/* Warning if potentially inconsistent or unclear */}
+                  {(evidenceAssessment.consistency === 'Potentially inconsistent' || evidenceAssessment.consistency === 'Unclear') && (
+                    <div className="p-2 rounded-2 mb-3" style={{ background: 'rgba(239, 68, 68, 0.12)', border: '1px solid #ef4444', fontSize: '12.5px', color: '#fca5a5' }}>
+                      <i className="bi bi-exclamation-triangle-fill me-1 text-danger" aria-hidden="true"></i>
+                      <strong>Verification Alert:</strong> The submitted evidence may not fully match the report. Please review the available information before dispatching.
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-secondary small py-2">
+                  <i className="bi bi-cpu text-info me-1" aria-hidden="true"></i>
+                  {mediaList.length > 0
+                    ? 'AI visual assessment is being processed for submitted attachments.'
+                    : 'No media available for visual assessment. Evaluation based on citizen description and location telemetry.'}
+                </div>
+              )}
+
+              <div className="mt-2 pt-2 border-top border-secondary border-opacity-25" style={{ fontSize: '11.5px', color: '#94a3b8' }}>
+                <i className="bi bi-shield-check text-warning me-1" aria-hidden="true"></i>
+                <strong>Decision Support:</strong> AI evidence assessment is decision support. Verify the situation using available information before dispatching responders.
+              </div>
+            </div>
+          </div>
+
+          {/* =====================================================
+              Human Coordinator Review (Visually Separate)
+              ===================================================== */}
+          <div className="section-card mb-4" id="human-coordinator-review-section" style={{ borderLeft: '4px solid #22c55e' }}>
+            <div className="section-card-header d-flex align-items-center justify-content-between">
+              <h2 className="section-card-title m-0">
+                <i className="bi bi-person-check-fill text-success"></i>
+                Human Coordinator Review
+              </h2>
+              <span className="badge bg-success" style={{ fontSize: '11px' }}>
+                Final Decision Authority
+              </span>
+            </div>
+
+            <div className="section-card-body">
+              <p className="text-secondary small mb-3">
+                Review the citizen report, location telemetry, visual evidence, and AI decision support to make response decisions.
+              </p>
+
+              {verdictNotice && (
+                <div className="alert alert-success py-2 px-3 mb-2 rounded-2" style={{ fontSize: '12.5px' }}>
+                  ✓ {verdictNotice}
+                </div>
+              )}
+
+              <div className="d-flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  className={`btn btn-sm ${coordinatorVerdict === 'verified' ? 'btn-success' : 'btn-outline-success'}`}
+                  onClick={() => {
+                    setCoordinatorVerdict('verified');
+                    setVerdictNotice('Visual evidence reviewed and marked as Consistent by coordinator.');
+                    setTimeout(() => setVerdictNotice(''), 4000);
+                  }}
+                >
+                  <i className="bi bi-check2-all me-1"></i>
+                  Verify Evidence Consistent
+                </button>
+
+                <button
+                  type="button"
+                  className={`btn btn-sm ${coordinatorVerdict === 'unclear' ? 'btn-warning text-dark' : 'btn-outline-warning'}`}
+                  onClick={() => {
+                    setCoordinatorVerdict('unclear');
+                    setVerdictNotice('Marked as Unclear / Needs Field Confirmation.');
+                    setTimeout(() => setVerdictNotice(''), 4000);
+                  }}
+                >
+                  <i className="bi bi-question-circle me-1"></i>
+                  Flag for Field Verification
+                </button>
+
+                <button
+                  type="button"
+                  className={`btn btn-sm ${coordinatorVerdict === 'dispatched' ? 'btn-info text-dark' : 'btn-outline-info'}`}
+                  onClick={() => {
+                    setCoordinatorVerdict('dispatched');
+                    setVerdictNotice('Coordinator confirmed dispatch authorization.');
+                    setTimeout(() => setVerdictNotice(''), 4000);
+                  }}
+                >
+                  <i className="bi bi-send-check me-1"></i>
+                  Authorize Responders
+                </button>
               </div>
             </div>
           </div>

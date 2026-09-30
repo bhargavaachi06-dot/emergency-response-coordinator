@@ -135,6 +135,18 @@ export default function EmergencyConfirmation() {
     emergency.createdAt ||
     emergency.reportedAt;
 
+  const photosCount = Number(emergency.photos_count || (Array.isArray(emergency.media) ? emergency.media.filter(m => m.media_type === 'photo' || m.type === 'photo').length : 0));
+  const videosCount = Number(emergency.videos_count || (Array.isArray(emergency.media) ? emergency.media.filter(m => m.media_type === 'video' || m.type === 'video').length : 0));
+  const totalMedia = photosCount + videosCount;
+
+  let evidenceText = t.noEvidence || "Photo or video not provided";
+  if (totalMedia > 0) {
+    const parts = [];
+    if (photosCount > 0) parts.push(`📷 ${photosCount} ${photosCount === 1 ? (t.photoAdded || 'Photo') : 'Photos'}`);
+    if (videosCount > 0) parts.push(`🎥 ${videosCount} ${videosCount === 1 ? (t.videoAdded || 'Video') : 'Videos'}`);
+    evidenceText = parts.join(', ');
+  }
+
   let ai =
     emergency.ai_analysis ||
     emergency.ai ||
@@ -404,6 +416,37 @@ export default function EmergencyConfirmation() {
 
                 </div>
 
+                <div className="col-12">
+
+                  <div className="info-label">
+                    Evidence / Media
+                  </div>
+
+                  <div className="info-value d-flex align-items-center gap-2">
+                    {totalMedia > 0 ? (
+                      <span className="badge bg-success text-white py-1 px-2" style={{ fontSize: '12px' }}>
+                        {evidenceText}
+                      </span>
+                    ) : (
+                      <span className="text-secondary" style={{ fontSize: '13px' }}>
+                        {t.noEvidence || 'Photo or video not provided'}
+                      </span>
+                    )}
+                  </div>
+
+                </div>
+
+                {emergency.description && (
+                  <div className="col-12">
+                    <div className="info-label">
+                      Description
+                    </div>
+                    <div className="info-value text-secondary" style={{ fontSize: '13px', lineHeight: 1.5 }}>
+                      {emergency.description}
+                    </div>
+                  </div>
+                )}
+
                 <div className="col-6">
 
                   <div className="info-label">
@@ -428,6 +471,17 @@ export default function EmergencyConfirmation() {
                       "Pending AI analysis"}
                   </div>
 
+                </div>
+
+                <div className="col-12 mt-3 pt-3 border-top">
+                  <div className="p-3 rounded-2" style={{ background: 'rgba(56, 189, 248, 0.08)', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
+                    <div className="d-flex align-items-start gap-2">
+                      <i className="bi bi-person-check-fill text-info mt-1" aria-hidden="true"></i>
+                      <div style={{ fontSize: '12.5px', color: '#cbd5e1', lineHeight: 1.45 }}>
+                        <strong>{t.hitlNotice || 'Your emergency report has been received. A human coordinator will review the available information and coordinate the appropriate response.'}</strong>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
               </div>

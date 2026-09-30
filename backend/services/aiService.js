@@ -64,14 +64,25 @@ Required JSON Schema:
   "recommendedResponders": ["Ambulance" | "Police" | "Fire & Rescue" | "Emergency Coordinator"],
   "confidence": <number between 0 and 1>,
   "reasoning": "<1-3 sentences explaining the assessment for the coordinator>",
-  "keySignals": ["<key keyword or phrase from report>"]
-}`;
+  "keySignals": ["<key keyword or phrase from report>"],
+  "evidenceAssessment": {
+    "mediaAvailable": <boolean>,
+    "consistency": "Consistent" | "Partially consistent" | "Unclear" | "Potentially inconsistent" | "Insufficient visual information" | "No media provided",
+    "evidenceQuality": "Low" | "Moderate" | "High" | "N/A",
+    "confidence": "Low" | "Moderate" | "High" | "N/A",
+    "visualObservations": ["<concise visual observation or context note>"]
+  }
+}
+CRITICAL EVIDENCE VERIFICATION RULES:
+- Never output "TRUE", "FALSE", "REAL", or "FAKE" as an automatic determination.
+- Media serves strictly as SUPPORTING EVIDENCE for the human coordinator.
+- Do NOT claim that video is automatically analyzed; video requires manual coordinator review.`;
 
 // ----------------------------------------------------------
 // AI CALL — Gemini with Timeout
 // ----------------------------------------------------------
 
-async function callGemini(type, description, locationText, memoryContext = null) {
+async function callGemini(type, description, locationText, memoryContext = null, mediaItems = []) {
   const apiKey =
     process.env.AI_API_KEY ||
     process.env.GEMINI_API_KEY ||
@@ -112,12 +123,26 @@ EPISODIC MEMORY USAGE RULES:
 `;
   }
 
-  const userPrompt = `${memorySection}CURRENT EMERGENCY REPORT FOR ANALYSIS:
+  let evidenceSection = "";
+  const photosCount = (mediaItems || []).filter(m => m.media_type === "image" || m.mime_type?.startsWith("image")).length;
+  const videosCount = (mediaItems || []).filter(m => m.media_type === "video" || m.mime_type?.startsWith("video")).length;
+  if (mediaItems && mediaItems.length > 0) {
+    evidenceSection = `
+==================================================
+CITIZEN-SUBMITTED SUPPORTING EVIDENCE:
+- Total Attached Files: ${mediaItems.length}
+- Photos: ${photosCount}
+- Videos: ${videosCount} (NOTE: Videos require manual human coordinator review; do NOT claim automated video parsing)
+==================================================
+`;
+  }
+
+  const userPrompt = `${memorySection}${evidenceSection}CURRENT EMERGENCY REPORT FOR ANALYSIS:
 - Reported Type: ${type || "Unknown"}
 - Description: ${description || "No description provided"}
 - Location: ${locationText || "Not provided"}
 
-Analyze the current incident, taking into account any relevant historical context where appropriate, and return the decision-support JSON.`;
+Analyze the current incident and visual/media evidence availability, taking into account any relevant historical context where appropriate, and return the decision-support JSON.`;
 
   const fullPrompt = `${SYSTEM_PROMPT}\n\n${userPrompt}`;
 
@@ -201,10 +226,96 @@ function normalizeResponders(rawList) {
 }
 
 // ----------------------------------------------------------
-// PARSE & VALIDATE AI JSON
+// PARSE & VALIDATE AI JSON & EVIDENCE ASSESSMENT
 // ----------------------------------------------------------
 
-function parseAndValidate(rawText) {
+function buildEvidenceAssessment(parsedEv, mediaItems = []) {
+  const items = Array.isArray(mediaItems) ? mediaItems : [];
+  const photosCount = items.filter((m) => m.media_type === "image" || m.mime_type?.startsWith("image")).length;
+  const videosCount = items.filter((m) => m.media_type === "video" || m.mime_type?.startsWith("video")).length;
+  const mediaAvailable = items.length > 0;
+
+  if (!mediaAvailable) {
+    return {
+      mediaAvailable: false,
+      mediaCount: 0,
+      photosCount: 0,
+      videosCount: 0,
+      visualObservations: [],
+      consistency: "No media provided",
+      evidenceQuality: "N/A",
+      confidence: "N/A",
+      videoAnalysisStatus: "None",
+      disclaimer: "AI evidence assessment is decision support. Verify the situation using available information before dispatching responders.",
+    };
+  }
+
+  // Strict allowed consistency terms (NEVER TRUE, FALSE, REAL, FAKE)
+  const allowedConsistency = [
+    "Consistent",
+    "Partially consistent",
+    "Unclear",
+    "Potentially inconsistent",
+    "Insufficient visual information",
+  ];
+
+  let rawConsistency = parsedEv?.consistency;
+  let consistency = "Consistent";
+  if (typeof rawConsistency === "string") {
+    const match = allowedConsistency.find((c) => c.toLowerCase() === rawConsistency.toLowerCase().trim());
+    if (match) {
+      consistency = match;
+    } else if (rawConsistency.toLowerCase().includes("inconsistent")) {
+      consistency = "Potentially inconsistent";
+    } else if (rawConsistency.toLowerCase().includes("partial")) {
+      consistency = "Partially consistent";
+    } else if (rawConsistency.toLowerCase().includes("unclear")) {
+      consistency = "Unclear";
+    }
+  }
+
+  const allowedQuality = ["High", "Moderate", "Low"];
+  let evidenceQuality = "Moderate";
+  if (parsedEv?.evidenceQuality && allowedQuality.includes(parsedEv.evidenceQuality)) {
+    evidenceQuality = parsedEv.evidenceQuality;
+  }
+
+  let conf = "Moderate";
+  if (parsedEv?.confidence && ["High", "Moderate", "Low"].includes(parsedEv.confidence)) {
+    conf = parsedEv.confidence;
+  }
+
+  let visualObservations = [];
+  if (Array.isArray(parsedEv?.visualObservations) && parsedEv.visualObservations.length > 0) {
+    visualObservations = parsedEv.visualObservations.map(String).map((s) => s.trim()).filter(Boolean);
+  } else {
+    if (photosCount > 0) {
+      visualObservations.push(`${photosCount} photo(s) submitted as visual supporting evidence.`);
+    }
+    if (videosCount > 0) {
+      visualObservations.push(`${videosCount} video recording(s) attached for visual coordinator verification.`);
+    }
+  }
+
+  const videoAnalysisStatus = videosCount > 0
+    ? "Video file attached. Requires manual coordinator inspection; automated video analysis is unavailable."
+    : "None";
+
+  return {
+    mediaAvailable: true,
+    mediaCount: items.length,
+    photosCount,
+    videosCount,
+    visualObservations,
+    consistency,
+    evidenceQuality,
+    confidence: conf,
+    videoAnalysisStatus,
+    disclaimer: "AI evidence assessment is decision support. Verify the situation using available information before dispatching responders.",
+  };
+}
+
+function parseAndValidate(rawText, mediaItems = []) {
   let parsed;
 
   try {
@@ -243,6 +354,8 @@ function parseAndValidate(rawText) {
     ? parsed.keySignals.map(String).map((s) => s.trim()).filter(Boolean)
     : [];
 
+  const evidenceAssessment = buildEvidenceAssessment(parsed.evidenceAssessment, mediaItems);
+
   return {
     category,
     classification: category, // Alias for Bug 1 consistency
@@ -252,6 +365,7 @@ function parseAndValidate(rawText) {
     confidence: conf,
     reasoning,
     keySignals,
+    evidenceAssessment,
   };
 }
 
@@ -389,6 +503,7 @@ function keywordFallback(type, description) {
   result.confidence =
     signalCount >= 3 ? 0.65 : signalCount === 2 ? 0.55 : signalCount === 1 ? 0.45 : 0.30;
   result.classification = result.category; // Bug 1 compatibility
+  result.evidenceAssessment = buildEvidenceAssessment(null, mediaItems);
 
   return result;
 }
@@ -406,9 +521,11 @@ function keywordFallback(type, description) {
  * @param {string} incident.locationText
  * @param {number|null} incident.latitude
  * @param {number|null} incident.longitude
+ * @param {object|null} memoryContext
+ * @param {Array} mediaItems
  * @returns {Promise<object>}
  */
-async function analyzeEmergency(incident, memoryContext = null) {
+async function analyzeEmergency(incident, memoryContext = null, mediaItems = []) {
   const { type, description, locationText } = incident;
 
   const apiKey =
@@ -431,8 +548,8 @@ async function analyzeEmergency(incident, memoryContext = null) {
     try {
       const activeModel = process.env.AI_MODEL || "gemini-flash-lite-latest";
       console.log(`[AI-Service] Invoking Gemini LLM (${activeModel})...`);
-      const rawResponse = await callGemini(type, description, locationText, memoryContext);
-      const validated = parseAndValidate(rawResponse);
+      const rawResponse = await callGemini(type, description, locationText, memoryContext, mediaItems);
+      const validated = parseAndValidate(rawResponse, mediaItems);
 
       console.log(
         `[AI-Service] Gemini analysis successful: category="${validated.category}", priority="${validated.priority}", confidence=${validated.confidence}`
@@ -454,7 +571,7 @@ async function analyzeEmergency(incident, memoryContext = null) {
     );
   }
 
-  const fallback = keywordFallback(type, description);
+  const fallback = keywordFallback(type, description, mediaItems);
   return {
     ...fallback,
     source: "FALLBACK",

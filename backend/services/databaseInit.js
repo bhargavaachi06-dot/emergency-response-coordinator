@@ -92,6 +92,18 @@ const SCHEMA_QUERIES = [
     event_type VARCHAR(50) NOT NULL,
     description TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  );`,
+
+  // 8. Emergency media / evidence table
+  `CREATE TABLE IF NOT EXISTS emergency_media (
+    id SERIAL PRIMARY KEY,
+    emergency_id INTEGER REFERENCES emergencies(id) ON DELETE CASCADE,
+    media_type VARCHAR(20) NOT NULL, -- 'image' or 'video'
+    file_name VARCHAR(255),
+    mime_type VARCHAR(100),
+    file_size INTEGER,
+    data_url TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   );`
 ];
 

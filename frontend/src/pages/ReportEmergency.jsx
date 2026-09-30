@@ -94,7 +94,8 @@ export default function ReportEmergency() {
 
   // Form state shared between both modes
   const [form, setForm] = useState(INITIAL_FORM);
-  const [imagePreview, setImagePreview] = useState(null);
+  const [mediaList, setMediaList] = useState([]);
+  const [mediaError, setMediaError] = useState('');
   const [loading, setLoading] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -104,8 +105,14 @@ export default function ReportEmergency() {
   const [speechTranscript, setSpeechTranscript] = useState('');
   const [speechError, setSpeechError] = useState('');
   const recognitionRef = useRef(null);
-  const fileInputRef = useRef(null);
-  const stdFileInputRef = useRef(null);
+
+  // Dedicated media input references (Camera photos, video capture, and file selection)
+  const photoCameraInputRef = useRef(null);
+  const videoCameraInputRef = useRef(null);
+  const filePickerInputRef = useRef(null);
+  const stdPhotoCameraInputRef = useRef(null);
+  const stdVideoCameraInputRef = useRef(null);
+  const stdFilePickerInputRef = useRef(null);
 
   // Active language metadata and translation dictionary
   const currentLangMeta = getLanguage(lang);
@@ -265,38 +272,145 @@ export default function ReportEmergency() {
     }
   };
 
-  // Optional image handler
-  const handleImageChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.size > 10 * 1024 * 1024) {
-      setErrors((prev) => ({
-        ...prev,
-        submit: 'Image must be smaller than 10 MB.',
-      }));
-      return;
-    }
-
-    if (!file.type.startsWith('image/')) {
-      setErrors((prev) => ({
-        ...prev,
-        submit: 'Please select a valid image file (JPG, PNG, WEBP).',
-      }));
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      setImagePreview(ev.target?.result);
-    };
-    reader.readAsDataURL(file);
+  // Helper: Format file sizes cleanly
+  const formatFileSize = (bytes) => {
+    if (!bytes || bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
   };
 
-  const handleRemoveImage = () => {
-    setImagePreview(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
-    if (stdFileInputRef.current) stdFileInputRef.current.value = '';
+  // Helper: Category-aware evidence requirement
+  const getEvidenceRequirement = (rawType = form.type) => {
+    const norm = String(rawType || '').toLowerCase();
+    if (norm.includes('road') || norm.includes('accident')) {
+      return {
+        level: 'recommended',
+        badgeText: t.evidenceRecommended || 'Photo or video recommended',
+        note: t.evidenceHelpText || 'Photo or video can help the response team assess the situation.',
+        isSafetyAlert: false,
+      };
+    }
+    if (norm.includes('fire')) {
+      return {
+        level: 'recommended',
+        badgeText: t.evidenceRecommended || 'Photo or video recommended',
+        note: t.evidenceHelpText || 'Photo or video can help the response team assess the situation.',
+        isSafetyAlert: false,
+      };
+    }
+    if (norm.includes('crime') || norm.includes('safety')) {
+      return {
+        level: 'recommended_safe',
+        badgeText: t.evidenceRecommended || 'Photo or video recommended',
+        note: t.safeCaptureWarning || 'Only capture evidence if it is safe to do so. Do not put yourself or others in danger.',
+        isSafetyAlert: true,
+      };
+    }
+    if (norm.includes('disaster') || norm.includes('flood') || norm.includes('natural')) {
+      return {
+        level: 'recommended_safe',
+        badgeText: t.evidenceRecommended || 'Photo or video recommended',
+        note: t.safeCaptureWarning || 'Only capture evidence if it is safe to do so. Do not put yourself or others in danger.',
+        isSafetyAlert: true,
+      };
+    }
+    if (norm.includes('medical')) {
+      return {
+        level: 'optional',
+        badgeText: t.evidenceOptional || 'Evidence optional',
+        note: 'Prioritize getting medical help quickly. Never delay assistance to capture media.',
+        isSafetyAlert: false,
+      };
+    }
+    return {
+      level: 'optional',
+      badgeText: t.evidenceOptional || 'Evidence optional',
+      note: t.evidenceHelpText || 'Photo or video can help the response team assess the situation.',
+      isSafetyAlert: false,
+    };
+  };
+
+  const reqInfo = getEvidenceRequirement(form.type);
+
+  // Handler: Select media files (photos up to 10MB, videos up to 50MB, max 3 files)
+  const handleFilesSelected = (filesList) => {
+    setMediaError('');
+    if (!filesList || filesList.length === 0) return;
+
+    const incoming = Array.from(filesList);
+    if (mediaList.length + incoming.length > 3) {
+      setMediaError(`Maximum 3 evidence files allowed. You already have ${mediaList.length} and selected ${incoming.length}.`);
+      return;
+    }
+
+    incoming.forEach((file) => {
+      const isImage = file.type.startsWith('image/');
+      const isVideo = file.type.startsWith('video/');
+
+      if (!isImage && !isVideo) {
+        setMediaError(t.unsupportedFile || 'This file format is not supported.');
+        return;
+      }
+
+      if (isImage && file.size > 10 * 1024 * 1024) {
+        setMediaError(t.fileTooLarge || 'Photo is too large. Maximum size is 10 MB.');
+        return;
+      }
+
+      if (isVideo && file.size > 50 * 1024 * 1024) {
+        setMediaError(t.fileTooLarge || 'Video is too large. Maximum size is 50 MB.');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const dataUrl = ev.target?.result;
+        const newMedia = {
+          id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          type: isVideo ? 'video' : 'image',
+          name: file.name || (isVideo ? 'video_evidence.mp4' : 'photo_evidence.jpg'),
+          size: file.size,
+          mimeType: file.type || (isVideo ? 'video/mp4' : 'image/jpeg'),
+          dataUrl: dataUrl,
+          previewUrl: dataUrl,
+        };
+
+        setMediaList((prev) => {
+          if (prev.length >= 3) return prev;
+          return [...prev, newMedia];
+        });
+      };
+
+      reader.onerror = () => {
+        setMediaError(t.errGeneral || 'Failed to read media file.');
+      };
+
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleRemoveMedia = (mediaId) => {
+    setMediaList((prev) => prev.filter((m) => m.id !== mediaId));
+    setMediaError('');
+  };
+
+  const handleRetakeMedia = (mediaId, isVideo = false) => {
+    handleRemoveMedia(mediaId);
+    if (isVideo) {
+      if (reportingMode === 'simple') {
+        videoCameraInputRef.current?.click();
+      } else {
+        stdVideoCameraInputRef.current?.click();
+      }
+    } else {
+      if (reportingMode === 'simple') {
+        photoCameraInputRef.current?.click();
+      } else {
+        stdPhotoCameraInputRef.current?.click();
+      }
+    }
   };
 
   // Form validation
@@ -356,12 +470,21 @@ export default function ReportEmergency() {
         locationText = `Lat: ${form.lat}, Lng: ${form.lng}`;
       }
 
+      const mediaPayload = mediaList.map((m) => ({
+        media_type: m.type,
+        file_name: m.name,
+        mime_type: m.mimeType,
+        file_size: m.size,
+        data_url: m.dataUrl,
+      }));
+
       const result = await addEmergency({
         type: canonicalEmergencyType,
         description,
         latitude,
         longitude,
         locationText,
+        media: mediaPayload,
       });
 
       if (!result?.success) {
@@ -393,7 +516,11 @@ export default function ReportEmergency() {
       form.locationStatus === 'detected'
         ? t.locationCaptured
         : form.locationAddress || 'Not specified';
-    const spokenText = `${t.reviewTitle}. ${t.summaryType}: ${typeLabel}. ${t.summaryLocation}: ${locText}. ${t.summaryDescription}: ${form.description || 'Not provided'}.`;
+    const evidenceText =
+      mediaList.length > 0
+        ? `${mediaList.length} ${t.evidenceAvailable || 'evidence items'}`
+        : t.noEvidence || 'No photo or video provided';
+    const spokenText = `${t.reviewTitle}. ${t.summaryType}: ${typeLabel}. ${t.summaryLocation}: ${locText}. ${t.summaryDescription}: ${form.description || 'Not provided'}. ${t.evidenceReview}: ${evidenceText}.`;
     speakText(spokenText, lang);
   };
 
@@ -851,63 +978,247 @@ export default function ReportEmergency() {
                 </div>
               </section>
 
-              {/* SECTION 4: OPTIONAL PHOTO */}
+              {/* SECTION 4: PHOTO + VIDEO EVIDENCE VERIFICATION */}
               <section
                 className="report-section-card simple-section-card"
-                aria-labelledby="simple-photo-heading"
+                aria-labelledby="simple-evidence-heading"
               >
-                <div className="report-section-header">
-                  <h2 className="report-section-title" id="simple-photo-heading">
-                    <i className="bi bi-camera-fill text-info" aria-hidden="true"></i>
-                    {t.photoSectionTitle}
-                  </h2>
+                <div className="report-section-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+                  <div className="d-flex align-items-center gap-2">
+                    <i className="bi bi-camera-reels-fill text-info fs-5" aria-hidden="true"></i>
+                    <h2 className="report-section-title m-0" id="simple-evidence-heading">
+                      {t.evidenceTitle || 'ADD PHOTO OR VIDEO'}
+                    </h2>
+                  </div>
+                  {/* Category-aware requirement badge */}
+                  <span
+                    className={`badge ${
+                      getEvidenceRequirement().level.startsWith('recommended')
+                        ? 'bg-warning text-dark'
+                        : 'bg-secondary text-light'
+                    }`}
+                    style={{ fontSize: '12px', padding: '6px 12px', borderRadius: '8px', fontWeight: 700 }}
+                  >
+                    {getEvidenceRequirement().badgeText}
+                  </span>
                 </div>
 
                 <div className="report-section-body">
-                  {!imagePreview ? (
-                    <div
-                      className="simple-photo-box"
-                      onClick={() => fileInputRef.current?.click()}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          fileInputRef.current?.click();
-                        }
-                      }}
-                      aria-label={t.takePhoto}
-                    >
-                      <i className="bi bi-camera fs-2 text-info mb-2 d-block" aria-hidden="true"></i>
-                      <span className="fw-bold d-block text-light">{t.takePhoto}</span>
-                      <span className="text-secondary small">{t.photoOptional}</span>
+                  <p className="text-secondary mb-3" style={{ fontSize: '14px', lineHeight: 1.5 }}>
+                    {getEvidenceRequirement().note}
+                  </p>
+
+                  {/* Safety Alert Warning Banner (Requirement 5) */}
+                  <div
+                    className="alert d-flex align-items-start gap-2 p-3 rounded-3 mb-3"
+                    style={{
+                      background: 'rgba(245, 158, 11, 0.12)',
+                      border: '1px solid rgba(245, 158, 11, 0.35)',
+                      color: '#FDE68A',
+                      fontSize: '13.5px',
+                    }}
+                    role="alert"
+                  >
+                    <i className="bi bi-shield-exclamation fs-5 flex-shrink-0 text-warning" aria-hidden="true"></i>
+                    <div>
+                      <strong className="d-block mb-1 text-warning">
+                        {t.safeCaptureWarning ? 'Safety Warning' : 'Safety Warning'}:
+                      </strong>
+                      <span>{t.safeCaptureWarning}</span>
                     </div>
-                  ) : (
-                    <div className="report-preview-container">
-                      <img
-                        src={imagePreview}
-                        alt="Emergency situation preview"
-                        className="report-preview-img"
-                      />
-                      <button
-                        type="button"
-                        className="report-remove-img-btn"
-                        onClick={handleRemoveImage}
-                        aria-label={t.removePhoto}
-                      >
-                        <i className="bi bi-trash-fill me-1" aria-hidden="true"></i>
-                        {t.removePhoto}
-                      </button>
+                  </div>
+
+                  {/* Media Error Message */}
+                  {mediaError && (
+                    <div
+                      className="alert alert-danger d-flex align-items-center gap-2 p-3 rounded-3 mb-3"
+                      style={{
+                        background: 'rgba(220, 38, 38, 0.15)',
+                        border: '1px solid rgba(220, 38, 38, 0.4)',
+                        color: '#FCA5A5',
+                        fontSize: '13.5px',
+                      }}
+                      role="alert"
+                    >
+                      <i className="bi bi-exclamation-triangle-fill text-danger fs-5" aria-hidden="true"></i>
+                      <span>{mediaError}</span>
                     </div>
                   )}
 
+                  {/* Evidence Action Buttons (TAKE PHOTO, RECORD VIDEO, CHOOSE FILE) */}
+                  {mediaList.length < 3 ? (
+                    <div className="evidence-buttons-grid mb-3">
+                      <button
+                        type="button"
+                        className="btn-evidence-action"
+                        onClick={() => photoCameraInputRef.current?.click()}
+                        aria-label={t.takePhoto || 'TAKE PHOTO'}
+                      >
+                        <i className="bi bi-camera-fill action-icon" aria-hidden="true"></i>
+                        <span className="action-text">📷 {t.takePhoto || 'TAKE PHOTO'}</span>
+                        <span className="action-sub">Open camera</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        className="btn-evidence-action"
+                        onClick={() => videoCameraInputRef.current?.click()}
+                        aria-label={t.recordVideo || 'RECORD VIDEO'}
+                      >
+                        <i className="bi bi-camera-video-fill action-icon text-danger" aria-hidden="true"></i>
+                        <span className="action-text">🎥 {t.recordVideo || 'RECORD VIDEO'}</span>
+                        <span className="action-sub">Record video</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        className="btn-evidence-action"
+                        onClick={() => filePickerInputRef.current?.click()}
+                        aria-label={t.chooseFile || 'CHOOSE FILE'}
+                      >
+                        <i className="bi bi-folder2-open action-icon text-warning" aria-hidden="true"></i>
+                        <span className="action-text">📁 {t.chooseFile || 'CHOOSE FILE'}</span>
+                        <span className="action-sub">From device</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <div
+                      className="alert alert-info py-2 px-3 mb-3"
+                      style={{ background: 'rgba(56, 189, 248, 0.1)', border: '1px solid #26344D', color: '#93c5fd', fontSize: '13px' }}
+                    >
+                      <i className="bi bi-check-circle-fill me-1 text-info"></i>
+                      Maximum 3 evidence files added. Remove a file to replace it.
+                    </div>
+                  )}
+
+                  {/* Hidden Native File Inputs for Camera / Video / File Picker */}
                   <input
-                    ref={fileInputRef}
+                    ref={photoCameraInputRef}
                     type="file"
                     accept="image/*"
                     capture="environment"
                     style={{ display: 'none' }}
-                    onChange={handleImageChange}
+                    onChange={(e) => {
+                      handleFilesSelected(e.target.files);
+                      e.target.value = '';
+                    }}
                   />
+                  <input
+                    ref={videoCameraInputRef}
+                    type="file"
+                    accept="video/*"
+                    capture="environment"
+                    style={{ display: 'none' }}
+                    onChange={(e) => {
+                      handleFilesSelected(e.target.files);
+                      e.target.value = '';
+                    }}
+                  />
+                  <input
+                    ref={filePickerInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime"
+                    multiple
+                    style={{ display: 'none' }}
+                    onChange={(e) => {
+                      handleFilesSelected(e.target.files);
+                      e.target.value = '';
+                    }}
+                  />
+
+                  {/* Previews List / Carousel */}
+                  {mediaList.length > 0 && (
+                    <div className="evidence-preview-list mt-3">
+                      <div className="d-flex align-items-center justify-content-between mb-2">
+                        <span className="fw-bold text-light" style={{ fontSize: '13.5px' }}>
+                          {t.evidenceReview || 'Evidence Attached'} ({mediaList.length}/3)
+                        </span>
+                        <span className="badge bg-success text-white" style={{ fontSize: '11px' }}>
+                          ✓ {t.evidenceReady || 'Ready'}
+                        </span>
+                      </div>
+
+                      <div className="row g-3">
+                        {mediaList.map((item, idx) => (
+                          <div key={item.id || idx} className="col-12 col-md-6 col-lg-4">
+                            <div className="evidence-card-item">
+                              <div className="evidence-media-wrap">
+                                {item.type === 'video' ? (
+                                  <video
+                                    src={item.previewUrl}
+                                    controls
+                                    muted
+                                    playsInline
+                                    preload="metadata"
+                                    className="evidence-video-element"
+                                    aria-label="Attached video evidence"
+                                  />
+                                ) : (
+                                  <img
+                                    src={item.previewUrl}
+                                    alt={`Emergency evidence ${idx + 1}`}
+                                    className="evidence-image-element"
+                                  />
+                                )}
+                                <span className="evidence-type-tag">
+                                  {item.type === 'video' ? '🎥 VIDEO' : '📷 PHOTO'}
+                                </span>
+                              </div>
+
+                              <div className="evidence-card-info">
+                                <div className="evidence-filename text-truncate" title={item.name}>
+                                  {item.name}
+                                </div>
+                                <div className="evidence-filesize text-muted">
+                                  {formatFileSize(item.size)}
+                                </div>
+
+                                <div className="evidence-actions-row">
+                                  <button
+                                    type="button"
+                                    className="btn-use-this-evidence"
+                                    title="Evidence confirmed"
+                                    aria-label="Confirm evidence ready"
+                                  >
+                                    <i className="bi bi-check2-circle me-1" aria-hidden="true"></i>
+                                    {t.useThis || 'Use This'}
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    className="btn-retake-evidence"
+                                    onClick={() => handleRetakeMedia(item.id, item.type === 'video')}
+                                    title="Retake or re-select"
+                                    aria-label={t.retake || 'Retake'}
+                                  >
+                                    <i className="bi bi-arrow-repeat me-1" aria-hidden="true"></i>
+                                    {t.retake || 'Retake'}
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    className="btn-remove-evidence"
+                                    onClick={() => handleRemoveMedia(item.id)}
+                                    title="Remove this media"
+                                    aria-label={t.removeMedia || 'Remove'}
+                                  >
+                                    <i className="bi bi-trash3-fill me-1" aria-hidden="true"></i>
+                                    {t.removeMedia || 'Remove'}
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Privacy note (Requirement 12) */}
+                  <div className="evidence-privacy-note mt-3">
+                    <i className="bi bi-shield-check text-secondary me-1" aria-hidden="true"></i>
+                    <span>{t.mediaPrivacyNote}</span>
+                  </div>
                 </div>
               </section>
 
@@ -967,15 +1278,39 @@ export default function ReportEmergency() {
                     </span>
                   </div>
 
-                  {imagePreview && (
-                    <div className="summary-row">
-                      <span className="summary-label">{t.summaryPhoto}:</span>
-                      <span className="summary-value text-success">
-                        <i className="bi bi-check-circle-fill me-1" aria-hidden="true"></i>
-                        {t.photoAttached}
-                      </span>
-                    </div>
-                  )}
+                  <div className="summary-row">
+                    <span className="summary-label">{t.evidenceReview || 'Evidence'}:</span>
+                    <span className="summary-value">
+                      {mediaList.length > 0 ? (
+                        <span className="text-success fw-bold d-inline-flex align-items-center gap-2 flex-wrap">
+                          <i className="bi bi-check-circle-fill"></i>
+                          {mediaList.filter((m) => m.type === 'image').length > 0 && (
+                            <span>
+                              📷 {mediaList.filter((m) => m.type === 'image').length}{' '}
+                              {mediaList.filter((m) => m.type === 'image').length === 1 ? 'Photo' : 'Photos'}
+                            </span>
+                          )}
+                          {mediaList.filter((m) => m.type === 'video').length > 0 && (
+                            <span>
+                              🎥 {mediaList.filter((m) => m.type === 'video').length}{' '}
+                              {mediaList.filter((m) => m.type === 'video').length === 1 ? 'Video' : 'Videos'}
+                            </span>
+                          )}
+                        </span>
+                      ) : (
+                        <span className="text-muted">
+                          {['road_accident', 'fire', 'crime', 'natural_disaster'].includes(form.type) ? (
+                            <span className="text-warning-emphasis fw-medium" style={{ fontSize: '13px' }}>
+                              <i className="bi bi-info-circle me-1"></i>
+                              {t.noEvidenceSafeNote || 'No evidence provided. You can continue if you cannot safely provide it.'}
+                            </span>
+                          ) : (
+                            <span>{t.noEvidence || 'No photo or video provided'}</span>
+                          )}
+                        </span>
+                      )}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Submission Error Banner */}
@@ -1248,52 +1583,239 @@ export default function ReportEmergency() {
                       )}
                     </div>
 
-                    {/* Image Attachment */}
+                    {/* Photo + Video Evidence Verification Section */}
                     <div className="report-input-group">
-                      <label className="report-label">{t.photoSectionTitle}</label>
-                      {!imagePreview ? (
-                        <div
-                          className="report-upload-box"
-                          onClick={() => stdFileInputRef.current?.click()}
-                          role="button"
-                          tabIndex={0}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              stdFileInputRef.current?.click();
-                            }
-                          }}
+                      <div className="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
+                        <label className="report-label m-0">
+                          <i className="bi bi-camera-reels-fill text-info me-2" aria-hidden="true"></i>
+                          {t.evidenceTitle || 'EVIDENCE (PHOTO / VIDEO)'}
+                        </label>
+                        <span
+                          className={`badge ${
+                            reqInfo.level === 'recommended'
+                              ? 'bg-warning text-dark'
+                              : 'bg-secondary text-light'
+                          }`}
+                          style={{ fontSize: '11px', padding: '5px 10px' }}
                         >
-                          <i className="bi bi-camera fs-3 text-secondary mb-2 d-block" aria-hidden="true"></i>
-                          <span className="text-light fw-semibold d-block">
-                            {t.takePhoto}
-                          </span>
-                          <span className="text-muted small">Supports JPG, PNG (Max 10MB)</span>
+                          {reqInfo.badgeText}
+                        </span>
+                      </div>
+
+                      <p className="text-secondary small mb-2">
+                        {t.evidenceHelpText || 'Photo or video can help the response team assess the situation.'}
+                      </p>
+
+                      {/* Safety Message Banner */}
+                      <div
+                        className="alert alert-warning d-flex align-items-start gap-2 py-2 px-3 mb-3 rounded-2"
+                        style={{
+                          background: 'rgba(245, 158, 11, 0.1)',
+                          border: '1px solid rgba(245, 158, 11, 0.3)',
+                          color: '#fde68a',
+                          fontSize: '12.5px',
+                        }}
+                        role="alert"
+                      >
+                        <i className="bi bi-shield-exclamation text-warning fs-6 mt-1" aria-hidden="true"></i>
+                        <div>
+                          <strong>{t.safeCaptureWarning || 'Only take a photo or video if it is safe. Do not put yourself or others in danger.'}</strong>
                         </div>
-                      ) : (
-                        <div className="report-preview-container">
-                          <img
-                            src={imagePreview}
-                            alt="Emergency attachment"
-                            className="report-preview-img"
-                          />
+                      </div>
+
+                      {mediaError && (
+                        <div
+                          className="alert alert-danger py-2 px-3 mb-3 rounded-2 d-flex align-items-center justify-content-between"
+                          style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid #ef4444', color: '#fca5a5', fontSize: '13px' }}
+                          role="alert"
+                        >
+                          <div className="d-flex align-items-center gap-2">
+                            <i className="bi bi-exclamation-octagon-fill" aria-hidden="true"></i>
+                            <span>{mediaError}</span>
+                          </div>
                           <button
                             type="button"
-                            className="report-remove-img-btn"
-                            onClick={handleRemoveImage}
-                          >
-                            <i className="bi bi-x-circle-fill me-1" aria-hidden="true"></i>
-                            {t.removePhoto}
-                          </button>
+                            className="btn-close btn-close-white btn-sm"
+                            aria-label="Close"
+                            onClick={() => setMediaError('')}
+                          ></button>
                         </div>
                       )}
 
+                      {/* Action buttons (Take Photo / Record Video / Choose File) */}
+                      {mediaList.length < 3 ? (
+                        <div className="evidence-buttons-grid mb-3">
+                          <button
+                            type="button"
+                            className="btn-evidence-action"
+                            onClick={() => stdPhotoCameraInputRef.current?.click()}
+                            aria-label={t.takePhoto || 'TAKE PHOTO'}
+                          >
+                            <i className="bi bi-camera-fill action-icon text-info" aria-hidden="true"></i>
+                            <span className="action-text">📷 {t.takePhoto || 'TAKE PHOTO'}</span>
+                            <span className="action-sub">Camera (Max 10MB)</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            className="btn-evidence-action"
+                            onClick={() => stdVideoCameraInputRef.current?.click()}
+                            aria-label={t.recordVideo || 'RECORD VIDEO'}
+                          >
+                            <i className="bi bi-camera-video-fill action-icon text-danger" aria-hidden="true"></i>
+                            <span className="action-text">🎥 {t.recordVideo || 'RECORD VIDEO'}</span>
+                            <span className="action-sub">Camera (Max 50MB)</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            className="btn-evidence-action"
+                            onClick={() => stdFilePickerInputRef.current?.click()}
+                            aria-label={t.chooseFile || 'CHOOSE FILE'}
+                          >
+                            <i className="bi bi-folder2-open action-icon text-warning" aria-hidden="true"></i>
+                            <span className="action-text">📁 {t.chooseFile || 'CHOOSE FILE'}</span>
+                            <span className="action-sub">Device storage</span>
+                          </button>
+                        </div>
+                      ) : (
+                        <div
+                          className="alert alert-info py-2 px-3 mb-3 rounded-2"
+                          style={{ background: 'rgba(56, 189, 248, 0.1)', border: '1px solid #26344D', color: '#93c5fd', fontSize: '13px' }}
+                        >
+                          <i className="bi bi-check-circle-fill me-1 text-info"></i>
+                          Maximum 3 evidence files reached. Remove an item to add another.
+                        </div>
+                      )}
+
+                      {/* Hidden inputs */}
                       <input
-                        ref={stdFileInputRef}
+                        ref={stdPhotoCameraInputRef}
                         type="file"
                         accept="image/*"
+                        capture="environment"
                         style={{ display: 'none' }}
-                        onChange={handleImageChange}
+                        onChange={(e) => {
+                          handleFilesSelected(e.target.files);
+                          e.target.value = '';
+                        }}
                       />
+                      <input
+                        ref={stdVideoCameraInputRef}
+                        type="file"
+                        accept="video/*"
+                        capture="environment"
+                        style={{ display: 'none' }}
+                        onChange={(e) => {
+                          handleFilesSelected(e.target.files);
+                          e.target.value = '';
+                        }}
+                      />
+                      <input
+                        ref={stdFilePickerInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime"
+                        multiple
+                        style={{ display: 'none' }}
+                        onChange={(e) => {
+                          handleFilesSelected(e.target.files);
+                          e.target.value = '';
+                        }}
+                      />
+
+                      {/* Standard Mode Media Cards */}
+                      {mediaList.length > 0 && (
+                        <div className="evidence-preview-list">
+                          <div className="d-flex align-items-center justify-content-between mb-2">
+                            <span className="fw-semibold text-light" style={{ fontSize: '13px' }}>
+                              {t.evidenceReview || 'Evidence Attached'} ({mediaList.length}/3)
+                            </span>
+                            <span className="badge bg-success text-white" style={{ fontSize: '11px' }}>
+                              ✓ {t.evidenceReady || 'Ready'}
+                            </span>
+                          </div>
+
+                          <div className="row g-3">
+                            {mediaList.map((item, idx) => (
+                              <div key={item.id || idx} className="col-12 col-md-6 col-lg-4">
+                                <div className="evidence-card-item">
+                                  <div className="evidence-media-wrap">
+                                    {item.type === 'video' ? (
+                                      <video
+                                        src={item.previewUrl}
+                                        controls
+                                        muted
+                                        playsInline
+                                        preload="metadata"
+                                        className="evidence-video-element"
+                                        aria-label="Attached video evidence"
+                                      />
+                                    ) : (
+                                      <img
+                                        src={item.previewUrl}
+                                        alt={`Emergency evidence ${idx + 1}`}
+                                        className="evidence-image-element"
+                                      />
+                                    )}
+                                    <span className="evidence-type-tag">
+                                      {item.type === 'video' ? '🎥 VIDEO' : '📷 PHOTO'}
+                                    </span>
+                                  </div>
+
+                                  <div className="evidence-card-info">
+                                    <div className="evidence-filename text-truncate" title={item.name}>
+                                      {item.name}
+                                    </div>
+                                    <div className="d-flex align-items-center justify-content-between text-muted" style={{ fontSize: '11px' }}>
+                                      <span>{formatFileSize(item.size)}</span>
+                                      <span className="text-uppercase">{item.mimeType?.split('/')[1] || item.type}</span>
+                                    </div>
+
+                                    <div className="evidence-actions-row mt-2">
+                                      <button
+                                        type="button"
+                                        className="btn-use-this-evidence"
+                                        title="Confirmed ready for submission"
+                                        aria-label="Confirm evidence ready"
+                                      >
+                                        <i className="bi bi-check2-circle me-1" aria-hidden="true"></i>
+                                        {t.useThis || 'Use This'}
+                                      </button>
+
+                                      <button
+                                        type="button"
+                                        className="btn-retake-evidence"
+                                        onClick={() => handleRetakeMedia(item.id, item.type === 'video')}
+                                        title="Retake or re-select"
+                                        aria-label={t.retake || 'Retake'}
+                                      >
+                                        <i className="bi bi-arrow-repeat me-1" aria-hidden="true"></i>
+                                        {t.retake || 'Retake'}
+                                      </button>
+
+                                      <button
+                                        type="button"
+                                        className="btn-remove-evidence"
+                                        onClick={() => handleRemoveMedia(item.id)}
+                                        title="Remove this media"
+                                        aria-label={t.removeMedia || 'Remove'}
+                                      >
+                                        <i className="bi bi-trash3-fill me-1" aria-hidden="true"></i>
+                                        {t.removeMedia || 'Remove'}
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="evidence-privacy-note mt-2">
+                        <i className="bi bi-shield-check text-success me-1" aria-hidden="true"></i>
+                        <span>{t.mediaPrivacyNote || 'Only share media that is safe and appropriate to share. Visual evidence is used as decision support by human coordinators.'}</span>
+                      </div>
                     </div>
 
                     {/* Optional Hazards & Gate Codes */}

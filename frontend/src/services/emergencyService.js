@@ -83,10 +83,29 @@ export const emergencyService = {
         "",
     };
 
+    if (Array.isArray(reportData.media) && reportData.media.length > 0) {
+      payload.media = reportData.media;
+    }
+
     return await apiRequest("/emergencies", {
       method: "POST",
       body: JSON.stringify(payload),
     });
+  },
+
+  // =====================================================
+  // ATTACH EVIDENCE MEDIA (PHOTO / VIDEO)
+  // =====================================================
+
+  async uploadMedia(id, mediaList) {
+    return await apiRequest(`/emergencies/${id}/media`, {
+      method: "POST",
+      body: JSON.stringify({ media: Array.isArray(mediaList) ? mediaList : [mediaList] }),
+    });
+  },
+
+  async getMedia(id) {
+    return await apiRequest(`/emergencies/${id}/media`);
   },
 
   // =====================================================

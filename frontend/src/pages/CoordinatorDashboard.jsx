@@ -633,6 +633,19 @@ export default function CoordinatorDashboard() {
                               {incident.responders.length} Assigned
                             </span>
                           )}
+                          {((Number(incident.photos_count) > 0) || (Number(incident.videos_count) > 0) || (Number(incident.media_count) > 0) || (Array.isArray(incident.media) && incident.media.length > 0)) && (
+                            <span className="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25" style={{ fontSize: '10.5px' }} title="Visual evidence attached">
+                              {(Number(incident.photos_count) > 0 || (Array.isArray(incident.media) && incident.media.some(m => m.media_type === 'photo'))) && (
+                                <span className="me-1">📷 {incident.photos_count || incident.media.filter(m => m.media_type === 'photo').length}</span>
+                              )}
+                              {(Number(incident.videos_count) > 0 || (Array.isArray(incident.media) && incident.media.some(m => m.media_type === 'video'))) && (
+                                <span>🎥 {incident.videos_count || incident.media.filter(m => m.media_type === 'video').length}</span>
+                              )}
+                              {!(Number(incident.photos_count) > 0) && !(Number(incident.videos_count) > 0) && (
+                                <span>Evidence Available</span>
+                              )}
+                            </span>
+                          )}
                         </div>
 
                         <div className="cc-incident-footer">

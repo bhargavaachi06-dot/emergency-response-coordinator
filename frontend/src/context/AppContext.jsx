@@ -146,6 +146,10 @@ export function AppProvider({ children }) {
       classification: ai?.category || ai?.classification || emergency.classification || emergency.type,
       severity: ai?.severity || emergency.severity,
       priority: ai?.priority || emergency.priority,
+      media: emergency.media || [],
+      media_count: emergency.media_count ?? (Array.isArray(emergency.media) ? emergency.media.length : 0),
+      photos_count: emergency.photos_count ?? (Array.isArray(emergency.media) ? emergency.media.filter((m) => m.media_type === "image").length : 0),
+      videos_count: emergency.videos_count ?? (Array.isArray(emergency.media) ? emergency.media.filter((m) => m.media_type === "video").length : 0),
     };
   };
 
