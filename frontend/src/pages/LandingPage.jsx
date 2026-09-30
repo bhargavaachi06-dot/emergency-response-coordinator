@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
+import { TopNavbar } from '../components/Navigation';
 import './LandingPage.css';
 
 const EMERGENCY_TYPES = [
@@ -67,46 +68,8 @@ export default function LandingPage() {
 
   return (
     <div className="landing-container">
-      {/* Top Tactical Sticky Navigation */}
-      <header className="landing-top-bar" role="banner">
-        <div className="container">
-          <div className="landing-nav-inner">
-            <div
-              className="landing-brand"
-              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => e.key === 'Enter' && window.scrollTo({ top: 0, behavior: 'smooth' })}
-              aria-label="Emergency Response Coordinator Home"
-            >
-              <div className="landing-brand-badge" aria-hidden="true">
-                <i className="bi bi-broadcast"></i>
-              </div>
-              <div className="landing-brand-text">
-                <span className="landing-brand-title">Emergency Response</span>
-                <span className="landing-brand-subtitle">Coordinator</span>
-              </div>
-            </div>
-
-            <div className="landing-nav-actions">
-              <div className="status-indicator-pill" title="Operational Readiness">
-                <span className="status-dot-pulse" aria-hidden="true"></span>
-                <span>Response Network Ready</span>
-              </div>
-
-              <button
-                type="button"
-                className="btn-landing-top-report"
-                onClick={() => handleReportEmergency()}
-                aria-label="Report emergency incident"
-              >
-                <i className="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
-                <span>Report Emergency</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+      {/* Unified Top Navigation */}
+      <TopNavbar />
 
       {/* Main Content */}
       <main className="landing-content" id="main-content">

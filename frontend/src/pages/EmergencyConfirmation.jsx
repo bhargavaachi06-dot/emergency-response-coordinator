@@ -11,11 +11,12 @@ export default function EmergencyConfirmation() {
   const {
     submittedEmergency,
     loading,
+    language,
   } = useApp();
 
   const emergency = submittedEmergency;
 
-  const savedLang = (() => {
+  const savedLang = language || (() => {
     try {
       return localStorage.getItem('citizenLanguage') || 'en';
     } catch {

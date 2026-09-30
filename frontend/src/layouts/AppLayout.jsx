@@ -1,15 +1,19 @@
-import { Sidebar, TopNavbar } from '../components/Navigation';
+import { TopNavbar } from '../components/Navigation';
 
-export function AppLayout({ children, title, subtitle }) {
+/**
+ * AppLayout Component
+ * Modern, full-width emergency response application shell.
+ * Uses a unified top navigation bar with no permanent left sidebar.
+ */
+export function AppLayout({ children }) {
   return (
-    <div className="app-with-sidebar">
-      <Sidebar />
-      <div className="app-main">
-        <TopNavbar title={title} subtitle={subtitle} />
-        <main className="page-content">
-          {children}
-        </main>
-      </div>
+    <div className="app-shell">
+      <TopNavbar />
+      <main className="app-main-content">
+        {children}
+      </main>
     </div>
   );
 }
+
+export default AppLayout;

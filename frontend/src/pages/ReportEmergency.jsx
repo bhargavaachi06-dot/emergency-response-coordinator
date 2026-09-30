@@ -65,23 +65,13 @@ const EMERGENCY_CARDS = [
 export default function ReportEmergency() {
   const navigate = useNavigate();
   const routeLocation = useLocation();
-  const { addEmergency } = useApp();
+  const { addEmergency, language, setLanguage, openLangModal } = useApp();
 
   // Mode: 'simple' (default for ease) or 'standard'
   const [reportingMode, setReportingMode] = useState('simple');
 
-  // Language state initialized from localStorage, defaulting to 'en'
-  const [lang, setLang] = useState(() => {
-    try {
-      const saved = localStorage.getItem('citizenLanguage');
-      if (saved && LANGUAGES.some((l) => l.code === saved)) {
-        return saved;
-      }
-    } catch {
-      // ignore storage access errors
-    }
-    return 'en';
-  });
+  // Language state synchronized with global citizenLanguage
+  const lang = language || 'en';
 
   // Modal drawer for selecting among 23 languages
   const [langModalOpen, setLangModalOpen] = useState(false);
@@ -120,16 +110,13 @@ export default function ReportEmergency() {
   // Accessibility ID
   const langSelectId = useId();
 
-  // Save language selection to localStorage
+  // Save language selection to localStorage & AppContext
   const handleSelectLanguage = (newCode) => {
     if (LANGUAGES.some((l) => l.code === newCode)) {
-      setLang(newCode);
-      setLangModalOpen(false);
-      try {
-        localStorage.setItem('citizenLanguage', newCode);
-      } catch {
-        // ignore storage error
+      if (setLanguage) {
+        setLanguage(newCode);
       }
+      setLangModalOpen(false);
     }
   };
 
@@ -538,7 +525,7 @@ export default function ReportEmergency() {
                 <button
                   type="button"
                   className="lang-picker-btn"
-                  onClick={() => setLangModalOpen(true)}
+                  onClick={() => (openLangModal ? openLangModal() : setLangModalOpen(true))}
                   aria-haspopup="dialog"
                   aria-expanded={langModalOpen}
                   aria-label={`${t.languageSelectorLabel}: ${currentLangMeta.nativeName}`}

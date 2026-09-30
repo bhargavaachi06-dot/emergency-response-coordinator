@@ -6,6 +6,12 @@ import {
 } from "react";
 
 import { emergencyService } from "../services/emergencyService";
+import {
+  LANGUAGES,
+  TRANSLATIONS,
+  getLanguage,
+  isRTL,
+} from "../data/translations";
 
 // --------------------------------------------------
 // ROLES
@@ -105,6 +111,57 @@ export function AppProvider({ children }) {
     useState(null);
 
   // ------------------------------------------------
+  // LANGUAGE & FIRST-LAUNCH STATE
+  // ------------------------------------------------
+  const [hasLanguageSet, setHasLanguageSet] = useState(() => {
+    try {
+      const saved = localStorage.getItem("citizenLanguage");
+      return Boolean(saved && LANGUAGES.some((l) => l.code === saved));
+    } catch {
+      return false;
+    }
+  });
+
+  const [citizenLanguage, setCitizenLanguageState] = useState(() => {
+    try {
+      const saved = localStorage.getItem("citizenLanguage");
+      if (saved && LANGUAGES.some((l) => l.code === saved)) {
+        return saved;
+      }
+    } catch {
+      // ignore
+    }
+    return "en";
+  });
+
+  const [isLangModalOpen, setIsLangModalOpen] = useState(false);
+
+  const setCitizenLanguage = (newCode) => {
+    if (LANGUAGES.some((l) => l.code === newCode)) {
+      try {
+        localStorage.setItem("citizenLanguage", newCode);
+      } catch (e) {
+        console.warn("LocalStorage error:", e);
+      }
+      setCitizenLanguageState(newCode);
+      setHasLanguageSet(true);
+
+      if (typeof document !== "undefined") {
+        document.documentElement.lang = newCode;
+        document.documentElement.dir = isRTL(newCode) ? "rtl" : "ltr";
+      }
+    }
+  };
+
+  useEffect(() => {
+    const activeLang = citizenLanguage || "en";
+    if (typeof document !== "undefined") {
+      document.documentElement.lang = activeLang;
+      document.documentElement.dir = isRTL(activeLang) ? "rtl" : "ltr";
+    }
+  }, [citizenLanguage]);
+
+  // ------------------------------------------------
   // SWITCH ROLE
   // ------------------------------------------------
 
@@ -132,7 +189,7 @@ export function AppProvider({ children }) {
     if (typeof ai === "string") {
       try {
         ai = JSON.parse(ai);
-      } catch (e) {
+      } catch {
         // ignore parse error
       }
     }
@@ -859,6 +916,19 @@ export function AppProvider({ children }) {
 
     setSubmittedEmergency,
     setSelectedEmergency,
+
+    language: citizenLanguage || "en",
+    citizenLanguage: citizenLanguage || "en",
+    setLanguage: setCitizenLanguage,
+    setCitizenLanguage,
+    hasLanguageSet,
+    setHasLanguageSet,
+    isLangModalOpen,
+    openLangModal: () => setIsLangModalOpen(true),
+    closeLangModal: () => setIsLangModalOpen(false),
+    currentLangMeta: getLanguage(citizenLanguage || "en"),
+    t: TRANSLATIONS[citizenLanguage || "en"] || TRANSLATIONS.en,
+    isRtl: isRTL(citizenLanguage || "en"),
   };
 
   return (
