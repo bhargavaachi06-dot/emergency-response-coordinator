@@ -1,10 +1,16 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useId } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { AppLayout } from '../layouts/AppLayout';
 import { BackButton } from '../components/BackButton';
 import { EMERGENCY_TYPES } from '../data/demoData';
-import { TRANSLATIONS, speakText } from '../data/translations';
+import {
+  LANGUAGES,
+  TRANSLATIONS,
+  getLanguage,
+  isRTL,
+  speakText,
+} from '../data/translations';
 import './ReportEmergency.css';
 
 const INITIAL_FORM = {
@@ -15,16 +21,6 @@ const INITIAL_FORM = {
   locationAddress: '',
   locationStatus: '',
   additionalInfo: '',
-};
-
-// Helpful subtitle descriptions for standard mode
-const TYPE_DESCRIPTIONS = {
-  medical: 'Cardiac arrest, trauma, unconsciousness or acute illness',
-  road_accident: 'Vehicle collisions, pedestrian incidents & roadway blockages',
-  fire: 'Structural, residential, smoke or hazardous chemical fire',
-  crime: 'Assaults, ongoing safety threats, burglaries & security incidents',
-  natural_disaster: 'Flash floods, severe storms, landslides & structural collapse',
-  other: 'Urgent situations requiring emergency triage and coordination',
 };
 
 // Visual emergency cards configuration for Simple Mode
@@ -79,8 +75,22 @@ export default function ReportEmergency() {
 
   // Mode: 'simple' (default for accessibility) or 'standard'
   const [reportingMode, setReportingMode] = useState('simple');
-  // Language: 'en' or 'te'
-  const [lang, setLang] = useState('en');
+
+  // Language state initialized from localStorage, defaulting to 'en'
+  const [lang, setLang] = useState(() => {
+    try {
+      const saved = localStorage.getItem('citizenLanguage');
+      if (saved && LANGUAGES.some((l) => l.code === saved)) {
+        return saved;
+      }
+    } catch {
+      // ignore storage access errors
+    }
+    return 'en';
+  });
+
+  // Modal drawer for selecting among 23 languages
+  const [langModalOpen, setLangModalOpen] = useState(false);
 
   // Form state shared between both modes
   const [form, setForm] = useState(INITIAL_FORM);
@@ -95,11 +105,30 @@ export default function ReportEmergency() {
   const [speechError, setSpeechError] = useState('');
   const recognitionRef = useRef(null);
   const fileInputRef = useRef(null);
+  const stdFileInputRef = useRef(null);
 
-  // Active translation dictionary
+  // Active language metadata and translation dictionary
+  const currentLangMeta = getLanguage(lang);
   const t = TRANSLATIONS[lang] || TRANSLATIONS.en;
+  const isCurrentRtl = isRTL(lang);
 
-  // Cleanup speech recognition on unmount
+  // Unique IDs for accessibility
+  const langSelectId = useId();
+
+  // Save language selection to localStorage
+  const handleSelectLanguage = (newCode) => {
+    if (LANGUAGES.some((l) => l.code === newCode)) {
+      setLang(newCode);
+      setLangModalOpen(false);
+      try {
+        localStorage.setItem('citizenLanguage', newCode);
+      } catch {
+        // ignore storage error
+      }
+    }
+  };
+
+  // Cleanup speech recognition and synthesis on unmount
   useEffect(() => {
     return () => {
       if (recognitionRef.current) {
@@ -111,7 +140,7 @@ export default function ReportEmergency() {
     };
   }, []);
 
-  // Update form fields
+  // Update form fields and clear associated errors
   const setField = (key, value) => {
     setForm((prev) => ({
       ...prev,
@@ -180,7 +209,7 @@ export default function ReportEmergency() {
       recognitionRef.current = recognition;
       recognition.continuous = false;
       recognition.interimResults = false;
-      recognition.lang = lang === 'te' ? 'te-IN' : 'en-IN';
+      recognition.lang = currentLangMeta.speechLocale || 'en-IN';
 
       recognition.onstart = () => {
         setIsListening(true);
@@ -199,9 +228,9 @@ export default function ReportEmergency() {
         if (event.error === 'not-allowed') {
           setSpeechError(t.speechDenied);
         } else if (event.error === 'no-speech') {
-          setSpeechError(t.speechAgain);
+          setSpeechError(t.speakAgain);
         } else {
-          setSpeechError(t.speechDenied);
+          setSpeechError(t.speechUnsupported);
         }
       };
 
@@ -211,9 +240,9 @@ export default function ReportEmergency() {
 
       recognition.start();
     } catch (err) {
-      console.warn('SpeechRecognition failed:', err);
+      console.warn('SpeechRecognition start failed:', err);
       setIsListening(false);
-      setSpeechError(t.speechDenied);
+      setSpeechError(t.speechUnsupported);
     }
   };
 
@@ -266,9 +295,8 @@ export default function ReportEmergency() {
 
   const handleRemoveImage = () => {
     setImagePreview(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (stdFileInputRef.current) stdFileInputRef.current.value = '';
   };
 
   // Form validation
@@ -288,7 +316,7 @@ export default function ReportEmergency() {
     return errs;
   };
 
-  // Submission handler (preserves 100% of existing payload and backend flow)
+  // Submission handler — Preserves 100% of existing canonical payload
   const handleSubmit = async (e) => {
     if (e && e.preventDefault) {
       e.preventDefault();
@@ -305,7 +333,8 @@ export default function ReportEmergency() {
     setErrors({});
 
     try {
-      const emergencyType =
+      // Send CANONICAL English emergency category to the backend
+      const canonicalEmergencyType =
         EMERGENCY_TYPES.find((item) => item.value === form.type)?.label ||
         form.type;
 
@@ -328,7 +357,7 @@ export default function ReportEmergency() {
       }
 
       const result = await addEmergency({
-        type: emergencyType,
+        type: canonicalEmergencyType,
         description,
         latitude,
         longitude,
@@ -357,9 +386,9 @@ export default function ReportEmergency() {
     }
   };
 
-  // Read out summary in Simple Mode
+  // Read out summary in selected language
   const handleReadSummary = () => {
-    const typeLabel = t.types[form.type]?.spoken || form.type || 'Emergency';
+    const typeLabel = t.types[form.type]?.spoken || t.types[form.type]?.label || form.type || 'Emergency';
     const locText =
       form.locationStatus === 'detected'
         ? t.locationCaptured
@@ -368,7 +397,7 @@ export default function ReportEmergency() {
     speakText(spokenText, lang);
   };
 
-  // Step progress for Standard Mode
+  // Step progress indicator for Standard Mode
   const isStep1Done = Boolean(form.type);
   const isStep2Done = Boolean((form.lat && form.lng) || form.locationAddress.trim());
   const isStep3Done = form.description.trim().length >= 10;
@@ -382,38 +411,49 @@ export default function ReportEmergency() {
           : 'Submit an incident report for immediate AI triage and dispatch'
       }
     >
-      <div className="report-page-wrapper">
+      <div
+        className={`report-page-wrapper ${isCurrentRtl ? 'is-rtl' : ''}`}
+        dir={isCurrentRtl ? 'rtl' : 'ltr'}
+        lang={lang}
+      >
         <div className="report-page-container">
-          {/* Top navigation row with back button and mode switch */}
+          {/* Top navigation row with back button, language selector and mode switch */}
           <div className="report-top-bar">
             <BackButton fallback="/citizen" />
 
             <div className="report-mode-controls">
-              {/* Language Selector */}
-              <div
-                className="report-lang-toggle"
-                role="group"
-                aria-label="Language Selector"
-              >
+              {/* Accessible Native-Script Language Selector Trigger */}
+              <div className="lang-selector-container">
                 <button
                   type="button"
-                  className={`lang-btn ${lang === 'en' ? 'active' : ''}`}
-                  onClick={() => setLang('en')}
-                  aria-pressed={lang === 'en'}
+                  className="lang-picker-btn"
+                  onClick={() => setLangModalOpen(true)}
+                  aria-haspopup="dialog"
+                  aria-expanded={langModalOpen}
+                  aria-label={`${t.languageSelectorLabel}: ${currentLangMeta.nativeName}`}
                 >
-                  English
+                  <span className="lang-icon" aria-hidden="true">🌐</span>
+                  <span className="lang-name-native">{currentLangMeta.nativeName}</span>
+                  <i className="bi bi-chevron-down lang-chevron" aria-hidden="true"></i>
                 </button>
-                <button
-                  type="button"
-                  className={`lang-btn ${lang === 'te' ? 'active' : ''}`}
-                  onClick={() => setLang('te')}
-                  aria-pressed={lang === 'te'}
+
+                {/* Direct quick accessible <select> for screen readers & quick selection */}
+                <select
+                  id={langSelectId}
+                  className="visually-hidden-accessible"
+                  value={lang}
+                  onChange={(e) => handleSelectLanguage(e.target.value)}
+                  aria-label={t.languageSelectorLabel}
                 >
-                  తెలుగు
-                </button>
+                  {LANGUAGES.map((l) => (
+                    <option key={l.code} value={l.code}>
+                      {l.nativeName} ({l.name})
+                    </option>
+                  ))}
+                </select>
               </div>
 
-              {/* Mode Switcher */}
+              {/* Mode Switcher Toggle */}
               <div
                 className="report-mode-toggle"
                 role="group"
@@ -427,7 +467,7 @@ export default function ReportEmergency() {
                   onClick={() => setReportingMode('simple')}
                   aria-pressed={reportingMode === 'simple'}
                 >
-                  <i className="bi bi-person-arms-up me-1"></i>
+                  <i className="bi bi-person-arms-up me-1" aria-hidden="true"></i>
                   {t.simpleMode}
                 </button>
                 <button
@@ -438,7 +478,7 @@ export default function ReportEmergency() {
                   onClick={() => setReportingMode('standard')}
                   aria-pressed={reportingMode === 'standard'}
                 >
-                  <i className="bi bi-card-checklist me-1"></i>
+                  <i className="bi bi-card-checklist me-1" aria-hidden="true"></i>
                   {t.standardMode}
                 </button>
               </div>
@@ -446,10 +486,71 @@ export default function ReportEmergency() {
           </div>
 
           {/* =====================================================
+              23-LANGUAGE SELECTION MODAL DRAWER
+              ===================================================== */}
+          {langModalOpen && (
+            <div
+              className="lang-modal-backdrop"
+              onClick={() => setLangModalOpen(false)}
+              role="dialog"
+              aria-modal="true"
+              aria-label={t.languageSelectorLabel}
+            >
+              <div
+                className="lang-modal-dialog"
+                onClick={(e) => e.stopPropagation()}
+                dir="ltr"
+              >
+                <div className="lang-modal-header">
+                  <div className="d-flex align-items-center gap-2">
+                    <span className="fs-5" aria-hidden="true">🌐</span>
+                    <h3 className="lang-modal-title m-0">{t.languageSelectorLabel}</h3>
+                  </div>
+                  <button
+                    type="button"
+                    className="lang-modal-close"
+                    onClick={() => setLangModalOpen(false)}
+                    aria-label="Close language selector"
+                  >
+                    <i className="bi bi-x-lg"></i>
+                  </button>
+                </div>
+
+                <div className="lang-modal-grid">
+                  {LANGUAGES.map((item) => {
+                    const isSelected = item.code === lang;
+                    return (
+                      <button
+                        key={item.code}
+                        type="button"
+                        className={`lang-option-card ${isSelected ? 'active' : ''}`}
+                        onClick={() => handleSelectLanguage(item.code)}
+                        aria-pressed={isSelected}
+                      >
+                        <div className="lang-card-native">{item.nativeName}</div>
+                        <div className="lang-card-english">{item.name}</div>
+                        {isSelected && (
+                          <div className="lang-card-check" aria-hidden="true">
+                            <i className="bi bi-check-circle-fill"></i>
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* =====================================================
               SIMPLE MODE (ACCESSIBLE / VOICE / VISUAL)
               ===================================================== */}
           {reportingMode === 'simple' && (
-            <div className="simple-report-flow" role="region" aria-label="Simple Emergency Reporting">
+            <div
+              className="simple-report-flow"
+              role="region"
+              aria-label="Simple Emergency Reporting"
+            >
               {/* Header Card */}
               <header className="report-header-card simple-header-card" role="banner">
                 <div className="report-header-top">
@@ -484,9 +585,12 @@ export default function ReportEmergency() {
               </header>
 
               {/* SECTION 1: VISUAL EMERGENCY TYPE (6 Large Cards) */}
-              <section className="report-section-card simple-section-card" aria-labelledby="type-section-heading">
+              <section
+                className="report-section-card simple-section-card"
+                aria-labelledby="simple-type-heading"
+              >
                 <div className="report-section-header">
-                  <h2 className="report-section-title" id="type-section-heading">
+                  <h2 className="report-section-title" id="simple-type-heading">
                     <i className="bi bi-grid-fill text-info" aria-hidden="true"></i>
                     {t.typesTitle}
                   </h2>
@@ -494,7 +598,11 @@ export default function ReportEmergency() {
                 </div>
 
                 <div className="report-section-body">
-                  <div className="simple-types-grid" role="radiogroup" aria-label={t.typesTitle}>
+                  <div
+                    className="simple-types-grid"
+                    role="radiogroup"
+                    aria-label={t.typesTitle}
+                  >
                     {SIMPLE_TYPE_CARDS.map((card) => {
                       const isSelected = form.type === card.key;
                       const typeData = t.types[card.key] || {};
@@ -547,26 +655,23 @@ export default function ReportEmergency() {
               </section>
 
               {/* SECTION 2: SPEAK INSTEAD OF TYPE (Voice Assistant) */}
-              <section className="report-section-card simple-section-card" aria-labelledby="voice-section-heading">
+              <section
+                className="report-section-card simple-section-card"
+                aria-labelledby="simple-voice-heading"
+              >
                 <div className="report-section-header">
-                  <h2 className="report-section-title" id="voice-section-heading">
+                  <h2 className="report-section-title" id="simple-voice-heading">
                     <i className="bi bi-mic-fill text-danger" aria-hidden="true"></i>
                     {t.voiceSectionTitle}
                   </h2>
                   <button
                     type="button"
                     className="btn-tts-listen-inline"
-                    onClick={() =>
-                      speakText(
-                        lang === 'te'
-                          ? 'మైక్రోఫోన్ నొక్కి ఏం జరిగిందో మాట్లాడండి'
-                          : 'Tap the microphone and tell us what happened',
-                        lang
-                      )
-                    }
-                    aria-label="Listen audio"
+                    onClick={() => speakText(t.instructionSpeech, lang)}
+                    aria-label={t.listenInstructions}
                   >
-                    <i className="bi bi-volume-up-fill"></i>
+                    <i className="bi bi-volume-up-fill" aria-hidden="true"></i>
+                    <span>{t.listenInstructions}</span>
                   </button>
                 </div>
 
@@ -598,9 +703,13 @@ export default function ReportEmergency() {
                     )}
                   </div>
 
-                  {/* Speech Transcript Output */}
+                  {/* Speech Transcript Output Card */}
                   {speechTranscript && (
-                    <div className="voice-transcript-card" role="region" aria-live="polite">
+                    <div
+                      className="voice-transcript-card"
+                      role="region"
+                      aria-live="polite"
+                    >
                       <div className="transcript-header">
                         <span className="transcript-label">{t.weHeard}</span>
                         <button
@@ -608,18 +717,21 @@ export default function ReportEmergency() {
                           className="btn-transcript-listen"
                           onClick={() => speakText(speechTranscript, lang)}
                           title="Listen to transcription"
+                          aria-label="Listen to transcription"
                         >
                           <i className="bi bi-volume-up-fill"></i>
                         </button>
                       </div>
-                      <blockquote className="transcript-text">"{speechTranscript}"</blockquote>
+                      <blockquote className="transcript-text">
+                        "{speechTranscript}"
+                      </blockquote>
                       <div className="transcript-actions">
                         <button
                           type="button"
                           className="btn-use-transcript"
                           onClick={handleApplyVoiceTranscript}
                         >
-                          <i className="bi bi-check-circle-fill me-1"></i>
+                          <i className="bi bi-check-circle-fill me-1" aria-hidden="true"></i>
                           {t.useThis}
                         </button>
                         <button
@@ -627,7 +739,7 @@ export default function ReportEmergency() {
                           className="btn-retry-transcript"
                           onClick={handleStartListening}
                         >
-                          <i className="bi bi-arrow-repeat me-1"></i>
+                          <i className="bi bi-arrow-repeat me-1" aria-hidden="true"></i>
                           {t.speakAgain}
                         </button>
                       </div>
@@ -636,12 +748,12 @@ export default function ReportEmergency() {
 
                   {speechError && (
                     <div className="alert-voice-notice" role="alert">
-                      <i className="bi bi-info-circle-fill me-2"></i>
+                      <i className="bi bi-info-circle-fill me-2" aria-hidden="true"></i>
                       <span>{speechError}</span>
                     </div>
                   )}
 
-                  {/* Fallback & Typed Description */}
+                  {/* Description Fallback Input */}
                   <div className="simple-text-fallback mt-4">
                     <label htmlFor="simple-desc-input" className="report-label">
                       {t.descriptionLabel} <span className="report-label-required">*</span>
@@ -670,9 +782,12 @@ export default function ReportEmergency() {
               </section>
 
               {/* SECTION 3: AUTOMATIC LOCATION */}
-              <section className="report-section-card simple-section-card" aria-labelledby="location-section-heading">
+              <section
+                className="report-section-card simple-section-card"
+                aria-labelledby="simple-location-heading"
+              >
                 <div className="report-section-header">
-                  <h2 className="report-section-title" id="location-section-heading">
+                  <h2 className="report-section-title" id="simple-location-heading">
                     <i className="bi bi-geo-alt-fill text-warning" aria-hidden="true"></i>
                     {t.locationSectionTitle}
                   </h2>
@@ -688,26 +803,30 @@ export default function ReportEmergency() {
                   >
                     {locationLoading ? (
                       <>
-                        <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                        <span
+                          className="spinner-border spinner-border-sm me-2"
+                          role="status"
+                          aria-hidden="true"
+                        ></span>
                         <span>{t.detectingLocation}</span>
                       </>
                     ) : form.locationStatus === 'detected' ? (
                       <>
-                        <i className="bi bi-check-circle-fill text-success fs-5"></i>
+                        <i className="bi bi-check-circle-fill text-success fs-5" aria-hidden="true"></i>
                         <span className="text-success fw-bold">{t.locationCaptured}</span>
                       </>
                     ) : (
                       <>
-                        <i className="bi bi-geo-fill fs-5 text-info"></i>
+                        <i className="bi bi-geo-fill fs-5 text-info" aria-hidden="true"></i>
                         <span>{t.useMyLocation}</span>
                       </>
                     )}
                   </button>
 
                   {form.locationStatus === 'error' && (
-                    <div className="location-error-card mt-3">
+                    <div className="location-error-card mt-3" role="alert">
                       <div className="text-warning mb-2 fw-semibold">
-                        <i className="bi bi-exclamation-triangle-fill me-1"></i>
+                        <i className="bi bi-exclamation-triangle-fill me-1" aria-hidden="true"></i>
                         {t.locationFailed}
                       </div>
                     </div>
@@ -733,9 +852,12 @@ export default function ReportEmergency() {
               </section>
 
               {/* SECTION 4: OPTIONAL PHOTO */}
-              <section className="report-section-card simple-section-card" aria-labelledby="photo-section-heading">
+              <section
+                className="report-section-card simple-section-card"
+                aria-labelledby="simple-photo-heading"
+              >
                 <div className="report-section-header">
-                  <h2 className="report-section-title" id="photo-section-heading">
+                  <h2 className="report-section-title" id="simple-photo-heading">
                     <i className="bi bi-camera-fill text-info" aria-hidden="true"></i>
                     {t.photoSectionTitle}
                   </h2>
@@ -755,7 +877,7 @@ export default function ReportEmergency() {
                       }}
                       aria-label={t.takePhoto}
                     >
-                      <i className="bi bi-camera fs-2 text-info mb-2 d-block"></i>
+                      <i className="bi bi-camera fs-2 text-info mb-2 d-block" aria-hidden="true"></i>
                       <span className="fw-bold d-block text-light">{t.takePhoto}</span>
                       <span className="text-secondary small">{t.photoOptional}</span>
                     </div>
@@ -772,7 +894,7 @@ export default function ReportEmergency() {
                         onClick={handleRemoveImage}
                         aria-label={t.removePhoto}
                       >
-                        <i className="bi bi-trash-fill me-1"></i>
+                        <i className="bi bi-trash-fill me-1" aria-hidden="true"></i>
                         {t.removePhoto}
                       </button>
                     </div>
@@ -790,11 +912,14 @@ export default function ReportEmergency() {
               </section>
 
               {/* SECTION 5: PRE-SUBMISSION CONFIRMATION SUMMARY CARD */}
-              <section className="simple-summary-card" aria-labelledby="summary-heading">
+              <section
+                className="simple-summary-card"
+                aria-labelledby="summary-heading"
+              >
                 <div className="summary-card-top">
                   <div>
                     <h3 className="summary-card-title" id="summary-heading">
-                      <i className="bi bi-shield-check text-success me-2"></i>
+                      <i className="bi bi-shield-check text-success me-2" aria-hidden="true"></i>
                       {t.reviewTitle}
                     </h3>
                     <p className="summary-card-sub">{t.reviewSubtitle}</p>
@@ -807,7 +932,7 @@ export default function ReportEmergency() {
                     title={t.listenSummary}
                     aria-label={t.listenSummary}
                   >
-                    <i className="bi bi-volume-up-fill me-1"></i>
+                    <i className="bi bi-volume-up-fill me-1" aria-hidden="true"></i>
                     <span>{t.listenSummary}</span>
                   </button>
                 </div>
@@ -818,7 +943,7 @@ export default function ReportEmergency() {
                     <span className="summary-value">
                       {form.type
                         ? t.types[form.type]?.label || form.type
-                        : '— (Not selected)'}
+                        : '—'}
                     </span>
                   </div>
 
@@ -827,7 +952,7 @@ export default function ReportEmergency() {
                     <span className="summary-value">
                       {form.locationStatus === 'detected'
                         ? t.locationCaptured
-                        : form.locationAddress || '— (No landmark provided)'}
+                        : form.locationAddress || '—'}
                     </span>
                   </div>
 
@@ -838,7 +963,7 @@ export default function ReportEmergency() {
                         ? form.description.length > 80
                           ? `${form.description.slice(0, 80)}...`
                           : form.description
-                        : '— (No details yet)'}
+                        : '—'}
                     </span>
                   </div>
 
@@ -846,17 +971,17 @@ export default function ReportEmergency() {
                     <div className="summary-row">
                       <span className="summary-label">{t.summaryPhoto}:</span>
                       <span className="summary-value text-success">
-                        <i className="bi bi-check-circle-fill me-1"></i>
+                        <i className="bi bi-check-circle-fill me-1" aria-hidden="true"></i>
                         {t.photoAttached}
                       </span>
                     </div>
                   )}
                 </div>
 
-                {/* Submission Error Banner if any */}
+                {/* Submission Error Banner */}
                 {errors.submit && (
                   <div className="alert alert-danger mt-3 mb-0" role="alert">
-                    <i className="bi bi-exclamation-triangle-fill me-2"></i>
+                    <i className="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>
                     <span>{errors.submit}</span>
                   </div>
                 )}
@@ -888,7 +1013,7 @@ export default function ReportEmergency() {
 
               {/* HUMAN-IN-THE-LOOP PLAIN LANGUAGE NOTICE */}
               <div className="simple-hitl-note mt-4" role="note">
-                <i className="bi bi-shield-lock-fill text-info fs-5 me-2"></i>
+                <i className="bi bi-shield-lock-fill text-info fs-5 me-2" aria-hidden="true"></i>
                 <span>{t.hitlNotice}</span>
               </div>
             </div>
@@ -898,7 +1023,11 @@ export default function ReportEmergency() {
               STANDARD MODE (DETAILED OPERATIONAL REPORTING FORM)
               ===================================================== */}
           {reportingMode === 'standard' && (
-            <div className="standard-report-flow" role="region" aria-label="Standard Emergency Reporting">
+            <div
+              className="standard-report-flow"
+              role="region"
+              aria-label="Standard Emergency Reporting"
+            >
               {/* Header Panel */}
               <header className="report-header-card" role="banner">
                 <div className="report-header-top">
@@ -907,16 +1036,14 @@ export default function ReportEmergency() {
                       <i className="bi bi-exclamation-octagon-fill"></i>
                     </div>
                     <div>
-                      <h1 className="report-main-title">Report an Emergency</h1>
-                      <p className="report-subtitle">
-                        Provide the essential details so the response team can act quickly.
-                      </p>
+                      <h1 className="report-main-title">{t.headerTitle}</h1>
+                      <p className="report-subtitle">{t.headerSubtitle}</p>
                     </div>
                   </div>
 
                   <div className="report-status-badge" role="status">
                     <span className="report-pulse-dot" aria-hidden="true"></span>
-                    <span>SYSTEM READY</span>
+                    <span>{t.systemReady}</span>
                   </div>
                 </div>
               </header>
@@ -925,7 +1052,7 @@ export default function ReportEmergency() {
               <div className="report-steps-bar" aria-label="Reporting Stages">
                 <div className={`report-step-item ${isStep1Done ? 'completed' : 'active'}`}>
                   <span className="report-step-num">{isStep1Done ? '✓' : '1'}</span>
-                  <span className="report-step-text">Emergency Type</span>
+                  <span className="report-step-text">{t.summaryType}</span>
                 </div>
 
                 <div
@@ -934,7 +1061,7 @@ export default function ReportEmergency() {
                   }`}
                 >
                   <span className="report-step-num">{isStep2Done ? '✓' : '2'}</span>
-                  <span className="report-step-text">Location</span>
+                  <span className="report-step-text">{t.summaryLocation}</span>
                 </div>
 
                 <div
@@ -943,7 +1070,7 @@ export default function ReportEmergency() {
                   }`}
                 >
                   <span className="report-step-num">{isStep3Done ? '✓' : '3'}</span>
-                  <span className="report-step-text">Details</span>
+                  <span className="report-step-text">{t.summaryDescription}</span>
                 </div>
               </div>
 
@@ -954,15 +1081,20 @@ export default function ReportEmergency() {
                   <div className="report-section-header">
                     <h2 className="report-section-title" id="std-type-title">
                       <i className="bi bi-grid-3x3-gap-fill text-danger" aria-hidden="true"></i>
-                      Select Emergency Type
+                      {t.typesTitle}
                     </h2>
                     <span className="badge bg-danger text-light">Required</span>
                   </div>
 
                   <div className="report-section-body">
-                    <div className="report-types-grid" role="radiogroup" aria-label="Emergency Types">
+                    <div
+                      className="report-types-grid"
+                      role="radiogroup"
+                      aria-label={t.typesTitle}
+                    >
                       {EMERGENCY_TYPES.map((type) => {
                         const isSelected = form.type === type.value;
+                        const translatedInfo = t.types[type.value] || {};
                         return (
                           <div
                             key={type.value}
@@ -994,9 +1126,11 @@ export default function ReportEmergency() {
                                 </div>
                               )}
                             </div>
-                            <div className="type-card-label">{type.label}</div>
+                            <div className="type-card-label">
+                              {translatedInfo.label || type.label}
+                            </div>
                             <p className="type-card-desc">
-                              {TYPE_DESCRIPTIONS[type.value] || 'Immediate dispatch support'}
+                              {translatedInfo.sublabel || 'Immediate dispatch support'}
                             </p>
                           </div>
                         );
@@ -1017,7 +1151,7 @@ export default function ReportEmergency() {
                   <div className="report-section-header">
                     <h2 className="report-section-title" id="std-location-title">
                       <i className="bi bi-geo-alt-fill text-warning" aria-hidden="true"></i>
-                      Incident Location
+                      {t.locationSectionTitle}
                     </h2>
                   </div>
 
@@ -1036,12 +1170,12 @@ export default function ReportEmergency() {
                             role="status"
                             aria-hidden="true"
                           ></span>
-                          <span>Detecting GPS Location...</span>
+                          <span>{t.detectingLocation}</span>
                         </>
                       ) : (
                         <>
-                          <i className="bi bi-crosshair2 fs-5"></i>
-                          <span>Use My Current GPS Location</span>
+                          <i className="bi bi-crosshair2 fs-5" aria-hidden="true"></i>
+                          <span>{t.useMyLocation}</span>
                         </>
                       )}
                     </button>
@@ -1050,7 +1184,7 @@ export default function ReportEmergency() {
                       <div className="location-status-banner location-status-success" role="status">
                         <i className="bi bi-check-circle-fill"></i>
                         <span>
-                          Coordinates locked: {form.lat}, {form.lng}
+                          {t.locationCaptured} (GPS: {form.lat}, {form.lng})
                         </span>
                       </div>
                     )}
@@ -1058,21 +1192,19 @@ export default function ReportEmergency() {
                     {form.locationStatus === 'error' && (
                       <div className="location-status-banner location-status-error" role="alert">
                         <i className="bi bi-exclamation-circle-fill"></i>
-                        <span>
-                          Could not access GPS. Please type the location or landmark below.
-                        </span>
+                        <span>{t.locationFailed}</span>
                       </div>
                     )}
 
                     <div className="report-input-group mt-3">
                       <label className="report-label" htmlFor="std-location-address">
-                        Street Address / Landmark
+                        {t.enterNearbyLabel}
                       </label>
                       <input
                         id="std-location-address"
                         type="text"
                         className="report-input-dark"
-                        placeholder="e.g. Near Metro Pillar 140, Outer Ring Road"
+                        placeholder={t.enterNearbyPlaceholder}
                         value={form.locationAddress}
                         onChange={(e) => setField('locationAddress', e.target.value)}
                       />
@@ -1085,7 +1217,7 @@ export default function ReportEmergency() {
                   <div className="report-section-header">
                     <h2 className="report-section-title" id="std-details-title">
                       <i className="bi bi-card-text text-info" aria-hidden="true"></i>
-                      Emergency Details
+                      {t.descriptionLabel}
                     </h2>
                     <span className="badge bg-danger text-light">Required</span>
                   </div>
@@ -1093,19 +1225,19 @@ export default function ReportEmergency() {
                   <div className="report-section-body">
                     <div className="report-input-group">
                       <label className="report-label" htmlFor="std-description">
-                        What is happening? <span className="report-label-required">*</span>
+                        {t.descriptionLabel} <span className="report-label-required">*</span>
                       </label>
                       <textarea
                         id="std-description"
                         className="report-textarea-dark"
                         rows={4}
-                        placeholder="Describe what happened, number of injured persons, visible hazards..."
+                        placeholder={t.descriptionPlaceholder}
                         value={form.description}
                         onChange={(e) => setField('description', e.target.value)}
                         maxLength={500}
                       />
                       <div className="report-char-count">
-                        {form.description.length} / 500 characters (min 10)
+                        {form.description.length} / 500 {t.charCount}
                       </div>
 
                       {errors.description && (
@@ -1118,22 +1250,22 @@ export default function ReportEmergency() {
 
                     {/* Image Attachment */}
                     <div className="report-input-group">
-                      <label className="report-label">Photo Attachment (Optional)</label>
+                      <label className="report-label">{t.photoSectionTitle}</label>
                       {!imagePreview ? (
                         <div
                           className="report-upload-box"
-                          onClick={() => fileInputRef.current?.click()}
+                          onClick={() => stdFileInputRef.current?.click()}
                           role="button"
                           tabIndex={0}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter' || e.key === ' ') {
-                              fileInputRef.current?.click();
+                              stdFileInputRef.current?.click();
                             }
                           }}
                         >
-                          <i className="bi bi-camera fs-3 text-secondary mb-2 d-block"></i>
+                          <i className="bi bi-camera fs-3 text-secondary mb-2 d-block" aria-hidden="true"></i>
                           <span className="text-light fw-semibold d-block">
-                            Click to take or upload a photo
+                            {t.takePhoto}
                           </span>
                           <span className="text-muted small">Supports JPG, PNG (Max 10MB)</span>
                         </div>
@@ -1149,14 +1281,14 @@ export default function ReportEmergency() {
                             className="report-remove-img-btn"
                             onClick={handleRemoveImage}
                           >
-                            <i className="bi bi-x-circle-fill me-1"></i>
-                            Remove
+                            <i className="bi bi-x-circle-fill me-1" aria-hidden="true"></i>
+                            {t.removePhoto}
                           </button>
                         </div>
                       )}
 
                       <input
-                        ref={fileInputRef}
+                        ref={stdFileInputRef}
                         type="file"
                         accept="image/*"
                         style={{ display: 'none' }}
@@ -1193,7 +1325,7 @@ export default function ReportEmergency() {
                     role="alert"
                   >
                     <div className="d-flex align-items-center gap-2">
-                      <i className="bi bi-exclamation-triangle-fill fs-5"></i>
+                      <i className="bi bi-exclamation-triangle-fill fs-5" aria-hidden="true"></i>
                       <span className="fw-semibold">{errors.submit}</span>
                     </div>
                     <button
@@ -1220,11 +1352,11 @@ export default function ReportEmergency() {
                         role="status"
                         aria-hidden="true"
                       ></span>
-                      <span>Submitting Report...</span>
+                      <span>{t.submittingReport}</span>
                     </>
                   ) : (
                     <>
-                      <span>🚨 Submit Emergency Report</span>
+                      <span>🚨 {t.sendReport}</span>
                     </>
                   )}
                 </button>
@@ -1236,9 +1368,7 @@ export default function ReportEmergency() {
                   <i className="bi bi-cpu-fill" aria-hidden="true"></i>
                   <span>🧠 What happens next?</span>
                 </div>
-                <p className="report-ai-info-text">
-                  Your report is analyzed by AI to identify the emergency category, severity, priority, and recommended responders. Relevant previous incident experience may also be recalled through persistent memory. A human coordinator remains responsible for response decisions.
-                </p>
+                <p className="report-ai-info-text">{t.hitlNotice}</p>
               </aside>
             </div>
           )}

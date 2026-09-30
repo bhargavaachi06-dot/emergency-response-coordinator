@@ -3,6 +3,7 @@ import { useApp } from "../context/AppContext";
 import { AppLayout } from "../layouts/AppLayout";
 import { BackButton } from "../components/BackButton";
 import { AIAnalysisCard } from "../components/AIAnalysisCard";
+import { TRANSLATIONS } from "../data/translations";
 
 export default function EmergencyConfirmation() {
   const navigate = useNavigate();
@@ -13,6 +14,15 @@ export default function EmergencyConfirmation() {
   } = useApp();
 
   const emergency = submittedEmergency;
+
+  const savedLang = (() => {
+    try {
+      return localStorage.getItem('citizenLanguage') || 'en';
+    } catch {
+      return 'en';
+    }
+  })();
+  const t = TRANSLATIONS[savedLang] || TRANSLATIONS.en;
 
   // =====================================================
   // Safety check
@@ -266,7 +276,7 @@ export default function EmergencyConfirmation() {
                   marginBottom: 4,
                 }}
               >
-                Emergency Report Received
+                {t.confirmedTitle || "Emergency Report Received"}
               </div>
 
               <div
@@ -276,7 +286,7 @@ export default function EmergencyConfirmation() {
                   lineHeight: 1.45,
                 }}
               >
-                Your emergency report was received. Your information has been sent to the response coordination system. A coordinator will review the report and coordinate the response.
+                {t.confirmedSubtitle} {t.coordinatorReviewing}
               </div>
 
             </div>
@@ -292,7 +302,7 @@ export default function EmergencyConfirmation() {
 
               <h2 className="section-card-title">
                 <i className="bi bi-hash text-muted"></i>
-                Emergency Reference
+                {t.emergencyReference || "Emergency Reference"}
               </h2>
 
               <span
@@ -331,7 +341,7 @@ export default function EmergencyConfirmation() {
                     marginBottom: 6,
                   }}
                 >
-                  Emergency Reference
+                  {t.emergencyReference || "Emergency Reference"}
                 </div>
 
                 <div
@@ -470,7 +480,7 @@ export default function EmergencyConfirmation() {
 
               <h2 className="section-card-title">
                 <i className="bi bi-list-check text-muted"></i>
-                Response Timeline
+                {t.responseTimeline || "Response Timeline"}
               </h2>
 
             </div>
@@ -595,7 +605,7 @@ export default function EmergencyConfirmation() {
             id="track-emergency-btn"
           >
             <i className="bi bi-map"></i>
-            Track Emergency
+            {t.trackEmergency || "Track Emergency"}
           </button>
 
           <button
@@ -607,7 +617,7 @@ export default function EmergencyConfirmation() {
               navigate("/citizen")
             }
           >
-            Back to Dashboard
+            {t.back || "Back to Dashboard"}
           </button>
 
         </div>
