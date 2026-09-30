@@ -49,7 +49,7 @@ function buildMapMarkers(emergencies, selectedCode) {
 }
 
 /**
- * Formats ISO timestamps cleanly
+ * Formats timestamps cleanly
  */
 function formatTime(isoString) {
   if (!isoString) return 'Just now';
@@ -92,17 +92,24 @@ export default function CoordinatorDashboard() {
   }, [emergencies]);
 
   // Selected code or fallback to first active emergency
-  const effectiveSelectedCode = selectedIncidentCode || (activeEmergencies[0]?.emergency_code || activeEmergencies[0]?.id || null);
+  const effectiveSelectedCode =
+    selectedIncidentCode ||
+    (activeEmergencies[0]?.emergency_code || activeEmergencies[0]?.id || null);
 
   // Current selected emergency record
   const currentEmergency = useMemo(() => {
-    return (emergencies || []).find(
-      (e) => String(e.emergency_code) === String(effectiveSelectedCode) || String(e.id) === String(effectiveSelectedCode)
-    ) || activeEmergencies[0] || null;
+    return (
+      (emergencies || []).find(
+        (e) =>
+          String(e.emergency_code) === String(effectiveSelectedCode) ||
+          String(e.id) === String(effectiveSelectedCode)
+      ) ||
+      activeEmergencies[0] ||
+      null
+    );
   }, [emergencies, effectiveSelectedCode, activeEmergencies]);
 
   // Fetch full details and memory context asynchronously when selected incident changes
-  // Fetch full details and memory context for an incident
   const fetchDeepDetails = async (code) => {
     if (!code) return;
     try {
@@ -202,7 +209,7 @@ export default function CoordinatorDashboard() {
         if (updateResponderStatus) {
           updateResponderStatus(currentEmergency.id, responderType, 'DISPATCHED');
         }
-        setActionNotice(`${responderType} unit dispatched successfully.`);
+        setActionNotice(`${responderType} dispatched successfully.`);
         await fetchDeepDetails(code);
         setTimeout(() => setActionNotice(''), 3500);
       }
@@ -221,7 +228,6 @@ export default function CoordinatorDashboard() {
       return p === 'CRITICAL' || p === 'HIGH';
     }).length;
 
-    // Responders active count across real active emergencies
     let respondersActiveCount = 0;
     activeEmergencies.forEach((e) => {
       (e.responders || []).forEach((r) => {
@@ -232,7 +238,6 @@ export default function CoordinatorDashboard() {
       });
     });
 
-    // AI analyses count
     const aiCount = (emergencies || []).filter((e) => {
       return Boolean(e.ai_analysis || e.ai || e.analysis);
     }).length;
@@ -245,7 +250,7 @@ export default function CoordinatorDashboard() {
     };
   }, [activeEmergencies, emergencies]);
 
-  // Filtered active incidents based on search & priority chip
+  // Filtered active incidents
   const filteredIncidents = useMemo(() => {
     return activeEmergencies.filter((e) => {
       const matchesPriority =
@@ -258,17 +263,33 @@ export default function CoordinatorDashboard() {
       const desc = (e.description || '').toLowerCase();
       const loc = (e.location_text || e.location?.address || e.location?.area || '').toLowerCase();
 
-      const matchesSearch = !q || code.includes(q) || type.includes(q) || desc.includes(q) || loc.includes(q);
+      const matchesSearch =
+        !q ||
+        code.includes(q) ||
+        type.includes(q) ||
+        desc.includes(q) ||
+        loc.includes(q);
 
       return matchesPriority && matchesSearch;
     });
   }, [activeEmergencies, filterPriority, searchQuery]);
 
-  // Map markers and center
-  const mapMarkers = useMemo(() => {
-    return buildMapMarkers(activeEmergencies, selectedIncidentCode);
-  }, [activeEmergencies, selectedIncidentCode]);
+  // Active AI analysis object
+  const activeAI = useMemo(() => {
+    const source = selectedDetails || currentEmergency;
+    if (!source) return null;
+    let ai = source.ai_analysis || source.ai || source.analysis;
+    if (typeof ai === 'string') {
+      try {
+        ai = JSON.parse(ai);
+      } catch {
+        // ignore
+      }
+    }
+    return ai || null;
+  }, [selectedDetails, currentEmergency]);
 
+  // Map center and markers
   const mapCenter = useMemo(() => {
     if (currentEmergency) {
       const lat = Number(currentEmergency.latitude ?? currentEmergency.location?.lat);
@@ -280,26 +301,15 @@ export default function CoordinatorDashboard() {
     return [28.6139, 77.2090];
   }, [currentEmergency]);
 
-  // Parse AI data for the selected incident
-  const activeAI = useMemo(() => {
-    const raw = selectedDetails?.ai_analysis || selectedDetails?.ai || currentEmergency?.ai_analysis || currentEmergency?.ai || currentEmergency?.analysis;
-    if (!raw) return null;
-    if (typeof raw === 'string') {
-      try {
-        return JSON.parse(raw);
-      } catch {
-        return null;
-      }
-    }
-    return raw;
-  }, [selectedDetails, currentEmergency]);
+  const mapMarkers = useMemo(() => {
+    return buildMapMarkers(activeEmergencies, effectiveSelectedCode);
+  }, [activeEmergencies, effectiveSelectedCode]);
 
-  // Recommended responders array
+  // Recommended responders
   const recommendedResponders = useMemo(() => {
-    if (activeAI?.recommendedResponders && Array.isArray(activeAI.recommendedResponders)) {
+    if (activeAI?.recommendedResponders && Array.isArray(activeAI.recommendedResponders) && activeAI.recommendedResponders.length > 0) {
       return activeAI.recommendedResponders;
     }
-    // Standard default emergency services recommendation based on incident type
     const t = (currentEmergency?.type || '').toLowerCase();
     if (t.includes('fire')) return ['Fire & Rescue', 'Ambulance', 'Police'];
     if (t.includes('road') || t.includes('accident')) return ['Ambulance', 'Police'];
@@ -308,54 +318,23 @@ export default function CoordinatorDashboard() {
     return ['Ambulance', 'Police'];
   }, [activeAI, currentEmergency]);
 
-  // Dispatched responder statuses for the selected incident
+  // Assigned responders list
   const assignedResponders = useMemo(() => {
     return selectedDetails?.responders || currentEmergency?.responders || [];
   }, [selectedDetails, currentEmergency]);
 
-  // Check if a responder type is already dispatched
   const isResponderDispatched = (type) => {
     return assignedResponders.some(
-      (r) => (r.type || '').toLowerCase().includes(type.toLowerCase()) && (r.status || '').toUpperCase() !== 'AVAILABLE'
+      (r) =>
+        (r.type || '').toLowerCase().includes(type.toLowerCase()) &&
+        (r.status || '').toUpperCase() !== 'AVAILABLE'
     );
   };
 
-  // Recent operational activity events (derived from real incidents)
-  const recentActivities = useMemo(() => {
-    const list = [];
-    (emergencies || []).slice(0, 8).forEach((e) => {
-      const code = e.emergency_code || e.id;
-      if (e.created_at || e.createdAt) {
-        list.push({
-          id: `rep-${code}`,
-          time: e.created_at || e.createdAt,
-          title: `Incident #${code} Reported`,
-          desc: `${e.type || 'Emergency'} received at ${e.location_text || 'Registered location'}`,
-          type: 'report',
-        });
-      }
-      if (e.ai_analysis || e.ai) {
-        list.push({
-          id: `ai-${code}`,
-          time: e.updated_at || e.created_at,
-          title: `AI Triage Generated for #${code}`,
-          desc: `Assessed Priority: ${e.priority || 'Standard'} • Severity: ${e.severity || 'Moderate'}`,
-          type: 'ai',
-        });
-      }
-      (e.responders || []).forEach((r, ri) => {
-        list.push({
-          id: `disp-${code}-${ri}`,
-          time: r.dispatched_at || e.updated_at,
-          title: `${r.type || 'Responder'} Dispatched to #${code}`,
-          desc: `Unit ${r.name || r.type} assigned • Status: ${r.status || 'Dispatched'}`,
-          type: 'dispatch',
-        });
-      });
-    });
-
-    return list.sort((a, b) => new Date(b.time || 0) - new Date(a.time || 0)).slice(0, 6);
-  }, [emergencies]);
+  // Media files for selected emergency
+  const mediaList = useMemo(() => {
+    return selectedDetails?.media || currentEmergency?.media || [];
+  }, [selectedDetails, currentEmergency]);
 
   return (
     <AppLayout
@@ -364,7 +343,7 @@ export default function CoordinatorDashboard() {
     >
       <div className="cc-container">
         {/* =====================================================
-            1. COMMAND CENTER HEADER
+            1. TOP: COMMAND CENTER HEADER
             ===================================================== */}
         <section className="cc-header-panel" aria-label="Command Center Header">
           <div className="cc-header-titles">
@@ -382,33 +361,29 @@ export default function CoordinatorDashboard() {
           </div>
 
           <div className="cc-header-actions">
-            {/* System Status Indicator */}
+            {/* System Status */}
             <div className="cc-status-badge" role="status">
               <span className="cc-pulse-dot" aria-hidden="true"></span>
               <span>SYSTEM OPERATIONAL</span>
             </div>
 
-            {/* Coordinator Role Indicator */}
+            {/* Coordinator Role */}
             <div className="cc-role-tag" title="Active Session Role">
               <i className="bi bi-person-badge-fill" aria-hidden="true"></i>
-              <span>{currentUser?.name || 'Emergency Coordinator'}</span>
+              <span>{currentUser?.name || 'Coordinator'}</span>
             </div>
 
-            {/* Refresh Control */}
+            {/* Refresh */}
             <button
               type="button"
               className="cc-btn-refresh"
               onClick={handleRefresh}
               disabled={isRefreshing || loading}
-              aria-label="Refresh command center telemetry"
+              aria-label="Refresh telemetry"
             >
               <i
-                className={`bi bi-arrow-clockwise ${isRefreshing ? 'spin-animation' : ''}`}
+                className={`bi bi-arrow-clockwise ${isRefreshing ? 'spin-icon' : ''}`}
                 aria-hidden="true"
-                style={{
-                  display: 'inline-block',
-                  animation: isRefreshing ? 'radarPing 1s linear infinite' : 'none',
-                }}
               ></i>
               <span>{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
             </button>
@@ -417,18 +392,14 @@ export default function CoordinatorDashboard() {
 
         {/* Action Notice Alert */}
         {actionNotice && (
-          <div
-            className="alert alert-success d-flex align-items-center gap-2 m-0 p-3 rounded-3"
-            style={{ background: 'rgba(16, 185, 129, 0.15)', border: '1px solid #10b981', color: '#6ee7b7' }}
-            role="alert"
-          >
-            <i className="bi bi-check-circle-fill fs-5" aria-hidden="true"></i>
-            <span className="fw-semibold">{actionNotice}</span>
+          <div className="cc-notice-banner" role="alert">
+            <i className="bi bi-check-circle-fill me-2 text-success"></i>
+            <span>{actionNotice}</span>
           </div>
         )}
 
         {/* =====================================================
-            2. KPI OVERVIEW CARDS (Real Data Only)
+            2. KPI ROW
             ===================================================== */}
         <section className="cc-kpi-grid" aria-label="Key Performance Indicators">
           {/* Active Emergencies */}
@@ -477,21 +448,21 @@ export default function CoordinatorDashboard() {
         </section>
 
         {/* =====================================================
-            3. MAIN COMMAND AREA (Two-Column Desktop Layout)
+            3. MAIN AREA: LEFT LIVE MAP | RIGHT INCIDENT QUEUE
             ===================================================== */}
-        <section className="cc-main-command-grid" aria-label="Incident Management Map and Queue">
-          {/* LEFT: LIVE INCIDENT MAP */}
-          <div className="cc-card-shell">
-            <div className="cc-card-header">
-              <h2 className="cc-card-title">
+        <section className="cc-main-grid" aria-label="Incident Management Map and Queue">
+          {/* LEFT: Live Map */}
+          <div className="cc-panel-card">
+            <div className="cc-panel-header">
+              <div className="d-flex align-items-center gap-2">
                 <i className="bi bi-geo-alt-fill text-danger" aria-hidden="true"></i>
-                <span>Live Incident Map</span>
+                <h2 className="cc-panel-title m-0">Live Map</h2>
                 {currentEmergency && (
-                  <span className="badge bg-secondary ms-2" style={{ fontSize: '11px' }}>
-                    #{currentEmergency.emergency_code || currentEmergency.id} Focus
+                  <span className="badge bg-secondary ms-1" style={{ fontSize: '11px' }}>
+                    #{currentEmergency.emergency_code || currentEmergency.id}
                   </span>
                 )}
-              </h2>
+              </div>
 
               <div className="cc-filter-row">
                 <button
@@ -518,52 +489,45 @@ export default function CoordinatorDashboard() {
               </div>
             </div>
 
-            <div className="cc-map-container">
+            <div className="cc-map-wrapper">
               {loading && emergencies.length === 0 ? (
-                <div className="cc-state-box h-100 d-flex flex-column align-items-center justify-content-center">
+                <div className="cc-empty-state">
                   <div className="spinner-border text-primary mb-2" role="status"></div>
-                  <div className="cc-state-title">Loading Incident Map...</div>
+                  <div>Loading Map...</div>
                 </div>
               ) : (
-                <MapView
-                  markers={mapMarkers}
-                  center={mapCenter}
-                  height={520}
-                />
+                <MapView markers={mapMarkers} center={mapCenter} height={480} />
               )}
             </div>
 
             <div className="cc-map-legend">
-              <div className="cc-legend-items">
-                <span className="cc-legend-item">🚨 Active Emergency</span>
-                <span className="cc-legend-item">🚑 Ambulance Unit</span>
-                <span className="cc-legend-item">👮 Police Patrol</span>
-                <span className="cc-legend-item">🤝 Community Helper</span>
-              </div>
-              <span>Click markers to view telemetry</span>
+              <span className="legend-tag">🚨 Emergency</span>
+              <span className="legend-tag">🚑 Ambulance</span>
+              <span className="legend-tag">👮 Police</span>
+              <span className="legend-tag">🤝 Helper</span>
             </div>
           </div>
 
-          {/* RIGHT: ACTIVE INCIDENTS PANEL */}
-          <div className="cc-card-shell">
-            <div className="cc-card-header">
-              <h2 className="cc-card-title">
+          {/* RIGHT: Active Incident Queue */}
+          <div className="cc-panel-card">
+            <div className="cc-panel-header">
+              <div className="d-flex align-items-center gap-2">
                 <i className="bi bi-list-task text-primary" aria-hidden="true"></i>
-                <span>Active Incidents Queue</span>
-              </h2>
+                <h2 className="cc-panel-title m-0">Active Incident Queue</h2>
+              </div>
               <span className="badge bg-danger" style={{ fontSize: '11px', fontWeight: 700 }}>
                 {activeEmergencies.length} ACTIVE
               </span>
             </div>
 
-            <div className="cc-card-body">
-              {/* Search Bar */}
-              <div className="cc-search-input-wrap">
+            <div className="cc-panel-body">
+              {/* Search input */}
+              <div className="cc-search-box">
                 <i className="bi bi-search" aria-hidden="true"></i>
                 <input
                   type="text"
-                  className="cc-search-input"
-                  placeholder="Filter by code, category, or location..."
+                  className="cc-search-field"
+                  placeholder="Filter by code, type, or location..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   aria-label="Filter incidents"
@@ -571,103 +535,59 @@ export default function CoordinatorDashboard() {
               </div>
 
               {/* Incidents List */}
-              <div className="cc-incidents-scroll" role="region" aria-label="Incident Cards List">
+              <div className="cc-queue-scroll" role="region" aria-label="Active Incidents List">
                 {loading && emergencies.length === 0 ? (
-                  <div className="cc-state-box">
-                    <div className="spinner-border text-primary mb-3" role="status"></div>
-                    <div className="cc-state-title">Loading active queue...</div>
+                  <div className="cc-empty-state">
+                    <div className="spinner-border text-primary mb-2" role="status"></div>
+                    <div>Loading queue...</div>
                   </div>
                 ) : error && emergencies.length === 0 ? (
-                  <div className="cc-state-box">
-                    <i className="bi bi-wifi-off cc-state-icon text-danger" aria-hidden="true"></i>
-                    <div className="cc-state-title">Connection Error</div>
-                    <p className="cc-state-desc">{error}</p>
-                    <button type="button" className="cc-btn-refresh mt-3" onClick={handleRefresh}>
-                      Retry Connection
+                  <div className="cc-empty-state">
+                    <i className="bi bi-wifi-off text-danger fs-3 mb-2"></i>
+                    <div>Connection Error</div>
+                    <button type="button" className="cc-btn-refresh mt-2" onClick={handleRefresh}>
+                      Retry
                     </button>
                   </div>
                 ) : filteredIncidents.length === 0 ? (
-                  <div className="cc-state-box">
-                    <i className="bi bi-shield-check cc-state-icon text-success" aria-hidden="true"></i>
-                    <div className="cc-state-title">All Clear</div>
-                    <p className="cc-state-desc">
-                      {searchQuery
-                        ? 'No incidents match the search query.'
-                        : 'No active emergency incidents currently reported in this sector.'}
-                    </p>
+                  <div className="cc-empty-state">
+                    <i className="bi bi-shield-check text-success fs-3 mb-2"></i>
+                    <div>No active incidents matching criteria</div>
                   </div>
                 ) : (
                   filteredIncidents.map((incident) => {
                     const code = incident.emergency_code || incident.id;
-                    const isSelected = String(selectedIncidentCode) === String(code);
+                    const isSelected = String(effectiveSelectedCode) === String(code);
 
                     return (
                       <div
                         key={incident.id}
-                        className={`cc-incident-card ${isSelected ? 'selected' : ''}`}
+                        className={`cc-queue-item ${isSelected ? 'selected' : ''}`}
                         onClick={() => handleSelectIncident(incident)}
                         role="button"
                         tabIndex={0}
                         onKeyDown={(e) => e.key === 'Enter' && handleSelectIncident(incident)}
                         aria-selected={isSelected}
-                        aria-label={`Incident #${code} - ${incident.type}`}
                       >
-                        <div className="cc-incident-card-top">
+                        <div className="d-flex justify-content-between align-items-start mb-1">
                           <div>
-                            <span className="cc-incident-ref">#{code}</span>
-                            <h3 className="cc-incident-type">{incident.type || 'Emergency'}</h3>
+                            <span className="cc-incident-code">#{code}</span>
+                            <span className="cc-incident-type-label">{incident.type || 'Emergency'}</span>
                           </div>
-                          <div className="cc-incident-badges">
+                          <div className="d-flex gap-1">
                             {incident.priority && <PriorityBadge priority={incident.priority} />}
                             {incident.status && <StatusBadge status={incident.status} />}
                           </div>
                         </div>
 
-                        <p className="cc-incident-desc">{incident.description}</p>
+                        <p className="cc-queue-desc">{incident.description}</p>
 
-                        <div className="d-flex align-items-center gap-2 flex-wrap">
-                          {incident.severity && <SeverityBadge severity={incident.severity} />}
-                          {incident.responders && incident.responders.length > 0 && (
-                            <span className="badge bg-dark border border-secondary text-secondary" style={{ fontSize: '10.5px' }}>
-                              <i className="bi bi-truck me-1"></i>
-                              {incident.responders.length} Assigned
-                            </span>
-                          )}
-                          {((Number(incident.photos_count) > 0) || (Number(incident.videos_count) > 0) || (Number(incident.media_count) > 0) || (Array.isArray(incident.media) && incident.media.length > 0)) && (
-                            <span className="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25" style={{ fontSize: '10.5px' }} title="Visual evidence attached">
-                              {(Number(incident.photos_count) > 0 || (Array.isArray(incident.media) && incident.media.some(m => m.media_type === 'photo'))) && (
-                                <span className="me-1">📷 {incident.photos_count || incident.media.filter(m => m.media_type === 'photo').length}</span>
-                              )}
-                              {(Number(incident.videos_count) > 0 || (Array.isArray(incident.media) && incident.media.some(m => m.media_type === 'video'))) && (
-                                <span>🎥 {incident.videos_count || incident.media.filter(m => m.media_type === 'video').length}</span>
-                              )}
-                              {!(Number(incident.photos_count) > 0) && !(Number(incident.videos_count) > 0) && (
-                                <span>Evidence Available</span>
-                              )}
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="cc-incident-footer">
-                          <div className="cc-incident-meta-left">
-                            <i className="bi bi-geo-alt text-danger" aria-hidden="true"></i>
-                            <span>
-                              {incident.location_text || incident.location?.area || incident.location?.address || 'Location registered'}
-                            </span>
-                          </div>
-
-                          <div className="d-flex align-items-center gap-2">
-                            <span>{formatTime(incident.created_at || incident.createdAt)}</span>
-                            <button
-                              type="button"
-                              className="cc-btn-view-details"
-                              onClick={(e) => handleOpenDetailsPage(incident, e)}
-                              title="Open Full Incident Record"
-                            >
-                              <span>Details</span>
-                              <i className="bi bi-box-arrow-up-right"></i>
-                            </button>
-                          </div>
+                        <div className="d-flex justify-content-between align-items-center pt-1 border-top border-secondary border-opacity-25 mt-2">
+                          <span className="text-secondary small text-truncate" style={{ maxWidth: '65%' }}>
+                            <i className="bi bi-geo-alt text-danger me-1"></i>
+                            {incident.location_text || incident.location?.address || 'Location registered'}
+                          </span>
+                          <span className="text-muted small">{formatTime(incident.created_at || incident.createdAt)}</span>
                         </div>
                       </div>
                     );
@@ -679,370 +599,230 @@ export default function CoordinatorDashboard() {
         </section>
 
         {/* =====================================================
-            4. SELECTED INCIDENT DEEP DIVE (AI, Dispatch & Timeline)
+            4. WHEN AN INCIDENT IS SELECTED: SHOW COMPACT DETAILS
             ===================================================== */}
         {currentEmergency && (
-          <section className="cc-incident-deepdive-grid" aria-label="Selected Incident Operational Controls">
-            {/* 5. AI ANALYSIS PANEL WITH HINDSIGHT MEMORY */}
-            <div className="cc-ai-card">
-              <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                <div className="d-flex align-items-center gap-2">
-                  <i className="bi bi-cpu text-info fs-5" aria-hidden="true"></i>
-                  <h3 className="m-0 text-white fw-bold fs-6">Memory-Assisted AI Analysis</h3>
-                </div>
-                <div className="d-flex align-items-center gap-2">
-                  <span className="badge bg-primary-subtle text-primary border border-primary-subtle">
-                    Incident #{currentEmergency.emergency_code || currentEmergency.id}
-                  </span>
-                  {activeAI?.confidence && (
-                    <span className="badge bg-info-subtle text-info border border-info-subtle">
-                      Confidence: {Math.round(activeAI.confidence * (activeAI.confidence <= 1 ? 100 : 1))}%
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Cognitive Workflow Diagram */}
-              <div className="cc-ai-flow-diagram" aria-label="Decision Support Flow">
-                <span className="cc-ai-flow-node active">
-                  <i className="bi bi-broadcast"></i> Current Incident
-                </span>
-                <span className="cc-ai-flow-arrow">→</span>
-                <span className="cc-ai-flow-node active">
-                  <i className="bi bi-database-fill-gear"></i> Hindsight Memory
-                </span>
-                <span className="cc-ai-flow-arrow">→</span>
-                <span className="cc-ai-flow-node active">
-                  <i className="bi bi-robot"></i> Context-Aware AI Support
-                </span>
-                <span className="cc-ai-flow-arrow">→</span>
-                <span className="cc-ai-flow-node">
-                  <i className="bi bi-person-check-fill"></i> Coordinator Decision
-                </span>
-              </div>
-
-              {activeAI ? (
-                <>
-                  <div className="cc-ai-meta-grid">
-                    <div className="cc-ai-meta-item">
-                      <span className="cc-ai-meta-title">Triage Category</span>
-                      <span className="cc-ai-meta-val">{activeAI.category || currentEmergency.type || 'Emergency'}</span>
+          <section className="cc-selected-incident-section" aria-label="Selected Incident Operations">
+            <div className="cc-incident-details-shell">
+              {/* Incident Header & Information */}
+              <div className="cc-details-header">
+                <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                  <div>
+                    <div className="d-flex align-items-center gap-2 mb-1">
+                      <span className="cc-detail-ref">
+                        Incident #{currentEmergency.emergency_code || currentEmergency.id}
+                      </span>
+                      <h2 className="cc-detail-title m-0">{currentEmergency.type || 'Emergency'}</h2>
                     </div>
-                    <div className="cc-ai-meta-item">
-                      <span className="cc-ai-meta-title">Severity Assessment</span>
-                      <span className="cc-ai-meta-val text-warning">{activeAI.severity || currentEmergency.severity || 'Moderate'}</span>
-                    </div>
-                    <div className="cc-ai-meta-item">
-                      <span className="cc-ai-meta-title">Priority Rating</span>
-                      <span className="cc-ai-meta-val text-danger">{activeAI.priority || currentEmergency.priority || 'Medium'}</span>
+                    <div className="d-flex align-items-center gap-2 flex-wrap">
+                      {currentEmergency.severity && <SeverityBadge severity={currentEmergency.severity} />}
+                      <PriorityBadge priority={currentEmergency.priority} />
+                      <StatusBadge status={currentEmergency.status} />
+                      <span className="text-secondary small ms-2">
+                        <i className="bi bi-clock me-1"></i>
+                        {formatTime(currentEmergency.created_at || currentEmergency.createdAt)}
+                      </span>
                     </div>
                   </div>
 
-                  {activeAI.reasoning && (
-                    <div className="cc-ai-reasoning-box">
-                      <div className="fw-bold mb-1 text-info small text-uppercase">Triage Clinical / Strategic Rationale</div>
-                      {activeAI.reasoning}
-                    </div>
-                  )}
-
-                  {activeAI.keySignals && Array.isArray(activeAI.keySignals) && activeAI.keySignals.length > 0 && (
-                    <div>
-                      <div className="text-secondary small fw-bold text-uppercase mb-2">Detected Scene Signals</div>
-                      <div className="cc-ai-keysignals-wrap">
-                        {activeAI.keySignals.map((signal, sIdx) => (
-                          <span key={sIdx} className="cc-ai-signal-pill">
-                            <i className="bi bi-tag-fill me-1 text-primary"></i>
-                            {signal}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Hindsight Memory Recall Card */}
-                  <div className="cc-hindsight-box">
-                    <div className="cc-hindsight-header">
-                      <i className="bi bi-database-fill-check"></i>
-                      <span>Episodic Hindsight Memory Recall</span>
-                    </div>
-                    <p className="cc-hindsight-text">
-                      {memoryContext?.summary ||
-                       memoryContext?.facts?.[0] ||
-                       activeAI?.hindsight_memory?.summary ||
-                       'Active contextual memory indexed. Historical incident constraints recalled to inform current responder dispatch.'}
-                    </p>
-                  </div>
-                </>
-              ) : (
-                <div className="cc-state-box p-3">
-                  <i className="bi bi-hourglass-split cc-state-icon text-muted" aria-hidden="true"></i>
-                  <div className="cc-state-title">AI Analysis Standby</div>
-                  <p className="cc-state-desc">
-                    Triage evaluation pending or automated classification in progress for this incident.
-                  </p>
-                </div>
-              )}
-
-              {/* Safety Footnote */}
-              <div className="cc-ai-safety-note">
-                <i className="bi bi-shield-exclamation text-warning fs-5" aria-hidden="true"></i>
-                <span>AI supports the coordinator. Final emergency response decisions remain human-controlled.</span>
-              </div>
-            </div>
-
-            {/* 6. RESPONSE / DISPATCH & TIMELINE PANEL */}
-            <div className="d-flex flex-direction-column gap-3" style={{ display: 'flex', flexDirection: 'column' }}>
-              {/* Dispatch Controls Card */}
-              <div className="cc-dispatch-card">
-                <div className="d-flex align-items-center justify-content-between">
-                  <div className="d-flex align-items-center gap-2">
-                    <i className="bi bi-send-check text-danger fs-5" aria-hidden="true"></i>
-                    <h3 className="m-0 text-white fw-bold fs-6">Response / Dispatch Panel</h3>
-                  </div>
-                  <span className="text-secondary small">Authorization Verified</span>
-                </div>
-
-                <div className="cc-dispatch-table">
-                  {recommendedResponders.map((responderName) => {
-                    const dispatched = isResponderDispatched(responderName);
-                    const isProcessing = dispatching[responderName];
-                    const isAmb = responderName.toLowerCase().includes('ambulance');
-                    const isPol = responderName.toLowerCase().includes('police');
-                    const isFire = responderName.toLowerCase().includes('fire');
-
-                    return (
-                      <div key={responderName} className="cc-dispatch-row">
-                        <div className="cc-responder-info">
-                          <div
-                            className={`cc-responder-avatar ${
-                              isAmb ? 'avatar-ambulance' : isPol ? 'avatar-police' : isFire ? 'avatar-fire' : 'avatar-helper'
-                            }`}
-                          >
-                            <i
-                              className={`bi ${
-                                isAmb ? 'bi-heart-pulse-fill' : isPol ? 'bi-shield-fill' : isFire ? 'bi-fire' : 'bi-people-fill'
-                              }`}
-                            ></i>
-                          </div>
-                          <div>
-                            <div className="cc-responder-name">{responderName}</div>
-                            <div className="cc-responder-desc">
-                              {isAmb && 'Immediate Advanced Medical & Triage Support'}
-                              {isPol && 'Traffic Containment & Area Security'}
-                              {isFire && 'Hazard Mitigation & Extraction Squad'}
-                              {!isAmb && !isPol && !isFire && 'Community Volunteer First Response'}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div>
-                          {dispatched ? (
-                            <span className="cc-badge-dispatched">
-                              <i className="bi bi-check-all"></i>
-                              <span>Dispatched</span>
-                            </span>
-                          ) : (
-                            <button
-                              type="button"
-                              className="cc-btn-dispatch"
-                              onClick={() => handleDispatchResponder(responderName)}
-                              disabled={isProcessing}
-                              aria-label={`Dispatch ${responderName}`}
-                            >
-                              {isProcessing ? (
-                                <>
-                                  <span className="spinner-border spinner-border-sm" role="status"></span>
-                                  <span>Dispatching...</span>
-                                </>
-                              ) : (
-                                <>
-                                  <i className="bi bi-send-fill"></i>
-                                  <span>DISPATCH</span>
-                                </>
-                              )}
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* 7. INCIDENT TIMELINE & 8. RESPONDER STATUS */}
-              <div className="cc-timeline-card">
-                <div className="d-flex align-items-center justify-content-between mb-3">
-                  <div className="d-flex align-items-center gap-2">
-                    <i className="bi bi-clock-history text-primary fs-5" aria-hidden="true"></i>
-                    <h3 className="m-0 text-white fw-bold fs-6">Incident Activity Timeline</h3>
-                  </div>
                   <button
                     type="button"
-                    className="btn btn-sm btn-outline-info"
+                    className="cc-btn-full-details"
                     onClick={(e) => handleOpenDetailsPage(currentEmergency, e)}
                   >
-                    Open Full Details Page →
+                    <span>Full Incident Record</span>
+                    <i className="bi bi-box-arrow-up-right ms-1"></i>
                   </button>
                 </div>
 
-                <ul className="cc-timeline-v">
-                  {/* Step 1: Reported */}
-                  <li className="cc-timeline-step">
-                    <span className="cc-step-dot done">✓</span>
-                    <div className="cc-step-title">Emergency Reported by Citizen</div>
-                    <div className="cc-step-time">{formatTime(currentEmergency.created_at || currentEmergency.createdAt)} • Inbound Telemetry</div>
-                  </li>
-
-                  {/* Step 2: AI Analyzed */}
-                  <li className="cc-timeline-step">
-                    <span className={`cc-step-dot ${activeAI ? 'done' : 'active'}`}>
-                      {activeAI ? '✓' : '●'}
+                {/* Location and Description */}
+                <div className="cc-details-summary-row mt-3">
+                  <div className="cc-summary-item">
+                    <span className="cc-summary-label">Location:</span>
+                    <span className="cc-summary-val">
+                      <i className="bi bi-geo-alt text-danger me-1"></i>
+                      {currentEmergency.location_text || currentEmergency.location?.address || 'Location registered'}
                     </span>
-                    <div className="cc-step-title">
-                      {activeAI ? 'AI Analysis Completed' : 'AI Analysis in Progress'}
-                    </div>
-                    <div className="cc-step-time">Google Gemini Decision Engine</div>
-                  </li>
+                  </div>
 
-                  {/* Step 3: Hindsight Recalled */}
-                  <li className="cc-timeline-step">
-                    <span className="cc-step-dot done">✓</span>
-                    <div className="cc-step-title">Memory Context Recalled</div>
-                    <div className="cc-step-time">Hindsight Episodic Memory System</div>
-                  </li>
+                  <div className="cc-summary-item">
+                    <span className="cc-summary-label">Description:</span>
+                    <span className="cc-summary-val">{currentEmergency.description}</span>
+                  </div>
 
-                  {/* Step 4: Dispatched */}
-                  <li className="cc-timeline-step">
-                    <span
-                      className={`cc-step-dot ${
-                        assignedResponders.length > 0 ? 'done' : 'active'
-                      }`}
-                    >
-                      {assignedResponders.length > 0 ? '✓' : '●'}
-                    </span>
-                    <div className="cc-step-title">
-                      {assignedResponders.length > 0
-                        ? `${assignedResponders.length} Responders Dispatched`
-                        : 'Awaiting Coordinator Dispatch Order'}
+                  {mediaList.length > 0 && (
+                    <div className="cc-summary-item">
+                      <span className="cc-summary-label">Evidence:</span>
+                      <span className="cc-summary-val text-info">
+                        <i className="bi bi-camera-reels me-1"></i>
+                        {mediaList.length} file{mediaList.length > 1 ? 's' : ''} attached
+                      </span>
                     </div>
-                    <div className="cc-step-time">Human Coordinator Authorization</div>
-                  </li>
-
-                  {/* Step 5: Resolved */}
-                  <li className="cc-timeline-step">
-                    <span className={`cc-step-dot ${(currentEmergency.status || '').toUpperCase() === 'RESOLVED' ? 'done' : ''}`}>
-                      {(currentEmergency.status || '').toUpperCase() === 'RESOLVED' ? '✓' : '○'}
-                    </span>
-                    <div className="cc-step-title">Incident Resolution</div>
-                    <div className="cc-step-time">
-                      {(currentEmergency.status || '').toUpperCase() === 'RESOLVED'
-                        ? 'Confirmed Resolved'
-                        : 'Active Operational Phase'}
-                    </div>
-                  </li>
-                </ul>
+                  )}
+                </div>
               </div>
 
-              {/* 8. ACTIVE RESPONDER STATUS SECTION */}
-              <div className="cc-timeline-card">
-                <div className="d-flex align-items-center justify-content-between mb-3">
-                  <div className="d-flex align-items-center gap-2">
-                    <i className="bi bi-broadcast-pin text-success fs-5" aria-hidden="true"></i>
-                    <h3 className="m-0 text-white fw-bold fs-6">Responder Telemetry & Monitoring</h3>
+              {/* TWO COLUMN OPERATIONS: AI DECISION SUPPORT | HUMAN REVIEW & DISPATCH */}
+              <div className="cc-ops-grid">
+                {/* 1. ONE COMPACT SECTION: "AI Decision Support" */}
+                <div className="cc-ai-decision-card">
+                  <div className="cc-ops-card-header d-flex justify-content-between align-items-center">
+                    <div className="d-flex align-items-center gap-2">
+                      <i className="bi bi-cpu text-info fs-5"></i>
+                      <h3 className="m-0 text-white fw-bold fs-6">AI Decision Support</h3>
+                    </div>
+                    {activeAI?.confidence && (
+                      <span className="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25">
+                        Confidence: {Math.round(activeAI.confidence * (activeAI.confidence <= 1 ? 100 : 1))}%
+                      </span>
+                    )}
                   </div>
-                  <span className="badge bg-success-subtle text-success">Live Track</span>
+
+                  <div className="cc-ops-card-body">
+                    {activeAI ? (
+                      <>
+                        {/* Current AI assessment */}
+                        <div className="cc-ai-sub-row mb-3">
+                          <div className="text-secondary small fw-bold text-uppercase mb-1">Current AI Assessment</div>
+                          <p className="cc-ai-text m-0">
+                            {activeAI.reasoning || `${activeAI.category || currentEmergency.type} incident assessed as ${activeAI.priority || 'standard'} priority.`}
+                          </p>
+                        </div>
+
+                        {/* Relevant Previous Experience (Hindsight) */}
+                        <div className="cc-ai-sub-row mb-3">
+                          <div className="text-secondary small fw-bold text-uppercase mb-1">
+                            <i className="bi bi-database-fill-check text-primary me-1"></i>
+                            Relevant Previous Experience
+                          </div>
+                          <p className="cc-ai-text m-0">
+                            {memoryContext?.summary ||
+                              memoryContext?.facts?.[0] ||
+                              activeAI?.hindsight_memory?.summary ||
+                              'Context indexed from similar historical sector incidents to inform rapid response.'}
+                          </p>
+                        </div>
+
+                        {/* Key Recommendation */}
+                        <div className="cc-ai-sub-row mb-3">
+                          <div className="text-secondary small fw-bold text-uppercase mb-1">
+                            <i className="bi bi-lightbulb-fill text-warning me-1"></i>
+                            Key Recommendation
+                          </div>
+                          <div className="d-flex align-items-center gap-2 flex-wrap">
+                            {recommendedResponders.map((r) => (
+                              <span key={r} className="badge bg-dark border border-secondary text-light px-2 py-1">
+                                {r}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-secondary small py-2">
+                        <i className="bi bi-hourglass-split me-1"></i>
+                        AI triage analysis is processing for this incident.
+                      </div>
+                    )}
+
+                    {/* Human in the loop statement */}
+                    <div className="cc-hitl-footer-note mt-3">
+                      <i className="bi bi-shield-check text-success me-2 fs-5"></i>
+                      <span>AI supports the coordinator. Final response decisions remain human-controlled.</span>
+                    </div>
+                  </div>
                 </div>
 
-                {assignedResponders.length === 0 ? (
-                  <div className="text-secondary small py-2">
-                    <i className="bi bi-info-circle me-1"></i>
-                    No units deployed for this incident yet. Use dispatch buttons above to mobilize emergency crews.
+                {/* 2. HUMAN COORDINATOR REVIEW & DISPATCH CONTROLS */}
+                <div className="cc-dispatch-controls-card">
+                  <div className="cc-ops-card-header d-flex justify-content-between align-items-center">
+                    <div className="d-flex align-items-center gap-2">
+                      <i className="bi bi-person-check-fill text-success fs-5"></i>
+                      <h3 className="m-0 text-white fw-bold fs-6">Human Coordinator Review & Dispatch</h3>
+                    </div>
+                    <span className="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25" style={{ fontSize: '11px' }}>
+                      Final Authority
+                    </span>
                   </div>
-                ) : (
-                  <div className="cc-responders-table-wrap">
-                    <table className="cc-responders-table">
-                      <thead>
-                        <tr>
-                          <th>Unit / Name</th>
-                          <th>Type</th>
-                          <th>Status</th>
-                          <th>Dispatched At</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {assignedResponders.map((r, rIndex) => (
-                          <tr key={rIndex}>
-                            <td className="fw-bold text-white">{r.name || r.type}</td>
-                            <td>{r.type}</td>
-                            <td>
-                              <span className="badge bg-success" style={{ fontSize: '10.5px' }}>
-                                ● {r.status || 'EN ROUTE'}
+
+                  <div className="cc-ops-card-body">
+                    <div className="text-secondary small mb-3">
+                      Authorize emergency responder units for Incident #{currentEmergency.emergency_code || currentEmergency.id}:
+                    </div>
+
+                    {/* Dispatch Table */}
+                    <div className="cc-dispatch-list">
+                      {recommendedResponders.map((responderName) => {
+                        const isDispatched = isResponderDispatched(responderName);
+                        const isProcessing = dispatching[responderName];
+                        const isAmb = responderName.toLowerCase().includes('ambulance');
+                        const isPol = responderName.toLowerCase().includes('police');
+                        const isFire = responderName.toLowerCase().includes('fire');
+
+                        return (
+                          <div key={responderName} className="cc-dispatch-row-item">
+                            <div className="d-flex align-items-center gap-2">
+                              <span className="fs-5">
+                                {isAmb ? '🚑' : isPol ? '👮' : isFire ? '🚒' : '🤝'}
                               </span>
-                            </td>
-                            <td className="text-secondary small">{formatTime(r.dispatched_at || r.updated_at)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                              <div>
+                                <div className="fw-bold text-white small">{responderName}</div>
+                                <div className="text-secondary" style={{ fontSize: '11px' }}>
+                                  {isAmb && 'Medical Triage'}
+                                  {isPol && 'Safety & Security'}
+                                  {isFire && 'Hazard Containment'}
+                                  {!isAmb && !isPol && !isFire && 'First Aid Support'}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div>
+                              {isDispatched ? (
+                                <span className="badge bg-success" style={{ fontSize: '11px', padding: '6px 12px' }}>
+                                  <i className="bi bi-check-all me-1"></i> Dispatched
+                                </span>
+                              ) : (
+                                <button
+                                  type="button"
+                                  className="btn-dispatch-action"
+                                  onClick={() => handleDispatchResponder(responderName)}
+                                  disabled={isProcessing}
+                                  aria-label={`Dispatch ${responderName}`}
+                                >
+                                  {isProcessing ? (
+                                    <>
+                                      <span className="spinner-border spinner-border-sm me-1" role="status"></span>
+                                      <span>Dispatching...</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <i className="bi bi-send-fill me-1"></i>
+                                      <span>Dispatch</span>
+                                    </>
+                                  )}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Assigned Responders Summary */}
+                    {assignedResponders.length > 0 && (
+                      <div className="mt-3 pt-2 border-top border-secondary border-opacity-25">
+                        <div className="text-secondary small fw-bold text-uppercase mb-2">Deployed Units:</div>
+                        <div className="d-flex gap-2 flex-wrap">
+                          {assignedResponders.map((r, ri) => (
+                            <span key={ri} className="badge bg-dark border border-success text-success" style={{ fontSize: '11px' }}>
+                              ● {r.name || r.type}: {r.status || 'Dispatched'}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* =====================================================
-            9. RECENT OPERATIONAL ACTIVITY FEED
-            ===================================================== */}
-        {recentActivities.length > 0 && (
-          <section className="cc-card-shell" aria-label="Recent Operational Activity">
-            <div className="cc-card-header">
-              <h2 className="cc-card-title">
-                <i className="bi bi-activity text-info" aria-hidden="true"></i>
-                <span>Recent System Activity Feed</span>
-              </h2>
-              <span className="text-secondary small">Real-time event logging</span>
-            </div>
-
-            <div className="cc-card-body p-0">
-              <div className="table-responsive m-0">
-                <table className="table table-dark table-hover m-0" style={{ background: 'transparent' }}>
-                  <thead>
-                    <tr style={{ borderBottom: '1px solid rgba(148, 163, 184, 0.12)' }}>
-                      <th className="px-3 py-2 text-secondary small text-uppercase">Time</th>
-                      <th className="px-3 py-2 text-secondary small text-uppercase">Event</th>
-                      <th className="px-3 py-2 text-secondary small text-uppercase">Operational Details</th>
-                      <th className="px-3 py-2 text-secondary small text-uppercase text-end">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {recentActivities.map((act) => (
-                      <tr key={act.id} style={{ borderBottom: '1px solid rgba(148, 163, 184, 0.08)' }}>
-                        <td className="px-3 py-2 text-secondary small font-monospace">{formatTime(act.time)}</td>
-                        <td className="px-3 py-2 fw-bold text-white small">{act.title}</td>
-                        <td className="px-3 py-2 text-secondary small">{act.desc}</td>
-                        <td className="px-3 py-2 text-end">
-                          <button
-                            type="button"
-                            className="btn btn-sm btn-outline-secondary py-0 px-2"
-                            style={{ fontSize: '11px' }}
-                            onClick={() => {
-                              const matchCode = act.title.match(/#([A-Za-z0-9-]+)/);
-                              if (matchCode && matchCode[1]) {
-                                const found = emergencies.find(
-                                  (e) => String(e.emergency_code) === matchCode[1] || String(e.id) === matchCode[1]
-                                );
-                                if (found) handleSelectIncident(found);
-                              }
-                            }}
-                          >
-                            Locate
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                </div>
               </div>
             </div>
           </section>

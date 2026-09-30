@@ -3,11 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { AppLayout } from '../layouts/AppLayout';
 import { PriorityBadge, StatusBadge, SeverityBadge } from '../components/Badges';
-import { AIAnalysisCard } from '../components/AIAnalysisCard';
 import { EmergencyTimeline } from '../components/EmergencyTimeline';
 import { MapView } from '../components/MapView';
 import { BackButton } from '../components/BackButton';
-import HindsightMemoryPanel from '../components/HindsightMemoryPanel';
 import emergencyService from '../services/emergencyService';
 
 export default function EmergencyDetails() {
@@ -24,16 +22,16 @@ export default function EmergencyDetails() {
   const [error, setError] = useState(null);
 
   const [dispatching, setDispatching] = useState({});
-  const [notifying, setNotifying]     = useState(false);
-  const [resolving, setResolving]     = useState(false);
-  const [actionMsg, setActionMsg]     = useState('');
+  const [notifying, setNotifying] = useState(false);
+  const [resolving, setResolving] = useState(false);
+  const [actionMsg, setActionMsg] = useState('');
 
   const [memoryContext, setMemoryContext] = useState(null);
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
   const [coordinatorVerdict, setCoordinatorVerdict] = useState('');
   const [verdictNotice, setVerdictNotice] = useState('');
 
-  // Fetch fresh emergency data from backend by emergency code or ID
+  // Fetch emergency and memory context
   useEffect(() => {
     let isMounted = true;
     async function loadEmergency() {
@@ -62,7 +60,7 @@ export default function EmergencyDetails() {
           setMemoryContext(memRes.data);
         }
       } catch {
-        // fail-safe
+        // ignore
       }
     }
 
@@ -81,7 +79,7 @@ export default function EmergencyDetails() {
       <AppLayout title="Incident Details" subtitle="Loading emergency record...">
         <div className="text-center py-5">
           <span className="spinner-border text-primary"></span>
-          <div className="mt-2 text-muted">Retrieving incident data...</div>
+          <div className="mt-2 text-secondary">Retrieving incident telemetry...</div>
         </div>
       </AppLayout>
     );
@@ -90,11 +88,11 @@ export default function EmergencyDetails() {
   if (!emergency) {
     return (
       <AppLayout title="Incident Not Found" subtitle={`No emergency matching "${id}"`}>
-        <div className="section-card text-center py-5">
-          <i className="bi bi-exclamation-triangle text-danger" style={{ fontSize: 48 }}></i>
-          <h3 className="mt-3 fw-bold">Emergency Not Found</h3>
-          <p className="text-muted">{error || `Could not find an incident with code or ID: ${id}`}</p>
-          <button className="btn-primary-custom" onClick={() => navigate('/coordinator')}>
+        <div className="clean-section-card text-center py-5">
+          <i className="bi bi-exclamation-triangle text-danger" style={{ fontSize: 44 }}></i>
+          <h2 className="mt-3 fw-bold text-white">Emergency Not Found</h2>
+          <p className="text-secondary">{error || `Could not find incident #${id}`}</p>
+          <button className="btn-primary-send mt-3" style={{ maxWidth: '280px', margin: '0 auto' }} onClick={() => navigate('/coordinator')}>
             Back to Command Center
           </button>
         </div>
@@ -121,28 +119,43 @@ export default function EmergencyDetails() {
 
   const handleDispatch = async (responderType) => {
     setDispatching((prev) => ({ ...prev, [responderType]: true }));
-    await emergencyService.dispatch(emergencyCode, responderType);
-    updateResponderStatus(emergency.id, responderType, 'dispatched');
-    setActionMsg(`${responderType} dispatched successfully.`);
-    setTimeout(() => setActionMsg(''), 3000);
-    setDispatching((prev) => ({ ...prev, [responderType]: false }));
+    try {
+      await emergencyService.dispatch(emergencyCode, responderType);
+      updateResponderStatus(emergency.id, responderType, 'dispatched');
+      setActionMsg(`${responderType} dispatched successfully.`);
+      setTimeout(() => setActionMsg(''), 3000);
+    } catch (err) {
+      setActionMsg(`Failed to dispatch ${responderType}: ${err.message}`);
+    } finally {
+      setDispatching((prev) => ({ ...prev, [responderType]: false }));
+    }
   };
 
   const handleNotifyHelpers = async () => {
     setNotifying(true);
-    await emergencyService.notifyHelpers(emergencyCode);
-    setActionMsg('Nearby community helpers have been notified.');
-    setTimeout(() => setActionMsg(''), 3000);
-    setNotifying(false);
+    try {
+      await emergencyService.notifyHelpers(emergencyCode);
+      setActionMsg('Nearby community helpers have been notified.');
+      setTimeout(() => setActionMsg(''), 3000);
+    } catch (err) {
+      setActionMsg(`Failed to notify helpers: ${err.message}`);
+    } finally {
+      setNotifying(false);
+    }
   };
 
   const handleResolve = async () => {
     if (!window.confirm('Mark this emergency as resolved?')) return;
     setResolving(true);
-    await emergencyService.resolve(emergencyCode);
-    resolveEmergency(emergency.id);
-    setResolving(false);
-    navigate('/coordinator');
+    try {
+      await emergencyService.resolve(emergencyCode);
+      resolveEmergency(emergency.id);
+      navigate('/coordinator');
+    } catch (err) {
+      setActionMsg(`Failed to resolve incident: ${err.message}`);
+    } finally {
+      setResolving(false);
+    }
   };
 
   const mapMarkers = [
@@ -150,566 +163,456 @@ export default function EmergencyDetails() {
     ...(emergency.responders || []).map((r, i) => ({
       lat: emergencyLat + (i + 1) * 0.003,
       lng: emergencyLng + (i + 1) * 0.002,
-      type: r.type === 'Ambulance' ? 'ambulance' : 'police',
-      label: r.type, status: r.status, eta: r.eta,
+      type: (r.type || '').toLowerCase().includes('ambulance') ? 'ambulance' : 'police',
+      label: r.name || r.type,
+      status: r.status,
+      eta: r.eta,
     })),
-    {
-      lat: emergencyLat + 0.001,
-      lng: emergencyLng - 0.002,
-      type: 'helper',
-      label: 'Community Helper',
-      status: 'assisting',
-    },
   ];
-
-  const responderIcons = { Ambulance: '🚑', Police: '👮', 'Fire/Rescue': '🚒', 'Fire & Rescue': '🚒' };
-  const responderAvatarClass = { Ambulance: 'ambulance', Police: 'police', 'Fire/Rescue': 'fire', 'Fire & Rescue': 'fire' };
 
   return (
     <AppLayout
-      title={`Emergency #${emergencyCode}`}
-      subtitle={`${emergency.type || 'Incident'} · ${(emergency.priority || 'PENDING').toUpperCase()}`}
+      title={`Incident #${emergencyCode}`}
+      subtitle={`${emergency.type || 'Emergency'} · Public Safety Record`}
     >
-      {/* Back button */}
-      <BackButton fallback="/coordinator" />
+      <div style={{ maxWidth: '960px', margin: '0 auto', paddingBottom: '40px' }}>
+        {/* Navigation row */}
+        <div className="mb-3">
+          <BackButton fallback="/coordinator" />
+        </div>
 
-      {/* Header card */}
-      <div style={{
-        background: emergency.priority?.toLowerCase() === 'critical'
-          ? 'linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%)'
-          : 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-        borderRadius: 16, padding: '22px 26px',
-        marginBottom: 24, color: '#fff',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        flexWrap: 'wrap', gap: 14,
-        boxShadow: '0 4px 20px rgba(15, 23, 42, 0.12)',
-        border: '1px solid rgba(255, 255, 255, 0.1)',
-      }}>
-        <div>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 4, fontWeight: 700 }}>
-            Incident Reference #{emergencyCode}
+        {/* Action Notice */}
+        {actionMsg && (
+          <div className="alert alert-success d-flex align-items-center gap-2 p-3 rounded-3 mb-3" style={{ background: 'rgba(34, 197, 94, 0.15)', border: '1px solid #22c55e', color: '#86efac' }}>
+            <i className="bi bi-check-circle-fill"></i>
+            <span>{actionMsg}</span>
           </div>
-          <h1 style={{ fontSize: 24, fontWeight: 800, color: '#fff', marginBottom: 10, letterSpacing: '-0.3px' }}>
-            {emergency.type}
-          </h1>
-          <div className="d-flex gap-2 flex-wrap align-items-center">
-            {emergency.severity && <SeverityBadge severity={emergency.severity} />}
-            <PriorityBadge priority={emergency.priority} />
-            <StatusBadge status={emergency.status} />
-          </div>
-        </div>
-        <div style={{ textAlign: 'right', fontSize: 12.5, color: 'rgba(255,255,255,0.7)' }}>
-          <div><i className="bi bi-clock me-1"></i>Reported {(emergency.created_at || emergency.createdAt || emergency.reportedAt) ? new Date(emergency.created_at || emergency.createdAt || emergency.reportedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recently'}</div>
-          <div className="mt-1"><i className="bi bi-geo-alt me-1"></i>{emergency.location_text || emergency.location?.area || emergency.location?.address || 'Location registered'}</div>
-        </div>
-      </div>
+        )}
 
-      {/* Action message */}
-      {actionMsg && (
-        <div style={{
-          background: '#dcfce7', border: '1px solid #bbf7d0',
-          borderRadius: 8, padding: '10px 16px',
-          display: 'flex', alignItems: 'center', gap: 8,
-          fontSize: 13.5, color: '#166534', marginBottom: 16,
-        }}>
-          <i className="bi bi-check-circle-fill"></i>
-          {actionMsg}
-        </div>
-      )}
-
-      <div className="row g-4">
-        {/* Left column */}
-        <div className="col-lg-5">
-          {/* Emergency info */}
-          <div className="section-card mb-4">
-            <div className="section-card-header">
-              <h2 className="section-card-title">
-                <i className="bi bi-info-circle-fill text-muted"></i>
-                Emergency Information
-              </h2>
-            </div>
-            <div className="section-card-body">
-              <div className="info-row">
-                <span className="info-label">Type</span>
-                <span className="info-value">{emergency.type}</span>
-              </div>
-              <div className="info-row">
-                <span className="info-label">Description</span>
-                <span className="info-value">{emergency.description}</span>
-              </div>
-              <div className="info-row">
-                <span className="info-label">Location</span>
-                <span className="info-value">
-                  {emergency.location_text || emergency.location?.address || (emergencyLat && emergencyLng ? `${emergencyLat.toFixed(4)}, ${emergencyLng.toFixed(4)}` : 'Not specified')}
+        {/* =====================================================
+            1. INCIDENT HEADER & 2. STATUS
+            ===================================================== */}
+        <section className="clean-section-card mb-3" aria-labelledby="inc-header-title">
+          <div className="clean-section-body p-4">
+            <div className="d-flex justify-content-between align-items-start flex-wrap gap-3">
+              <div>
+                <span className="text-info fw-bold font-monospace small text-uppercase">
+                  Incident Reference #{emergencyCode}
                 </span>
-              </div>
-              <div className="info-row">
-                <span className="info-label">Reported At</span>
-                <span className="info-value">
-                  {(emergency.created_at || emergency.createdAt || emergency.reportedAt) ? new Date(emergency.created_at || emergency.createdAt || emergency.reportedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recently'}
-                </span>
-              </div>
-              {emergency.severity && (
-                <div className="info-row">
-                  <span className="info-label">Severity</span>
-                  <span className="info-value"><SeverityBadge severity={emergency.severity} /></span>
+                <h1 className="text-white fw-bold m-0 mt-1 fs-3" id="inc-header-title">
+                  {emergency.type}
+                </h1>
+                <div className="d-flex align-items-center gap-2 mt-2 flex-wrap">
+                  {emergency.severity && <SeverityBadge severity={emergency.severity} />}
+                  <PriorityBadge priority={emergency.priority} />
+                  <StatusBadge status={emergency.status} />
                 </div>
-              )}
-              <div className="info-row">
-                <span className="info-label">Priority</span>
-                <span className="info-value"><PriorityBadge priority={emergency.priority} /></span>
+              </div>
+
+              <div className="text-secondary small text-end">
+                <div>
+                  <i className="bi bi-clock me-1"></i>
+                  Reported: {(emergency.created_at || emergency.createdAt || emergency.reportedAt)
+                    ? new Date(emergency.created_at || emergency.createdAt || emergency.reportedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                    : 'Recently'}
+                </div>
+                <div className="mt-1">
+                  <i className="bi bi-calendar-event me-1"></i>
+                  {(emergency.created_at || emergency.createdAt)
+                    ? new Date(emergency.created_at || emergency.createdAt).toLocaleDateString()
+                    : 'Today'}
+                </div>
               </div>
             </div>
           </div>
+        </section>
 
-          {/* =====================================================
-              Photo + Video Evidence Verification Section
-              ===================================================== */}
-          <div className="section-card mb-4" id="evidence-verification-section">
-            <div className="section-card-header d-flex align-items-center justify-content-between">
-              <h2 className="section-card-title m-0">
-                <i className="bi bi-camera-reels-fill text-info"></i>
-                Visual Evidence Inspection
-              </h2>
-              <span className={`badge ${mediaList.length > 0 ? 'bg-success' : 'bg-secondary'}`} style={{ fontSize: '11.5px' }}>
-                {mediaList.length > 0 ? `${mediaList.length} File${mediaList.length > 1 ? 's' : ''} Attached` : 'No Media Attached'}
-              </span>
+        {/* =====================================================
+            3. LOCATION & MAP
+            ===================================================== */}
+        <section className="clean-section-card mb-3" aria-labelledby="inc-location-title">
+          <div className="clean-section-header">
+            <i className="bi bi-geo-alt-fill text-danger"></i>
+            <h2 className="clean-section-title" id="inc-location-title">Location</h2>
+          </div>
+          <div className="clean-section-body p-3">
+            <div className="mb-2 text-white fw-semibold">
+              {emergency.location_text || emergency.location?.address || `${emergencyLat.toFixed(5)}, ${emergencyLng.toFixed(5)}`}
             </div>
+            <div className="rounded-3 overflow-hidden border border-secondary border-opacity-25" style={{ height: '320px' }}>
+              <MapView markers={mapMarkers} center={[emergencyLat, emergencyLng]} height={320} />
+            </div>
+          </div>
+        </section>
 
-            <div className="section-card-body">
-              {mediaList.length > 0 ? (
-                <div>
-                  {/* Active Media Viewer */}
-                  {activeMedia && (
-                    <div className="p-2 rounded-3 mb-3" style={{ background: '#0b1220', border: '1px solid #26344D' }}>
-                      <div className="d-flex align-items-center justify-content-between px-2 py-1 mb-2 text-secondary" style={{ fontSize: '12px' }}>
-                        <span className="fw-semibold text-light text-truncate" style={{ maxWidth: '70%' }}>
-                          {activeMedia.media_type === 'video' ? '🎥 ' : '📷 '}
-                          {activeMedia.file_name || `Evidence File #${activeMediaIndex + 1}`}
-                        </span>
-                        <span className="badge bg-dark border border-secondary text-info">
-                          {activeMedia.media_type?.toUpperCase() || 'MEDIA'}
-                        </span>
-                      </div>
+        {/* =====================================================
+            4. DESCRIPTION
+            ===================================================== */}
+        <section className="clean-section-card mb-3" aria-labelledby="inc-desc-title">
+          <div className="clean-section-header">
+            <i className="bi bi-card-text text-info"></i>
+            <h2 className="clean-section-title" id="inc-desc-title">Description</h2>
+          </div>
+          <div className="clean-section-body p-3">
+            <p className="text-light m-0" style={{ fontSize: '14.5px', lineHeight: 1.6 }}>
+              {emergency.description || 'No detailed description provided by the reporting citizen.'}
+            </p>
+          </div>
+        </section>
 
-                      <div className="text-center" style={{ maxHeight: '340px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        {activeMedia.media_type === 'video' ? (
-                          <video
-                            key={activeMedia.data_url || activeMedia.id}
-                            src={activeMedia.data_url}
-                            controls
-                            muted
-                            playsInline
-                            preload="metadata"
-                            style={{ maxWidth: '100%', maxHeight: '320px', borderRadius: '6px', outline: 'none' }}
-                          />
+        {/* =====================================================
+            5. EVIDENCE (Photo Gallery, Video Player, File Info)
+            ===================================================== */}
+        <section className="clean-section-card mb-3" aria-labelledby="inc-evidence-title">
+          <div className="clean-section-header d-flex justify-content-between align-items-center">
+            <div className="d-flex align-items-center gap-2">
+              <i className="bi bi-camera-reels-fill text-info"></i>
+              <h2 className="clean-section-title m-0" id="inc-evidence-title">
+                Evidence
+              </h2>
+            </div>
+            <span className={`badge ${mediaList.length > 0 ? 'bg-success' : 'bg-secondary'}`} style={{ fontSize: '11px' }}>
+              {mediaList.length > 0 ? `${mediaList.length} File${mediaList.length > 1 ? 's' : ''}` : 'No Media'}
+            </span>
+          </div>
+
+          <div className="clean-section-body p-3">
+            {mediaList.length > 0 ? (
+              <div>
+                {/* Active Media Viewer */}
+                {activeMedia && (
+                  <div className="p-2 rounded-3 mb-3" style={{ background: '#0F172A', border: '1px solid #26344D' }}>
+                    <div className="d-flex align-items-center justify-content-between px-2 py-1 mb-2 text-secondary small">
+                      <span className="fw-semibold text-light text-truncate" style={{ maxWidth: '70%' }}>
+                        {activeMedia.media_type === 'video' ? '🎥 ' : '📷 '}
+                        {activeMedia.file_name || `Evidence #${activeMediaIndex + 1}`}
+                      </span>
+                      <span className="badge bg-dark border border-secondary text-info text-uppercase">
+                        {activeMedia.media_type || 'Media'}
+                      </span>
+                    </div>
+
+                    <div className="text-center" style={{ maxHeight: '340px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {activeMedia.media_type === 'video' ? (
+                        <video
+                          key={activeMedia.data_url || activeMedia.id}
+                          src={activeMedia.data_url}
+                          controls
+                          muted
+                          playsInline
+                          preload="metadata"
+                          style={{ maxWidth: '100%', maxHeight: '320px', borderRadius: '6px' }}
+                        />
+                      ) : (
+                        <img
+                          key={activeMedia.data_url || activeMedia.id}
+                          src={activeMedia.data_url}
+                          alt={activeMedia.file_name || 'Emergency visual evidence'}
+                          style={{ maxWidth: '100%', maxHeight: '320px', objectFit: 'contain', borderRadius: '6px' }}
+                        />
+                      )}
+                    </div>
+
+                    {/* File Information */}
+                    <div className="d-flex align-items-center justify-content-between px-2 pt-2 text-secondary" style={{ fontSize: '11px' }}>
+                      <span>Size: {activeMedia.file_size ? `${(activeMedia.file_size / 1024).toFixed(1)} KB` : 'Standard'}</span>
+                      <span>MIME: {activeMedia.mime_type || (activeMedia.media_type === 'video' ? 'video/mp4' : 'image/jpeg')}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Thumbnail Strip */}
+                {mediaList.length > 1 && (
+                  <div className="d-flex gap-2 overflow-auto pb-1 mb-2">
+                    {mediaList.map((m, idx) => (
+                      <div
+                        key={m.id || idx}
+                        onClick={() => setActiveMediaIndex(idx)}
+                        role="button"
+                        tabIndex={0}
+                        style={{
+                          width: '68px',
+                          height: '54px',
+                          borderRadius: '6px',
+                          overflow: 'hidden',
+                          border: activeMediaIndex === idx ? '2px solid #38BDF8' : '1px solid #26344D',
+                          background: '#0F172A',
+                          cursor: 'pointer',
+                          flexShrink: 0,
+                          position: 'relative',
+                        }}
+                      >
+                        {m.media_type === 'video' ? (
+                          <div className="w-100 h-100 d-flex align-items-center justify-content-center text-danger fs-5">
+                            🎥
+                          </div>
                         ) : (
                           <img
-                            key={activeMedia.data_url || activeMedia.id}
-                            src={activeMedia.data_url}
-                            alt={activeMedia.file_name || 'Emergency visual evidence'}
-                            style={{ maxWidth: '100%', maxHeight: '320px', objectFit: 'contain', borderRadius: '6px' }}
+                            src={m.data_url}
+                            alt={`Thumbnail ${idx + 1}`}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                           />
                         )}
                       </div>
-
-                      <div className="d-flex align-items-center justify-content-between px-2 pt-2 text-muted" style={{ fontSize: '11px' }}>
-                        <span>Size: {activeMedia.file_size ? `${(activeMedia.file_size / 1024).toFixed(1)} KB` : 'Standard'}</span>
-                        <span>MIME: {activeMedia.mime_type || (activeMedia.media_type === 'video' ? 'video/mp4' : 'image/jpeg')}</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Thumbnail Selector Strip if multiple media */}
-                  {mediaList.length > 1 && (
-                    <div className="d-flex gap-2 mb-3 overflow-auto pb-1">
-                      {mediaList.map((m, idx) => (
-                        <div
-                          key={m.id || idx}
-                          onClick={() => setActiveMediaIndex(idx)}
-                          role="button"
-                          tabIndex={0}
-                          style={{
-                            width: '70px',
-                            height: '56px',
-                            borderRadius: '6px',
-                            overflow: 'hidden',
-                            border: activeMediaIndex === idx ? '2px solid #38bdf8' : '1px solid #26344D',
-                            background: '#0f172a',
-                            cursor: 'pointer',
-                            flexShrink: 0,
-                            position: 'relative',
-                          }}
-                        >
-                          {m.media_type === 'video' ? (
-                            <div className="w-100 h-100 d-flex align-items-center justify-content-center text-danger" style={{ fontSize: '18px' }}>
-                              🎥
-                            </div>
-                          ) : (
-                            <img
-                              src={m.data_url}
-                              alt={`Thumbnail ${idx + 1}`}
-                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                            />
-                          )}
-                          <span
-                            style={{
-                              position: 'absolute',
-                              bottom: '1px',
-                              right: '2px',
-                              fontSize: '9px',
-                              background: 'rgba(0,0,0,0.7)',
-                              color: '#fff',
-                              padding: '1px 3px',
-                              borderRadius: '3px',
-                            }}
-                          >
-                            #{idx + 1}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="p-3 rounded-2 text-center" style={{ background: 'rgba(15, 23, 42, 0.6)', border: '1px dashed #26344D' }}>
-                  <i className="bi bi-camera-video-off fs-4 text-muted mb-2 d-block" aria-hidden="true"></i>
-                  <div className="text-light fw-semibold" style={{ fontSize: '13.5px' }}>
-                    No Photo or Video Evidence Provided
+                    ))}
                   </div>
-                  <p className="text-secondary small m-0 mt-1">
-                    Visual evidence was not submitted with this report. Do not delay emergency response solely for missing media.
-                  </p>
-                </div>
-              )}
-
-              {/* Supporting Evidence Note */}
-              <div className="p-2 rounded-2 mt-3" style={{ background: 'rgba(56, 189, 248, 0.08)', border: '1px solid rgba(56, 189, 248, 0.2)', fontSize: '12px', color: '#93c5fd' }}>
-                <i className="bi bi-info-circle-fill me-1" aria-hidden="true"></i>
-                <strong>Notice:</strong> Visual media serves as supporting evidence for situational awareness, not automatic proof.
+                )}
               </div>
+            ) : (
+              <div className="text-secondary small py-2">
+                <i className="bi bi-camera-video-off me-1"></i>
+                No photo or video evidence was submitted with this report.
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* =====================================================
+            6. AI ASSESSMENT (Decision Support & Memory)
+            ===================================================== */}
+        <section className="clean-section-card mb-3" aria-labelledby="inc-ai-title">
+          <div className="clean-section-header d-flex justify-content-between align-items-center">
+            <div className="d-flex align-items-center gap-2">
+              <i className="bi bi-cpu text-info"></i>
+              <h2 className="clean-section-title m-0" id="inc-ai-title">AI Assessment</h2>
             </div>
+            <span className="badge bg-dark border border-info text-info" style={{ fontSize: '11px' }}>
+              Decision Support
+            </span>
           </div>
 
-          {/* =====================================================
-              AI Evidence Assessment (Visually Labeled)
-              ===================================================== */}
-          <div className="section-card mb-4" id="ai-evidence-assessment-section" style={{ borderLeft: '4px solid #38bdf8' }}>
-            <div className="section-card-header d-flex align-items-center justify-content-between">
-              <h2 className="section-card-title m-0">
-                <i className="bi bi-robot text-info"></i>
-                AI Evidence Assessment
-              </h2>
-              <span className="badge bg-dark border border-info text-info" style={{ fontSize: '11px' }}>
-                Decision Support
-              </span>
-            </div>
-
-            <div className="section-card-body">
-              {evidenceAssessment ? (
-                <div>
-                  <div className="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
-                    <div>
-                      <span className="text-secondary small d-block">Consistency Evaluation</span>
-                      <span
-                        className={`badge ${
-                          evidenceAssessment.consistency === 'Consistent'
-                            ? 'bg-success text-white'
-                            : evidenceAssessment.consistency === 'Partially consistent'
-                            ? 'bg-warning text-dark'
-                            : evidenceAssessment.consistency === 'Potentially inconsistent'
-                            ? 'bg-danger text-white'
-                            : 'bg-secondary text-light'
-                        }`}
-                        style={{ fontSize: '12px', padding: '5px 10px' }}
-                      >
-                        {evidenceAssessment.consistency || 'Under Review'}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="text-secondary small d-block">Evidence Quality</span>
-                      <span className="badge bg-dark border border-secondary text-light" style={{ fontSize: '12px', padding: '5px 10px' }}>
-                        {evidenceAssessment.evidenceQuality || 'Moderate'}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="text-secondary small d-block">AI Confidence</span>
-                      <span className="badge bg-info bg-opacity-25 text-info border border-info border-opacity-50" style={{ fontSize: '12px', padding: '5px 10px' }}>
-                        {evidenceAssessment.confidence || 'Medium'}
-                      </span>
-                    </div>
+          <div className="clean-section-body p-3">
+            {ai ? (
+              <div>
+                <div className="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+                  <div>
+                    <span className="text-secondary small d-block">Triage Evaluation</span>
+                    <span className="text-white fw-bold">{ai.category || emergency.type}</span>
                   </div>
+                  {ai.confidence && (
+                    <div>
+                      <span className="text-secondary small d-block">Confidence</span>
+                      <span className="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25">
+                        {Math.round(ai.confidence * (ai.confidence <= 1 ? 100 : 1))}%
+                      </span>
+                    </div>
+                  )}
+                </div>
 
-                  {/* Observations */}
-                  {Array.isArray(evidenceAssessment.visualObservations) && evidenceAssessment.visualObservations.length > 0 && (
-                    <div className="mb-3">
-                      <div className="text-secondary small fw-bold text-uppercase mb-1">Visual Observations</div>
-                      <ul className="m-0 ps-3" style={{ fontSize: '13px', color: '#cbd5e1', lineHeight: 1.5 }}>
-                        {evidenceAssessment.visualObservations.map((obs, oIdx) => (
-                          <li key={oIdx} className="mb-1">{obs}</li>
+                {ai.reasoning && (
+                  <div className="p-3 rounded-2 mb-3" style={{ background: '#0F172A', border: '1px solid #26344D', fontSize: '13.5px', color: '#cbd5e1' }}>
+                    <div className="text-info fw-bold small text-uppercase mb-1">Operational Assessment:</div>
+                    {ai.reasoning}
+                  </div>
+                )}
+
+                {/* Evidence Assessment Evaluation */}
+                {evidenceAssessment && (
+                  <div className="p-3 rounded-2 mb-3" style={{ background: '#0F172A', border: '1px solid #26344D', fontSize: '13px' }}>
+                    <div className="text-warning fw-bold small text-uppercase mb-2">Visual Evidence Assessment:</div>
+                    <div className="d-flex gap-3 mb-2 flex-wrap">
+                      <span><strong>Consistency:</strong> {evidenceAssessment.consistency || 'Assessed'}</span>
+                      <span><strong>Quality:</strong> {evidenceAssessment.evidenceQuality || 'Standard'}</span>
+                    </div>
+                    {Array.isArray(evidenceAssessment.visualObservations) && evidenceAssessment.visualObservations.length > 0 && (
+                      <ul className="m-0 ps-3 text-secondary">
+                        {evidenceAssessment.visualObservations.map((obs, idx) => (
+                          <li key={idx}>{obs}</li>
                         ))}
                       </ul>
-                    </div>
-                  )}
-
-                  {/* Video analysis status disclaimer if present */}
-                  {evidenceAssessment.videoAnalysisStatus && (
-                    <div className="p-2 rounded-2 mb-2" style={{ background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.25)', fontSize: '12px', color: '#fde68a' }}>
-                      <i className="bi bi-camera-video me-1" aria-hidden="true"></i>
-                      <strong>Video Assessment Note:</strong> {evidenceAssessment.videoAnalysisStatus}
-                    </div>
-                  )}
-
-                  {/* Warning if potentially inconsistent or unclear */}
-                  {(evidenceAssessment.consistency === 'Potentially inconsistent' || evidenceAssessment.consistency === 'Unclear') && (
-                    <div className="p-2 rounded-2 mb-3" style={{ background: 'rgba(239, 68, 68, 0.12)', border: '1px solid #ef4444', fontSize: '12.5px', color: '#fca5a5' }}>
-                      <i className="bi bi-exclamation-triangle-fill me-1 text-danger" aria-hidden="true"></i>
-                      <strong>Verification Alert:</strong> The submitted evidence may not fully match the report. Please review the available information before dispatching.
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="text-secondary small py-2">
-                  <i className="bi bi-cpu text-info me-1" aria-hidden="true"></i>
-                  {mediaList.length > 0
-                    ? 'AI visual assessment is being processed for submitted attachments.'
-                    : 'No media available for visual assessment. Evaluation based on citizen description and location telemetry.'}
-                </div>
-              )}
-
-              <div className="mt-2 pt-2 border-top border-secondary border-opacity-25" style={{ fontSize: '11.5px', color: '#94a3b8' }}>
-                <i className="bi bi-shield-check text-warning me-1" aria-hidden="true"></i>
-                <strong>Decision Support:</strong> AI evidence assessment is decision support. Verify the situation using available information before dispatching responders.
-              </div>
-            </div>
-          </div>
-
-          {/* =====================================================
-              Human Coordinator Review (Visually Separate)
-              ===================================================== */}
-          <div className="section-card mb-4" id="human-coordinator-review-section" style={{ borderLeft: '4px solid #22c55e' }}>
-            <div className="section-card-header d-flex align-items-center justify-content-between">
-              <h2 className="section-card-title m-0">
-                <i className="bi bi-person-check-fill text-success"></i>
-                Human Coordinator Review
-              </h2>
-              <span className="badge bg-success" style={{ fontSize: '11px' }}>
-                Final Decision Authority
-              </span>
-            </div>
-
-            <div className="section-card-body">
-              <p className="text-secondary small mb-3">
-                Review the citizen report, location telemetry, visual evidence, and AI decision support to make response decisions.
-              </p>
-
-              {verdictNotice && (
-                <div className="alert alert-success py-2 px-3 mb-2 rounded-2" style={{ fontSize: '12.5px' }}>
-                  ✓ {verdictNotice}
-                </div>
-              )}
-
-              <div className="d-flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  className={`btn btn-sm ${coordinatorVerdict === 'verified' ? 'btn-success' : 'btn-outline-success'}`}
-                  onClick={() => {
-                    setCoordinatorVerdict('verified');
-                    setVerdictNotice('Visual evidence reviewed and marked as Consistent by coordinator.');
-                    setTimeout(() => setVerdictNotice(''), 4000);
-                  }}
-                >
-                  <i className="bi bi-check2-all me-1"></i>
-                  Verify Evidence Consistent
-                </button>
-
-                <button
-                  type="button"
-                  className={`btn btn-sm ${coordinatorVerdict === 'unclear' ? 'btn-warning text-dark' : 'btn-outline-warning'}`}
-                  onClick={() => {
-                    setCoordinatorVerdict('unclear');
-                    setVerdictNotice('Marked as Unclear / Needs Field Confirmation.');
-                    setTimeout(() => setVerdictNotice(''), 4000);
-                  }}
-                >
-                  <i className="bi bi-question-circle me-1"></i>
-                  Flag for Field Verification
-                </button>
-
-                <button
-                  type="button"
-                  className={`btn btn-sm ${coordinatorVerdict === 'dispatched' ? 'btn-info text-dark' : 'btn-outline-info'}`}
-                  onClick={() => {
-                    setCoordinatorVerdict('dispatched');
-                    setVerdictNotice('Coordinator confirmed dispatch authorization.');
-                    setTimeout(() => setVerdictNotice(''), 4000);
-                  }}
-                >
-                  <i className="bi bi-send-check me-1"></i>
-                  Authorize Responders
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* AI Analysis */}
-          <div className="mb-4">
-            <AIAnalysisCard ai={ai} />
-          </div>
-
-          {/* Hindsight Episodic Memory Panel */}
-          <HindsightMemoryPanel memoryContext={memoryContext} ai={ai} />
-
-          {/* Professional Responders */}
-          <div className="section-card mb-4">
-            <div className="section-card-header">
-              <h2 className="section-card-title">
-                <i className="bi bi-broadcast text-danger"></i>
-                Professional Responders
-              </h2>
-            </div>
-            <div className="section-card-body">
-              {(emergency.responders || []).map((r) => (
-                <div key={r.type} className="responder-card mb-2">
-                  <div className="d-flex align-items-center gap-2">
-                    <div className={`responder-avatar ${responderAvatarClass[r.type] || 'ambulance'}`}>
-                      {responderIcons[r.type] || '🔵'}
-                    </div>
-                    <div>
-                      <div style={{ fontWeight: 700, fontSize: 13.5 }}>{r.type}</div>
-                      {r.eta && <div style={{ fontSize: 11.5, color: '#64748b' }}>ETA: {r.eta}</div>}
-                    </div>
-                  </div>
-                  <div className="d-flex align-items-center gap-2">
-                    <StatusBadge status={r.status} />
-                    {r.status === 'pending' && (
-                      <button
-                        className="btn-primary-custom"
-                        style={{ fontSize: 11, padding: '5px 10px' }}
-                        onClick={() => handleDispatch(r.type)}
-                        disabled={dispatching[r.type]}
-                      >
-                        {dispatching[r.type] ? <span className="spinner-border spinner-border-sm"></span> : 'Dispatch'}
-                      </button>
                     )}
                   </div>
+                )}
+
+                {/* Memory Context */}
+                <div className="p-3 rounded-2" style={{ background: '#0F172A', border: '1px solid #26344D', fontSize: '13px' }}>
+                  <div className="text-primary fw-bold small text-uppercase mb-1">
+                    <i className="bi bi-database-fill-check me-1"></i>
+                    Hindsight Memory Context:
+                  </div>
+                  <p className="text-secondary m-0">
+                    {memoryContext?.summary ||
+                      memoryContext?.facts?.[0] ||
+                      ai?.hindsight_memory?.summary ||
+                      'Historical incident patterns and dispatch precedents indexed for response support.'}
+                  </p>
                 </div>
-              ))}
-
-              {/* Dispatch buttons */}
-              <div className="d-flex gap-2 flex-wrap mt-3">
-                <button
-                  className="btn-primary-custom"
-                  style={{ fontSize: 12, padding: '8px 14px' }}
-                  onClick={() => handleDispatch('Ambulance')}
-                  disabled={dispatching['Ambulance']}
-                  id="dispatch-ambulance-btn"
-                >
-                  🚑 Dispatch Ambulance
-                </button>
-                <button
-                  className="btn-primary-custom"
-                  style={{ fontSize: 12, padding: '8px 14px', background: '#1d4ed8' }}
-                  onClick={() => handleDispatch('Police')}
-                  disabled={dispatching['Police']}
-                  id="dispatch-police-btn"
-                >
-                  👮 Dispatch Police
-                </button>
               </div>
-            </div>
+            ) : (
+              <div className="text-secondary small py-2">
+                <i className="bi bi-hourglass-split me-1"></i>
+                AI analysis has not completed for this incident record.
+              </div>
+            )}
           </div>
+        </section>
 
-          {/* Community Helpers */}
-          <div className="section-card mb-4">
-            <div className="section-card-header">
-              <h2 className="section-card-title">
-                <i className="bi bi-people-fill" style={{ color: '#d97706' }}></i>
-                Community Helpers
+        {/* =====================================================
+            7. HUMAN COORDINATOR REVIEW (Clearly Separated)
+            ===================================================== */}
+        <section className="clean-section-card mb-3" style={{ borderLeft: '4px solid #22C55E' }} aria-labelledby="inc-human-title">
+          <div className="clean-section-header d-flex justify-content-between align-items-center">
+            <div className="d-flex align-items-center gap-2">
+              <i className="bi bi-person-check-fill text-success"></i>
+              <h2 className="clean-section-title m-0" id="inc-human-title">
+                Human Coordinator Review
               </h2>
             </div>
-            <div className="section-card-body">
-              <div className="row g-2 mb-3">
-                {[
-                  { label: 'Found Nearby', value: emergency.helpers?.found || 0 },
-                  { label: 'Notified',     value: emergency.helpers?.notified || 0 },
-                  { label: 'Accepted',     value: emergency.helpers?.accepted || 0 },
-                ].map((s) => (
-                  <div key={s.label} className="col-4">
-                    <div style={{
-                      background: '#f8fafc', border: '1px solid #e2e8f0',
-                      borderRadius: 8, padding: '10px', textAlign: 'center',
-                    }}>
-                      <div style={{ fontSize: 22, fontWeight: 800, color: '#0f172a' }}>{s.value}</div>
-                      <div style={{ fontSize: 11, color: '#64748b' }}>{s.label}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+            <span className="badge bg-success" style={{ fontSize: '11px' }}>
+              Final Authority
+            </span>
+          </div>
 
+          <div className="clean-section-body p-3">
+            <p className="text-secondary small mb-3">
+              Review evidence and AI decision support. Final response actions remain strictly under human control.
+            </p>
+
+            {verdictNotice && (
+              <div className="alert alert-success py-2 px-3 mb-3 rounded-2 small">
+                ✓ {verdictNotice}
+              </div>
+            )}
+
+            <div className="d-flex flex-wrap gap-2">
               <button
-                className="btn-outline-custom w-100"
-                style={{ justifyContent: 'center', fontSize: 13 }}
-                onClick={handleNotifyHelpers}
-                disabled={notifying}
-                id="notify-helpers-btn"
+                type="button"
+                className={`btn btn-sm ${coordinatorVerdict === 'verified' ? 'btn-success' : 'btn-outline-success'}`}
+                onClick={() => {
+                  setCoordinatorVerdict('verified');
+                  setVerdictNotice('Evidence verified consistent by coordinator.');
+                  setTimeout(() => setVerdictNotice(''), 3500);
+                }}
               >
-                {notifying ? <span className="spinner-border spinner-border-sm"></span> : <i className="bi bi-bell-fill"></i>}
-                Notify Nearby Helpers
+                <i className="bi bi-check2-all me-1"></i>
+                Verify Evidence Consistent
               </button>
 
-              {(emergency.helpers?.found || 0) === 0 && (
-                <div style={{ fontSize: 12, color: '#64748b', textAlign: 'center', marginTop: 8 }}>
-                  No eligible helpers found nearby. Professional responders have been notified.
+              <button
+                type="button"
+                className={`btn btn-sm ${coordinatorVerdict === 'unclear' ? 'btn-warning text-dark' : 'btn-outline-warning'}`}
+                onClick={() => {
+                  setCoordinatorVerdict('unclear');
+                  setVerdictNotice('Flagged for field verification by arriving units.');
+                  setTimeout(() => setVerdictNotice(''), 3500);
+                }}
+              >
+                <i className="bi bi-question-circle me-1"></i>
+                Flag for Field Confirmation
+              </button>
+
+              <button
+                type="button"
+                className={`btn btn-sm ${coordinatorVerdict === 'authorized' ? 'btn-info text-dark' : 'btn-outline-info'}`}
+                onClick={() => {
+                  setCoordinatorVerdict('authorized');
+                  setVerdictNotice('Coordinator confirmed dispatch authorization.');
+                  setTimeout(() => setVerdictNotice(''), 3500);
+                }}
+              >
+                <i className="bi bi-shield-check me-1"></i>
+                Authorize Response Units
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* =====================================================
+            8. RESPONDERS & DISPATCH
+            ===================================================== */}
+        <section className="clean-section-card mb-3" aria-labelledby="inc-responders-title">
+          <div className="clean-section-header">
+            <i className="bi bi-truck-front-fill text-danger"></i>
+            <h2 className="clean-section-title" id="inc-responders-title">Responders</h2>
+          </div>
+
+          <div className="clean-section-body p-3">
+            {/* Active responders list */}
+            {(emergency.responders || []).length > 0 ? (
+              <div className="mb-3">
+                <div className="text-secondary small fw-bold text-uppercase mb-2">Deployed Units:</div>
+                <div className="d-flex flex-column gap-2">
+                  {emergency.responders.map((r, ri) => (
+                    <div key={ri} className="d-flex align-items-center justify-content-between p-2 rounded-2" style={{ background: '#0F172A', border: '1px solid #26344D' }}>
+                      <div className="d-flex align-items-center gap-2">
+                        <span className="fs-5">
+                          {(r.type || '').toLowerCase().includes('ambulance') ? '🚑' : '👮'}
+                        </span>
+                        <div>
+                          <div className="fw-bold text-white small">{r.name || r.type}</div>
+                          {r.eta && <div className="text-secondary" style={{ fontSize: '11px' }}>ETA: {r.eta}</div>}
+                        </div>
+                      </div>
+                      <StatusBadge status={r.status || 'Dispatched'} />
+                    </div>
+                  ))}
                 </div>
-              )}
+              </div>
+            ) : (
+              <div className="text-secondary small mb-3">No responders currently deployed.</div>
+            )}
+
+            {/* Quick Dispatch Actions */}
+            <div className="d-flex gap-2 flex-wrap">
+              <button
+                type="button"
+                className="btn-dispatch-action"
+                onClick={() => handleDispatch('Ambulance')}
+                disabled={dispatching['Ambulance']}
+              >
+                🚑 Dispatch Ambulance
+              </button>
+              <button
+                type="button"
+                className="btn-dispatch-action"
+                style={{ background: '#1D4ED8', borderColor: '#3B82F6' }}
+                onClick={() => handleDispatch('Police')}
+                disabled={dispatching['Police']}
+              >
+                👮 Dispatch Police
+              </button>
+              <button
+                type="button"
+                className="btn-dispatch-action"
+                style={{ background: '#D97706', borderColor: '#F59E0B' }}
+                onClick={handleNotifyHelpers}
+                disabled={notifying}
+              >
+                🤝 Notify Community Helpers
+              </button>
             </div>
           </div>
+        </section>
 
-          {/* Timeline */}
-          <div className="section-card mb-4">
-            <div className="section-card-header">
-              <h2 className="section-card-title">
-                <i className="bi bi-list-check text-muted"></i>
-                Response Timeline
-              </h2>
-            </div>
-            <div className="section-card-body">
-              <EmergencyTimeline steps={emergency.timeline || []} />
-            </div>
+        {/* =====================================================
+            9. TIMELINE & RESOLUTION
+            ===================================================== */}
+        <section className="clean-section-card mb-3" aria-labelledby="inc-timeline-title">
+          <div className="clean-section-header">
+            <i className="bi bi-clock-history text-primary"></i>
+            <h2 className="clean-section-title" id="inc-timeline-title">Timeline</h2>
           </div>
 
-          {/* Resolve button */}
-          <button
-            className="btn-outline-custom w-100"
-            style={{ justifyContent: 'center', fontSize: 14, borderColor: '#16a34a', color: '#16a34a', padding: '12px' }}
-            onClick={handleResolve}
-            disabled={resolving}
-            id="mark-resolved-btn"
-          >
-            {resolving ? <span className="spinner-border spinner-border-sm"></span> : <i className="bi bi-check-circle-fill"></i>}
-            Mark Emergency Resolved
-          </button>
-        </div>
+          <div className="clean-section-body p-3">
+            <EmergencyTimeline steps={emergency.timeline || []} />
 
-        {/* Right column — Map */}
-        <div className="col-lg-7">
-          <div className="section-card" style={{ position: 'sticky', top: 20 }}>
-            <div className="section-card-header">
-              <h2 className="section-card-title">
-                <i className="bi bi-map text-muted"></i>
-                Live Map View
-              </h2>
+            <div className="mt-4 pt-3 border-top border-secondary border-opacity-25 text-end">
+              <button
+                type="button"
+                className="btn btn-outline-success"
+                onClick={handleResolve}
+                disabled={resolving || (emergency.status || '').toUpperCase() === 'RESOLVED'}
+              >
+                {resolving ? (
+                  <span className="spinner-border spinner-border-sm me-1"></span>
+                ) : (
+                  <i className="bi bi-check-circle-fill me-1"></i>
+                )}
+                {(emergency.status || '').toUpperCase() === 'RESOLVED' ? 'Incident Resolved' : 'Mark Emergency Resolved'}
+              </button>
             </div>
-            <MapView
-              markers={mapMarkers}
-              center={[emergency.location?.lat, emergency.location?.lng]}
-              height={600}
-            />
           </div>
-        </div>
+        </section>
       </div>
     </AppLayout>
   );
