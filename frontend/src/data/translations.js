@@ -74,9 +74,9 @@ export const TRANSLATIONS = {
     enterNearbyLabel: 'Enter a nearby place, village, road, landmark, building, or area:',
     enterNearbyPlaceholder: 'e.g., Near Bus Stand, Market Road, or Village Gate',
     locationOptionalNote: 'Your location helps responders reach the right place quickly.',
-    photoSectionTitle: '4. Photo (Optional)',
+    photoSectionTitle: '4. Photo / Video Evidence — Optional',
     takePhoto: 'Add Photo',
-    photoOptional: 'Optional',
+    photoOptional: 'Photo / Video Optional',
     photoAttached: 'Photo attached',
     removePhoto: 'Remove photo',
     reviewTitle: 'Emergency Report Summary',
@@ -2477,12 +2477,278 @@ export const EVIDENCE_TRANSLATIONS = {
   },
 };
 
-// Merge evidence translations into each language in TRANSLATIONS
+// Category-Aware Evidence Section Labels across all 23 Languages
+export const EVIDENCE_CATEGORY_LABELS = {
+  en: {
+    evidenceSectionRecommended: '4. Photo / Video Evidence — Recommended',
+    evidenceSectionRecommendedSafe: '4. Photo / Video Evidence — Recommended when safe',
+    evidenceSectionOptional: '4. Photo / Video Evidence — Optional',
+    evidenceHelpRecommended: 'Photo or video helps us understand what happened. Only share it if it is safe.',
+    evidenceHelpOptional: 'Photo or video is optional. You can continue without it.',
+    evidenceBadgeRecommended: 'Recommended',
+    evidenceBadgeRecommendedSafe: 'Recommended when safe',
+    evidenceBadgeOptional: 'Optional',
+  },
+  hi: {
+    evidenceSectionRecommended: '4. फोटो / वीडियो साक्ष्य — अनुशंसित',
+    evidenceSectionRecommendedSafe: '4. फोटो / वीडियो साक्ष्य — सुरक्षित होने पर अनुशंसित',
+    evidenceSectionOptional: '4. फोटो / वीडियो साक्ष्य — वैकल्पिक',
+    evidenceHelpRecommended: 'फोटो या वीडियो से स्थिति समझने में मदद मिलती है। केवल सुरक्षित होने पर ही साझा करें।',
+    evidenceHelpOptional: 'फोटो या वीडियो वैकल्पिक है। आप इसके बिना भी आगे बढ़ सकते हैं।',
+    evidenceBadgeRecommended: 'अनुशंसित',
+    evidenceBadgeRecommendedSafe: 'सुरक्षित होने पर अनुशंसित',
+    evidenceBadgeOptional: 'वैकल्पिक',
+  },
+  te: {
+    evidenceSectionRecommended: '4. ఫోటో / వీడియో సాక్ష్యం — సిఫార్సు చేయబడింది',
+    evidenceSectionRecommendedSafe: '4. ఫోటో / వీడియో సాక్ష్యం — సురక్షితమైతే సిఫార్సు చేయబడింది',
+    evidenceSectionOptional: '4. ఫోటో / వీడియో సాక్ష్యం — ఐచ్ఛికం',
+    evidenceHelpRecommended: 'ఏం జరిగిందో అర్థం చేసుకోవడానికి ఫోటో లేదా వీడియో సహాయపడుతుంది. సురక్షితంగా ఉన్నప్పుడే పంచుకోండి.',
+    evidenceHelpOptional: 'ఫోటో లేదా వీడియో ఐచ్ఛికం. ఇది లేకుండా కూడా మీరు కొనసాగవచ్చు.',
+    evidenceBadgeRecommended: 'సిఫార్సు చేయబడింది',
+    evidenceBadgeRecommendedSafe: 'సురక్షితమైతే సిఫార్సు చేయబడింది',
+    evidenceBadgeOptional: 'ఐచ్ఛికం',
+  },
+  ta: {
+    evidenceSectionRecommended: '4. புகைப்படம் / வீடியோ ஆதாரம் — பரிந்துரைக்கப்படுகிறது',
+    evidenceSectionRecommendedSafe: '4. புகைப்படம் / வீடியோ ஆதாரம் — பாதுகாப்பாக இருந்தால் பரிந்துரைக்கப்படுகிறது',
+    evidenceSectionOptional: '4. புகைப்படம் / வீடியோ ஆதாரம் — விருப்பத்தேர்வு',
+    evidenceHelpRecommended: 'என்ன நடந்தது என்பதைப் புரிந்து கொள்ள புகைப்படம் அல்லது வீடியோ உதவும். பாதுகாப்பாக இருந்தால் மட்டுமே பகிரவும்.',
+    evidenceHelpOptional: 'புகைப்படம் அல்லது வீடியோ விருப்பத்தேர்வு. இது இல்லாமலும் நீங்கள் தொடரலாம்.',
+    evidenceBadgeRecommended: 'பரிந்துரைக்கப்படுகிறது',
+    evidenceBadgeRecommendedSafe: 'பாதுகாப்பாக இருந்தால் பரிந்துரைக்கப்படுகிறது',
+    evidenceBadgeOptional: 'விருப்பத்தேர்வு',
+  },
+  kn: {
+    evidenceSectionRecommended: '4. ಫೋಟೋ / ವೀಡಿಯೊ ಸಾಕ್ಷ್ಯ — ಶಿಫಾರಸು ಮಾಡಲಾಗಿದೆ',
+    evidenceSectionRecommendedSafe: '4. ಫೋಟೋ / ವೀಡಿಯೊ ಸಾಕ್ಷ್ಯ — ಸುರಕ್ಷಿತವಾಗಿದ್ದಾಗ ಶಿಫಾರಸು ಮಾಡಲಾಗಿದೆ',
+    evidenceSectionOptional: '4. ಫೋಟೋ / ವೀಡಿಯೊ ಸಾಕ್ಷ್ಯ — ಐಚ್ಛಿಕ',
+    evidenceHelpRecommended: 'ಏನಾಯಿತು ಎಂದು ಅರ್ಥಮಾಡಿಕೊಳ್ಳಲು ಫೋಟೋ ಅಥವಾ ವೀಡಿಯೊ ಸಹಾಯ ಮಾಡುತ್ತದೆ. ಸುರಕ್ಷಿತವಾಗಿದ್ದಾಗ ಮಾತ್ರ ಹಂಚಿಕೊಳ್ಳಿ.',
+    evidenceHelpOptional: 'ಫೋಟೋ ಅಥವಾ ವೀಡಿಯೊ ಐಚ್ಛಿಕ. ನೀವು ಇದರ ಹೊರತಾಗಿಯೂ ಮುಂದುವರಿಯಬಹುದು.',
+    evidenceBadgeRecommended: 'ಶಿಫಾರಸು ಮಾಡಲಾಗಿದೆ',
+    evidenceBadgeRecommendedSafe: 'ಸುರಕ್ಷಿತವಾಗಿದ್ದಾಗ ಶಿಫಾರಸು ಮಾಡಲಾಗಿದೆ',
+    evidenceBadgeOptional: 'ಐಚ್ಛಿಕ',
+  },
+  ml: {
+    evidenceSectionRecommended: '4. ഫോട്ടോ / വീഡിയോ തെളിവ് — ശുപാർശ ചെയ്യുന്നത്',
+    evidenceSectionRecommendedSafe: '4. ഫോട്ടോ / വീഡിയോ തെളിവ് — സുരക്ഷിതമെങ്കിൽ ശുപാർശ ചെയ്യുന്നത്',
+    evidenceSectionOptional: '4. ഫോട്ടോ / വീഡിയോ തെളിവ് — നിർബന്ധമില്ല',
+    evidenceHelpRecommended: 'എന്താണ് സംഭവിച്ചതെന്ന് മനസ്സിലാക്കാൻ ഫോട്ടോയോ വീഡിയോയോ സഹായിക്കും. സുരക്ഷിതമാണെങ്കിൽ മാത്രം പങ്കിടുക.',
+    evidenceHelpOptional: 'ഫോട്ടോയോ വീഡിയോയോ നിർബന്ധമില്ല. ഇതില്ലാതെയും നിങ്ങൾക്ക് തുടരാം.',
+    evidenceBadgeRecommended: 'ശുപാർശ ചെയ്യുന്നത്',
+    evidenceBadgeRecommendedSafe: 'സുരക്ഷിതമെങ്കിൽ ശുപാർശ ചെയ്യുന്നത്',
+    evidenceBadgeOptional: 'നിർബന്ധമില്ല',
+  },
+  mr: {
+    evidenceSectionRecommended: '4. फोटो / व्हिडिओ पुरावा — शिफारस केलेले',
+    evidenceSectionRecommendedSafe: '4. फोटो / व्हिडिओ पुरावा — सुरक्षित असल्यास शिफारस केलेले',
+    evidenceSectionOptional: '4. फोटो / व्हिडिओ पुरावा — ऐच्छिक',
+    evidenceHelpRecommended: 'नेमके काय घडले हे समजून घेण्यासाठी फोटो किंवा व्हिडिओ मदत करतो. केवळ सुरक्षित असल्यास शेअर करा.',
+    evidenceHelpOptional: 'फोटो किंवा व्हिडिओ ऐच्छिक आहे. याशिवायही आपण पुढे जाऊ शकता.',
+    evidenceBadgeRecommended: 'शिफारस केलेले',
+    evidenceBadgeRecommendedSafe: 'सुरक्षित असल्यास शिफारस केलेले',
+    evidenceBadgeOptional: 'ऐच्छिक',
+  },
+  gu: {
+    evidenceSectionRecommended: '4. ફોટો / વિડિઓ પુરાવો — ભલામણ કરેલ',
+    evidenceSectionRecommendedSafe: '4. ફોટો / વિડિઓ પુરાવો — સલામત હોય તો ભલામણ કરેલ',
+    evidenceSectionOptional: '4. ફોટો / વિડિઓ પુરાવો — મરજિયાત',
+    evidenceHelpRecommended: 'શું બન્યું છે તે સમજવામાં ફોટો અથવા વિડિઓ મદદ કરે છે. જો સલામત હોય તો જ શેર કરો.',
+    evidenceHelpOptional: 'ફોટો અથવા વિડિઓ મરજિયાત છે. તમે તેના વિના પણ આગળ વધી શકો છો.',
+    evidenceBadgeRecommended: 'ભલામણ કરેલ',
+    evidenceBadgeRecommendedSafe: 'સલામત હોય તો ભલામણ કરેલ',
+    evidenceBadgeOptional: 'મરજિયાત',
+  },
+  bn: {
+    evidenceSectionRecommended: '৪. ছবি / ভিডিও প্রমাণ — প্রস্তাবিত',
+    evidenceSectionRecommendedSafe: '৪. ছবি / ভিডিও প্রমাণ — নিরাপদ হলে প্রস্তাবিত',
+    evidenceSectionOptional: '৪. ছবি / ভিডিও প্রমাণ — ঐচ্ছিক',
+    evidenceHelpRecommended: 'কী ঘটেছে তা বুঝতে ছবি বা ভিডিও সাহায্য করে। নিরাপদ হলেই কেবল শেয়ার করুন।',
+    evidenceHelpOptional: 'ছবি বা ভিডিও ঐচ্ছিক। এটি ছাড়াও আপনি এগিয়ে যেতে পারেন।',
+    evidenceBadgeRecommended: 'প্রস্তাবিত',
+    evidenceBadgeRecommendedSafe: 'নিরাপদ হলে প্রস্তাবিত',
+    evidenceBadgeOptional: 'ঐচ্ছিক',
+  },
+  pa: {
+    evidenceSectionRecommended: '4. ਫ਼ੋਟੋ / ਵੀਡੀਓ ਸਬੂਤ — ਸਿਫ਼ਾਰਸ਼ ਕੀਤੀ ਜਾਂਦੀ ਹੈ',
+    evidenceSectionRecommendedSafe: '4. ਫ਼ੋਟੋ / ਵੀਡੀਓ ਸਬੂਤ — ਸੁਰੱਖਿਅਤ ਹੋਣ ਤੇ ਸਿਫ਼ਾਰਸ਼',
+    evidenceSectionOptional: '4. ਫ਼ੋਟੋ / ਵੀਡੀਓ ਸਬੂਤ — ਮਰਜ਼ੀ ਅਨੁਸਾਰ',
+    evidenceHelpRecommended: 'ਕੀ ਵਾਪਰਿਆ ਹੈ ਸਮਝਣ ਵਿੱਚ ਫ਼ੋਟੋ ਜਾਂ ਵੀਡੀਓ ਮਦਦ ਕਰਦੀ ਹੈ। ਸਿਰਫ਼ ਸੁਰੱਖਿਅਤ ਹੋਣ ਤੇ ਹੀ ਸਾਂਝੀ ਕਰੋ।',
+    evidenceHelpOptional: 'ਫ਼ੋਟੋ ਜਾਂ ਵੀਡੀਓ ਮਰਜ਼ੀ ਅਨੁਸਾਰ ਹੈ। ਤੁਸੀਂ ਇਸਦੇ ਬਿਨਾਂ ਵੀ ਅੱਗੇ ਵੱਧ ਸਕਦੇ ਹੋ।',
+    evidenceBadgeRecommended: 'ਸਿਫ਼ਾਰਸ਼ ਕੀਤੀ ਜਾਂਦੀ ਹੈ',
+    evidenceBadgeRecommendedSafe: 'ਸੁਰੱਖਿਅਤ ਹੋਣ ਤੇ ਸਿਫ਼ਾਰਸ਼',
+    evidenceBadgeOptional: 'ਮਰਜ਼ੀ ਅਨੁਸਾਰ',
+  },
+  or: {
+    evidenceSectionRecommended: '4. ଫଟୋ / ଭିଡିଓ ପ୍ରମାଣ — ସୁପାରିଶ',
+    evidenceSectionRecommendedSafe: '4. ଫଟୋ / ଭିଡିଓ ପ୍ରମାଣ — ସୁରକ୍ଷିତ ଥିଲେ ସୁପାରିଶ',
+    evidenceSectionOptional: '4. ଫଟୋ / ଭିଡିଓ ପ୍ରମାଣ — ଐଚ୍ଛିକ',
+    evidenceHelpRecommended: 'କ’ଣ ଘଟିଛି ତାହା ବୁଝିବାରେ ଫଟୋ କିମ୍ବା ଭିଡିଓ ସାହାଯ୍ୟ କରେ। କେବଳ ସୁରକ୍ଷିତ ଥିଲେ ସେୟାର କରନ୍ତୁ।',
+    evidenceHelpOptional: 'ଫଟୋ କିମ୍ବା ଭିଡିଓ ଐଚ୍ଛିକ। ଆପଣ ଏହା ବିନା ମଧ୍ୟ ଆଗକୁ ବଢ଼ିପାରିବେ।',
+    evidenceBadgeRecommended: 'ସୁପାରିଶ',
+    evidenceBadgeRecommendedSafe: 'ସୁରକ୍ଷିତ ଥିଲେ ସୁପାରିଶ',
+    evidenceBadgeOptional: 'ଐଚ୍ଛିକ',
+  },
+  as: {
+    evidenceSectionRecommended: '৪. ফটো / ভিডিঅ’ প্ৰমাণ — পৰামৰ্শ দিয়া হৈছে',
+    evidenceSectionRecommendedSafe: '৪. ফটো / ভিডিঅ’ প্ৰমাণ — সুৰক্ষিত থাকিলে পৰামৰ্শ দিয়া হৈছে',
+    evidenceSectionOptional: '৪. ফটো / ভিডিঅ’ প্ৰমাণ — ঐচ্ছিক',
+    evidenceHelpRecommended: 'কি ঘটিছে সেয়া বুজিবলৈ ফটো বা ভিডিঅ’ই সহায় কৰে। সুৰক্ষিত থাকিলেহে শ্বেয়াৰ কৰিব।',
+    evidenceHelpOptional: 'ফটো বা ভিডিঅ’ ঐচ্ছিক। আপুনি ইয়াৰ অবিহনেও আগবাঢ়িব পাৰে।',
+    evidenceBadgeRecommended: 'পৰামৰ্শ দিয়া হৈছে',
+    evidenceBadgeRecommendedSafe: 'সুৰক্ষিত থাকিলে পৰামৰ্শ',
+    evidenceBadgeOptional: 'ঐচ্ছিক',
+  },
+  ur: {
+    evidenceSectionRecommended: '4. تصویر / ویڈیو ثبوت — تجویز کردہ',
+    evidenceSectionRecommendedSafe: '4. تصویر / ویڈیو ثبوت — محفوظ ہونے پر تجویز کردہ',
+    evidenceSectionOptional: '4. تصویر / ویڈیو ثبوت — اختیاری',
+    evidenceHelpRecommended: 'کیا ہوا ہے اسے سمجھنے میں تصویر یا ویڈیو مدد کرتی ہے۔ صرف محفوظ ہونے پر ہی شیئر کریں۔',
+    evidenceHelpOptional: 'تصویر یا ویڈیو اختیاری ہے۔ آپ اس کے بغیر بھی آگے بڑھ سکتے ہیں۔',
+    evidenceBadgeRecommended: 'تجویز کردہ',
+    evidenceBadgeRecommendedSafe: 'محفوظ ہونے پر تجویز کردہ',
+    evidenceBadgeOptional: 'اختیاری',
+  },
+  sd: {
+    evidenceSectionRecommended: '4. فوٽو / وڊيو ثبوت — تجويز ڪيل',
+    evidenceSectionRecommendedSafe: '4. فوٽو / وڊيو ثبوت — محفوظ هئڻ تي تجويز ڪيل',
+    evidenceSectionOptional: '4. فوٽو / وڊيو ثبوت — اختياري',
+    evidenceHelpRecommended: 'ڇا ٿيو آهي اهو سمجهڻ ۾ فوٽو يا وڊيو مدد ڪري ٿي. رڳو محفوظ هئڻ تي شيئر ڪريو.',
+    evidenceHelpOptional: 'فوٽو يا وڊيو اختياري آهي. توهان ان کانسواءِ به اڳتي وڌي سگهو ٿا.',
+    evidenceBadgeRecommended: 'تجويز ڪيل',
+    evidenceBadgeRecommendedSafe: 'محفوظ هئڻ تي تجويز ڪيل',
+    evidenceBadgeOptional: 'اختياري',
+  },
+  sa: {
+    evidenceSectionRecommended: '४. चित्रम् / चलचित्रम् प्रमाणम् — अनुशंसितम्',
+    evidenceSectionRecommendedSafe: '४. चित्रम् / चलचित्रम् प्रमाणम् — सुरक्षिते सति अनुशंसितम्',
+    evidenceSectionOptional: '४. चित्रम् / चलचित्रम् प्रमाणम् — ऐच्छिकम्',
+    evidenceHelpRecommended: 'किम् अभवत् इति ज्ञातुं चित्रं चलचित्रं वा साहाय्यं करोति। सुरक्षिते सति एव प्रेषयन्तु।',
+    evidenceHelpOptional: 'चित्रं चलचित्रं वा ऐच्छिकम्। विनापि भवन्तः अग्रे गन्तुं शक्नुवन्ति।',
+    evidenceBadgeRecommended: 'अनुशंसितम्',
+    evidenceBadgeRecommendedSafe: 'सुरक्षिते सति अनुशंसितम्',
+    evidenceBadgeOptional: 'ऐच्छिकम्',
+  },
+  ks: {
+    evidenceSectionRecommended: '4. تصویر / ویڈیو ثبوت — مشورہ دِنہٕ چھُ یوان',
+    evidenceSectionRecommendedSafe: '4. تصویر / ویڈیو ثبوت — محفوظ آسنس پؠٹھ مشورہ',
+    evidenceSectionOptional: '4. تصویر / ویڈیو ثبوت — مرضی مطٲبق',
+    evidenceHelpRecommended: 'کیاہ گوٚو تِہ سمجھنَس منٛز چھِ تصویر یا ویڈیو مدد کران۔ صِرِف محفوظ آسنس پؠٹھ شیئر کٔریو।',
+    evidenceHelpOptional: 'تصویر یا ویڈیو چھِ اختیاری۔ توٚہی ہؠکیو اَمیک بغیر تِہ برٛونٛہہ پٔکِتھ۔',
+    evidenceBadgeRecommended: 'مشورہ دِنہٕ چھُ یوان',
+    evidenceBadgeRecommendedSafe: 'محفوظ آسنس پؠٹھ مشورہ',
+    evidenceBadgeOptional: 'مرضی مطٲبق',
+  },
+  kok: {
+    evidenceSectionRecommended: '4. फोटो / व्हिडियो पुरावो — शिफारस केल्लें',
+    evidenceSectionRecommendedSafe: '4. फोटो / व्हिडियो पुरावो — सुरक्षीत आसल्यार शिफारस',
+    evidenceSectionOptional: '4. फोटो / व्हिडियो पुरावो — ऐच्छिक',
+    evidenceHelpRecommended: 'कितें घडलां तें समजूंक फोटो वा व्हिडियो मदत करता. सुरक्षीत आसल्यारच वांटा.',
+    evidenceHelpOptional: 'फोटो वा व्हिडियो ऐच्छिक आसा. हाच्या विरयत तुमी फुडें वचूं शकतात.',
+    evidenceBadgeRecommended: 'शिफारस केल्लें',
+    evidenceBadgeRecommendedSafe: 'सुरक्षीत आसल्यार शिफारस',
+    evidenceBadgeOptional: 'ऐच्छिक',
+  },
+  mai: {
+    evidenceSectionRecommended: '4. फोटो / वीडियो साक्ष्य — अनुशंसित',
+    evidenceSectionRecommendedSafe: '4. फोटो / वीडियो साक्ष्य — सुरक्षित रहला पर अनुशंसित',
+    evidenceSectionOptional: '4. फोटो / वीडियो साक्ष्य — ऐच्छिक',
+    evidenceHelpRecommended: 'की भेल से बुझय लेल फोटो या वीडियो मद्दति करैत अछि। सुरक्षितावस्था मे ही साझा करू।',
+    evidenceHelpOptional: 'फोटो या वीडियो ऐच्छिक अछि। अहाँ एकरा बिनु सेहो आगू बढ़ि सकैत छी।',
+    evidenceBadgeRecommended: 'अनुशंसित',
+    evidenceBadgeRecommendedSafe: 'सुरक्षित रहला पर अनुशंसित',
+    evidenceBadgeOptional: 'ऐच्छिक',
+  },
+  mni: {
+    evidenceSectionRecommended: '৪. ফোতো / ভিদিও খুদম — অপাম্বা',
+    evidenceSectionRecommendedSafe: '৪. ফোতো / ভিদিও খুদম — অশোয়-ঙামদ্রবদি অপাম্বা',
+    evidenceSectionOptional: '৪. ফোতো / ভিদিও খুদম — পাম্লবদি',
+    evidenceHelpRecommended: 'করি থোকখিগে খঙবদা ফোতো নত্রগা ভিদিওনা মতেং পাংই। অশোয়-ঙামদ্রবদি খক্তদা শিয়র তৌবিয়ু।',
+    evidenceHelpOptional: 'ফোতো নত্রগা ভিদিও অসি পাম্লবদি তৌবা য়াই। মসি য়াওদনা মখাতাবা য়াগনি।',
+    evidenceBadgeRecommended: 'অপাম্বা',
+    evidenceBadgeRecommendedSafe: 'অশোয়-ঙামদ্রবদি অপাম্বা',
+    evidenceBadgeOptional: 'পাম্লবদি',
+  },
+  ne: {
+    evidenceSectionRecommended: '4. फोटो / भिडियो प्रमाण — सिफारिस गरिएको',
+    evidenceSectionRecommendedSafe: '4. फोटो / भिडियो प्रमाण — सुरक्षित हुँदा सिफारिस',
+    evidenceSectionOptional: '4. फोटो / भिडियो प्रमाण — ऐच्छिक',
+    evidenceHelpRecommended: 'के भयो भनेर बुझ्न फोटो वा भिडियोले सहयोग गर्छ। सुरक्षित हुँदा मात्र सेयर गर्नुहोस्।',
+    evidenceHelpOptional: 'फोटो वा भिडियो ऐच्छिक हो। तपाईं यस बिना पनि अघि बढ्न सक्नुहुन्छ।',
+    evidenceBadgeRecommended: 'सिफारिस गरिएको',
+    evidenceBadgeRecommendedSafe: 'सुरक्षित हुँदा सिफारिस',
+    evidenceBadgeOptional: 'ऐच्छिक',
+  },
+  brx: {
+    evidenceSectionRecommended: '4. फटो / भिदिঅ’ साखि — सिफारिस खालामनाय',
+    evidenceSectionRecommendedSafe: '4. फटो / भिदिঅ’ साखि — रैखाथि थायोब्ला सिफारिस',
+    evidenceSectionOptional: '4. फटो / भिदिঅ’ साखि — नांगौब्ला',
+    evidenceHelpRecommended: 'मा जादों बुजिनायाव फटो एबा भिदिঅ’आ हेफाजाब होयो। रैखाथि दंब्लासो सेयार खालाम।',
+    evidenceHelpOptional: 'फटो एबा भिदिঅ’आ नांगौब्लासो। नोंथाङा बेनि अनगायैबो साबसिनै थांनो हागोन।',
+    evidenceBadgeRecommended: 'सिफारिस खालामनाय',
+    evidenceBadgeRecommendedSafe: 'रैखाथि थायोब्ला सिफारिस',
+    evidenceBadgeOptional: 'नांगौब्ला',
+  },
+  sat: {
+    evidenceSectionRecommended: '4. ᱯᱷᱳᱴᱳ / ᱵᱷᱤᱰᱤᱭᱳ ᱯᱨᱚᱢᱟᱱ — ᱥᱤᱯᱷᱟᱨᱤᱥ',
+    evidenceSectionRecommendedSafe: '4. ᱯᱷᱳᱴᱳ / ᱵᱷᱤᱰᱤᱭᱳ ᱯᱨᱚᱢᱟᱱ — ᱥᱩᱨᱚᱠᱷᱤᱛ ᱨᱮ ᱥᱤᱯᱷᱟᱨᱤᱥ',
+    evidenceSectionOptional: '4. ᱯᱷᱳᱴᱳ / ᱵᱷᱤᱰᱤᱭᱳ ᱯᱨᱚᱢᱟᱱ — ᱤᱪᱷᱟᱹ ᱞᱮᱠᱟᱛᱮ',
+    evidenceHelpRecommended: 'ᱪᱮᱫ ᱦᱩᱭ ᱟᱠᱟᱱᱟ ᱵᱟᱰᱟᱭ ᱞᱟᱹᱜᱤᱫ ᱯᱷᱳᱴᱳ ᱥᱮ ᱵᱷᱤᱰᱤᱭᱳ ᱜᱚᱲᱚᱭ ᱮᱢᱟ᱾ ᱥᱩᱨᱚᱠᱷᱤᱛ ᱛᱟᱦᱮᱸᱱ ᱨᱮᱜᱮ ᱥᱮᱭᱟᱨ ᱢᱮ᱾',
+    evidenceHelpOptional: 'ᱯᱷᱳᱴᱳ ᱥᱮ ᱵᱷᱤᱰᱤᱭᱳ ᱫᱚ ᱤᱪᱷᱟᱹ ᱞᱮᱠᱟᱛᱮ᱾ ᱱᱚᱶᱟ ᱵᱮᱜᱚᱨ ᱦᱚᱸ ᱟᱢ ᱞᱟᱦᱟ ᱫᱟᱲᱮᱭᱟᱜ-ᱟᱢ᱾',
+    evidenceBadgeRecommended: 'ᱥᱤᱯᱷᱟᱨᱤᱥ',
+    evidenceBadgeRecommendedSafe: 'ᱥᱩᱨᱚᱠᱷᱤᱛ ᱨᱮ ᱥᱤᱯᱷᱟᱨᱤᱥ',
+    evidenceBadgeOptional: 'ᱤᱪᱷᱟᱹ ᱞᱮᱠᱟᱛᱮ',
+  },
+  doi: {
+    evidenceSectionRecommended: '4. फोटो / वीडियो सबूत — सिफारिश कीती गेई',
+    evidenceSectionRecommendedSafe: '4. फोटो / वीडियो सबूत — महफूज होन पर सिफारिश',
+    evidenceSectionOptional: '4. फोटो / वीडियो सबूत — मर्जी कन्नै',
+    evidenceHelpRecommended: 'केह् होआ ऐ समझने च फोटो या वीडियो मदद करदी ऐ। सिर्फ महफूज होने पर ही साझी करो।',
+    evidenceHelpOptional: 'फोटो या वीडियो मर्जी कन्नै ऐ। तुस इसदे बगैर बी अग्गें बद्धी सकदे ओ।',
+    evidenceBadgeRecommended: 'सिफारिश कीती गेई',
+    evidenceBadgeRecommendedSafe: 'महफूज होन पर सिफारिश',
+    evidenceBadgeOptional: 'मर्जी कन्नै',
+  },
+};
+
+// Merge evidence translations and category-aware labels into each language in TRANSLATIONS
 Object.keys(EVIDENCE_TRANSLATIONS).forEach((langKey) => {
   if (TRANSLATIONS[langKey]) {
     Object.assign(TRANSLATIONS[langKey], EVIDENCE_TRANSLATIONS[langKey]);
+    if (EVIDENCE_CATEGORY_LABELS[langKey]) {
+      Object.assign(TRANSLATIONS[langKey], EVIDENCE_CATEGORY_LABELS[langKey]);
+    }
   }
 });
+
+// Dynamic Category-Aware Evidence Title Helper
+export function getEvidenceSectionTitle(langCode = 'en', emergencyType = '') {
+  const norm = String(emergencyType || '').toLowerCase();
+  const langObj = TRANSLATIONS[langCode] || TRANSLATIONS.en;
+  if (norm.includes('road') || norm.includes('accident') || norm.includes('fire')) {
+    return langObj.evidenceSectionRecommended || '4. Photo / Video Evidence — Recommended';
+  }
+  if (
+    norm.includes('crime') ||
+    norm.includes('safety') ||
+    norm.includes('flood') ||
+    norm.includes('disaster') ||
+    norm.includes('natural')
+  ) {
+    return langObj.evidenceSectionRecommendedSafe || '4. Photo / Video Evidence — Recommended when safe';
+  }
+  return langObj.evidenceSectionOptional || '4. Photo / Video Evidence — Optional';
+}
+
+// Dynamic Category-Aware Evidence Help Text Helper
+export function getEvidenceSectionHelp(langCode = 'en', emergencyType = '') {
+  const norm = String(emergencyType || '').toLowerCase();
+  const langObj = TRANSLATIONS[langCode] || TRANSLATIONS.en;
+  if (norm.includes('medical') || norm.includes('other')) {
+    return langObj.evidenceHelpOptional || 'Photo or video is optional. You can continue without it.';
+  }
+  return langObj.evidenceHelpRecommended || 'Photo or video helps us understand what happened. Only share it if it is safe.';
+}
 
 // Helper: Get language metadata
 export function getLanguage(code) {

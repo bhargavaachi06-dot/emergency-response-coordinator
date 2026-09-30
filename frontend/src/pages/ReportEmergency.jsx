@@ -284,50 +284,64 @@ export default function ReportEmergency() {
   // Helper: Category-aware evidence requirement
   const getEvidenceRequirement = (rawType = form.type) => {
     const norm = String(rawType || '').toLowerCase();
+    const currentLangObj = TRANSLATIONS[lang] || TRANSLATIONS.en;
+
     if (norm.includes('road') || norm.includes('accident')) {
       return {
         level: 'recommended',
-        badgeText: t.evidenceRecommended || 'Photo or video recommended',
-        note: t.evidenceHelpText || 'Photo or video can help the response team assess the situation.',
+        sectionTitle: currentLangObj.evidenceSectionRecommended || '4. Photo / Video Evidence — Recommended',
+        badgeText: currentLangObj.evidenceBadgeRecommended || 'Recommended',
+        note: currentLangObj.evidenceHelpRecommended || 'Photo or video helps us understand what happened. Only share it if it is safe.',
+        simpleHelp: currentLangObj.evidenceHelpRecommended || 'Photo or video helps us understand what happened. Only share it if it is safe.',
         isSafetyAlert: false,
       };
     }
     if (norm.includes('fire')) {
       return {
         level: 'recommended',
-        badgeText: t.evidenceRecommended || 'Photo or video recommended',
-        note: t.evidenceHelpText || 'Photo or video can help the response team assess the situation.',
+        sectionTitle: currentLangObj.evidenceSectionRecommended || '4. Photo / Video Evidence — Recommended',
+        badgeText: currentLangObj.evidenceBadgeRecommended || 'Recommended',
+        note: currentLangObj.evidenceHelpRecommended || 'Photo or video helps us understand what happened. Only share it if it is safe.',
+        simpleHelp: currentLangObj.evidenceHelpRecommended || 'Photo or video helps us understand what happened. Only share it if it is safe.',
         isSafetyAlert: false,
       };
     }
     if (norm.includes('crime') || norm.includes('safety')) {
       return {
         level: 'recommended_safe',
-        badgeText: t.evidenceRecommended || 'Photo or video recommended',
-        note: t.safeCaptureWarning || 'Only capture evidence if it is safe to do so. Do not put yourself or others in danger.',
+        sectionTitle: currentLangObj.evidenceSectionRecommendedSafe || '4. Photo / Video Evidence — Recommended when safe',
+        badgeText: currentLangObj.evidenceBadgeRecommendedSafe || 'Recommended when safe',
+        note: currentLangObj.evidenceHelpRecommended || 'Photo or video helps us understand what happened. Only share it if it is safe.',
+        simpleHelp: currentLangObj.evidenceHelpRecommended || 'Photo or video helps us understand what happened. Only share it if it is safe.',
         isSafetyAlert: true,
       };
     }
     if (norm.includes('disaster') || norm.includes('flood') || norm.includes('natural')) {
       return {
         level: 'recommended_safe',
-        badgeText: t.evidenceRecommended || 'Photo or video recommended',
-        note: t.safeCaptureWarning || 'Only capture evidence if it is safe to do so. Do not put yourself or others in danger.',
+        sectionTitle: currentLangObj.evidenceSectionRecommendedSafe || '4. Photo / Video Evidence — Recommended when safe',
+        badgeText: currentLangObj.evidenceBadgeRecommendedSafe || 'Recommended when safe',
+        note: currentLangObj.evidenceHelpRecommended || 'Photo or video helps us understand what happened. Only share it if it is safe.',
+        simpleHelp: currentLangObj.evidenceHelpRecommended || 'Photo or video helps us understand what happened. Only share it if it is safe.',
         isSafetyAlert: true,
       };
     }
     if (norm.includes('medical')) {
       return {
         level: 'optional',
-        badgeText: t.evidenceOptional || 'Evidence optional',
-        note: 'Prioritize getting medical help quickly. Never delay assistance to capture media.',
+        sectionTitle: currentLangObj.evidenceSectionOptional || '4. Photo / Video Evidence — Optional',
+        badgeText: currentLangObj.evidenceBadgeOptional || 'Optional',
+        note: currentLangObj.evidenceHelpOptional || 'Photo or video is optional. You can continue without it.',
+        simpleHelp: currentLangObj.evidenceHelpOptional || 'Photo or video is optional. You can continue without it.',
         isSafetyAlert: false,
       };
     }
     return {
       level: 'optional',
-      badgeText: t.evidenceOptional || 'Evidence optional',
-      note: t.evidenceHelpText || 'Photo or video can help the response team assess the situation.',
+      sectionTitle: currentLangObj.evidenceSectionOptional || '4. Photo / Video Evidence — Optional',
+      badgeText: currentLangObj.evidenceBadgeOptional || 'Optional',
+      note: currentLangObj.evidenceHelpOptional || 'Photo or video is optional. You can continue without it.',
+      simpleHelp: currentLangObj.evidenceHelpOptional || 'Photo or video is optional. You can continue without it.',
       isSafetyAlert: false,
     };
   };
@@ -987,25 +1001,25 @@ export default function ReportEmergency() {
                   <div className="d-flex align-items-center gap-2">
                     <i className="bi bi-camera-reels-fill text-info fs-5" aria-hidden="true"></i>
                     <h2 className="report-section-title m-0" id="simple-evidence-heading">
-                      {t.evidenceTitle || 'ADD PHOTO OR VIDEO'}
+                      {reqInfo.sectionTitle}
                     </h2>
                   </div>
                   {/* Category-aware requirement badge */}
                   <span
                     className={`badge ${
-                      getEvidenceRequirement().level.startsWith('recommended')
+                      reqInfo.level.startsWith('recommended')
                         ? 'bg-warning text-dark'
                         : 'bg-secondary text-light'
                     }`}
                     style={{ fontSize: '12px', padding: '6px 12px', borderRadius: '8px', fontWeight: 700 }}
                   >
-                    {getEvidenceRequirement().badgeText}
+                    {reqInfo.badgeText}
                   </span>
                 </div>
 
                 <div className="report-section-body">
                   <p className="text-secondary mb-3" style={{ fontSize: '14px', lineHeight: 1.5 }}>
-                    {getEvidenceRequirement().note}
+                    {reqInfo.simpleHelp}
                   </p>
 
                   {/* Safety Alert Warning Banner (Requirement 5) */}
@@ -1586,13 +1600,13 @@ export default function ReportEmergency() {
                     {/* Photo + Video Evidence Verification Section */}
                     <div className="report-input-group">
                       <div className="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
-                        <label className="report-label m-0">
+                        <label className="report-label m-0" id="std-evidence-label">
                           <i className="bi bi-camera-reels-fill text-info me-2" aria-hidden="true"></i>
-                          {t.evidenceTitle || 'EVIDENCE (PHOTO / VIDEO)'}
+                          {reqInfo.sectionTitle}
                         </label>
                         <span
                           className={`badge ${
-                            reqInfo.level === 'recommended'
+                            reqInfo.level.startsWith('recommended')
                               ? 'bg-warning text-dark'
                               : 'bg-secondary text-light'
                           }`}
@@ -1603,7 +1617,7 @@ export default function ReportEmergency() {
                       </div>
 
                       <p className="text-secondary small mb-2">
-                        {t.evidenceHelpText || 'Photo or video can help the response team assess the situation.'}
+                        {reqInfo.simpleHelp}
                       </p>
 
                       {/* Safety Message Banner */}
