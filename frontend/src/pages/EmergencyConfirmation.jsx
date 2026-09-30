@@ -134,7 +134,7 @@ export default function EmergencyConfirmation() {
   if (typeof ai === "string") {
     try {
       ai = JSON.parse(ai);
-    } catch (e) {
+    } catch {
       // ignore
     }
   }
@@ -272,11 +272,11 @@ export default function EmergencyConfirmation() {
               <div
                 style={{
                   fontSize: 13.5,
-                  opacity: 0.8,
+                  opacity: 0.9,
+                  lineHeight: 1.45,
                 }}
               >
-                Your emergency has been successfully
-                registered with the response system.
+                Your emergency report was received. Your information has been sent to the response coordination system. A coordinator will review the report and coordinate the response.
               </div>
 
             </div>
