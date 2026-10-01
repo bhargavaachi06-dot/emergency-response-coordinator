@@ -1,7 +1,51 @@
 import { signInWithGoogleOAuth, firebaseSignOut } from "./firebase";
+import { AUTH_ENDPOINTS, API_ROOT_URL } from "../config/apiConfig";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 const TOKEN_KEY = "emergency_auth_token";
+
+/**
+ * Format user-facing error messages safely
+ */
+function formatAuthError(error, response) {
+  if (response) {
+    if (response.status >= 500) {
+      return "The authentication server is temporarily unavailable. Please try again.";
+    }
+  }
+
+  const rawMessage = (error?.message || String(error || "")).toLowerCase();
+
+  if (
+    rawMessage.includes("failed to fetch") ||
+    rawMessage.includes("networkerror") ||
+    rawMessage.includes("load failed") ||
+    rawMessage.includes("network request failed") ||
+    rawMessage.includes("connection refused")
+  ) {
+    return "Unable to connect to the emergency response server. Please check your internet connection and try again.";
+  }
+
+  if (rawMessage.includes("cors") || rawMessage.includes("cross-origin")) {
+    return "Authentication service configuration needs attention.";
+  }
+
+  return error?.message || "Authentication request failed. Please try again.";
+}
+
+/**
+ * Safe development diagnostics logger
+ * Never logs OTPs, JWTs, passwords, or sensitive payloads
+ */
+function safeDevLog(method, endpointUrl, status, statusText) {
+  if (typeof import.meta !== "undefined" && import.meta.env && import.meta.env.DEV) {
+    try {
+      const parsed = new URL(endpointUrl);
+      console.log(`[API Diagnostic] ${method} ${parsed.hostname}${parsed.pathname} [${status || "ERR"}] ${statusText || ""}`);
+    } catch {
+      console.log(`[API Diagnostic] ${method} ${endpointUrl} [${status || "ERR"}]`);
+    }
+  }
+}
 
 export const authService = {
   // --------------------------------------------------
@@ -47,38 +91,44 @@ export const authService = {
   // 1. MOBILE OTP
   // --------------------------------------------------
   async sendMobileOtp(countryCode, mobileNumber) {
+    const endpoint = AUTH_ENDPOINTS.mobileSendOtp;
     try {
-      const res = await fetch(`${API_BASE_URL}/api/auth/mobile/send-otp`, {
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ countryCode, mobileNumber }),
       });
+      safeDevLog("POST", endpoint, res.status, res.statusText);
       const data = await res.json();
       return data;
     } catch (error) {
+      safeDevLog("POST", endpoint, 0, error.message);
       return {
         success: false,
-        message: error.message || "Failed to send mobile OTP. Please check your connection.",
+        message: formatAuthError(error),
       };
     }
   },
 
   async verifyMobileOtp(countryCode, mobileNumber, otp, isLogin = false) {
+    const endpoint = AUTH_ENDPOINTS.mobileVerifyOtp;
     try {
-      const res = await fetch(`${API_BASE_URL}/api/auth/mobile/verify-otp`, {
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ countryCode, mobileNumber, otp, isLogin }),
       });
+      safeDevLog("POST", endpoint, res.status, res.statusText);
       const data = await res.json();
       if (data.success && data.token) {
         this.setToken(data.token);
       }
       return data;
     } catch (error) {
+      safeDevLog("POST", endpoint, 0, error.message);
       return {
         success: false,
-        message: error.message || "Verification failed. Please try again.",
+        message: formatAuthError(error),
       };
     }
   },
@@ -87,38 +137,44 @@ export const authService = {
   // 2. EMAIL OTP
   // --------------------------------------------------
   async sendEmailOtp(email) {
+    const endpoint = AUTH_ENDPOINTS.emailSendOtp;
     try {
-      const res = await fetch(`${API_BASE_URL}/api/auth/email/send-otp`, {
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
+      safeDevLog("POST", endpoint, res.status, res.statusText);
       const data = await res.json();
       return data;
     } catch (error) {
+      safeDevLog("POST", endpoint, 0, error.message);
       return {
         success: false,
-        message: error.message || "Failed to send email OTP. Please check your connection.",
+        message: formatAuthError(error),
       };
     }
   },
 
   async verifyEmailOtp(email, otp, isLogin = false) {
+    const endpoint = AUTH_ENDPOINTS.emailVerifyOtp;
     try {
-      const res = await fetch(`${API_BASE_URL}/api/auth/email/verify-otp`, {
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, otp, isLogin }),
       });
+      safeDevLog("POST", endpoint, res.status, res.statusText);
       const data = await res.json();
       if (data.success && data.token) {
         this.setToken(data.token);
       }
       return data;
     } catch (error) {
+      safeDevLog("POST", endpoint, 0, error.message);
       return {
         success: false,
-        message: error.message || "Verification failed. Please try again.",
+        message: formatAuthError(error),
       };
     }
   },
@@ -133,8 +189,9 @@ export const authService = {
         return oauthResult;
       }
 
+      const endpoint = AUTH_ENDPOINTS.google;
       // Send authenticated Google profile to backend for verification and account linking
-      const res = await fetch(`${API_BASE_URL}/api/auth/google`, {
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -145,6 +202,7 @@ export const authService = {
           googleToken: oauthResult.idToken,
         }),
       });
+      safeDevLog("POST", endpoint, res.status, res.statusText);
 
       const data = await res.json();
       if (data.success && data.token) {
@@ -152,29 +210,33 @@ export const authService = {
       }
       return data;
     } catch (error) {
+      safeDevLog("POST", AUTH_ENDPOINTS.google, 0, error.message);
       return {
         success: false,
-        message: error.message || "Google authentication failed",
+        message: formatAuthError(error),
       };
     }
   },
 
   async linkGoogleMobile(email, countryCode, mobileNumber, otp) {
+    const endpoint = AUTH_ENDPOINTS.googleLinkMobile;
     try {
-      const res = await fetch(`${API_BASE_URL}/api/auth/google/link-mobile`, {
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, countryCode, mobileNumber, otp }),
       });
+      safeDevLog("POST", endpoint, res.status, res.statusText);
       const data = await res.json();
       if (data.success && data.token) {
         this.setToken(data.token);
       }
       return data;
     } catch (error) {
+      safeDevLog("POST", endpoint, 0, error.message);
       return {
         success: false,
-        message: error.message || "Failed to link mobile to Google account",
+        message: formatAuthError(error),
       };
     }
   },
@@ -183,8 +245,9 @@ export const authService = {
   // 4. SIGN UP REGISTRATION
   // --------------------------------------------------
   async registerUser({ name, email, countryCode, mobileNumber, profilePhoto }) {
+    const endpoint = AUTH_ENDPOINTS.register;
     try {
-      const res = await fetch(`${API_BASE_URL}/api/auth/register`, {
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -195,15 +258,17 @@ export const authService = {
           profilePhoto: profilePhoto || null,
         }),
       });
+      safeDevLog("POST", endpoint, res.status, res.statusText);
       const data = await res.json();
       if (data.success && data.token) {
         this.setToken(data.token);
       }
       return data;
     } catch (error) {
+      safeDevLog("POST", endpoint, 0, error.message);
       return {
         success: false,
-        message: error.message || "Account creation failed",
+        message: formatAuthError(error),
       };
     }
   },
@@ -215,11 +280,13 @@ export const authService = {
     const token = this.getToken();
     if (!token) return null;
 
+    const endpoint = AUTH_ENDPOINTS.me;
     try {
-      const res = await fetch(`${API_BASE_URL}/api/auth/me`, {
+      const res = await fetch(endpoint, {
         method: "GET",
         headers: this.getAuthHeaders(),
       });
+      safeDevLog("GET", endpoint, res.status, res.statusText);
 
       if (!res.ok) {
         if (res.status === 401 || res.status === 403) {
@@ -231,7 +298,8 @@ export const authService = {
       const data = await res.json();
       return data.user || null;
     } catch (error) {
-      console.warn("Failed to fetch user session:", error);
+      safeDevLog("GET", endpoint, 0, error.message);
+      console.warn("Failed to fetch user session:", formatAuthError(error));
       return null;
     }
   },
@@ -242,5 +310,10 @@ export const authService = {
   async logout() {
     this.clearToken();
     await firebaseSignOut();
+  },
+
+  // Expose root URL for diagnostics
+  getApiRoot() {
+    return API_ROOT_URL;
   },
 };

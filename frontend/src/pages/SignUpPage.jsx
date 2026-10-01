@@ -24,6 +24,14 @@ export default function SignUpPage() {
 
   const t = (key) => getAuthText(key, citizenLanguage);
 
+  const getCleanError = (err, fallbackKey = "networkError") => {
+    const msg = (err?.message || String(err || "")).toLowerCase();
+    if (msg.includes("failed to fetch") || msg.includes("networkerror") || msg.includes("load failed") || msg.includes("connection refused")) {
+      return t("networkError");
+    }
+    return err?.message || t(fallbackKey);
+  };
+
   // Hidden file inputs for Camera & Gallery
   const cameraInputRef = useRef(null);
   const galleryInputRef = useRef(null);
@@ -131,7 +139,7 @@ export default function SignUpPage() {
         setError(res.message || "Failed to send mobile OTP");
       }
     } catch (err) {
-      setError(err.message || t("networkError"));
+      setError(getCleanError(err, "networkError"));
     } finally {
       setLoading(false);
     }
@@ -162,7 +170,7 @@ export default function SignUpPage() {
         setError(res.message || t("incorrectOtp"));
       }
     } catch (err) {
-      setError(err.message || t("incorrectOtp"));
+      setError(getCleanError(err, "incorrectOtp"));
     } finally {
       setLoading(false);
     }
@@ -180,7 +188,7 @@ export default function SignUpPage() {
         setError(res.message || "Failed to resend mobile OTP");
       }
     } catch (err) {
-      setError(err.message || t("networkError"));
+      setError(getCleanError(err, "networkError"));
     } finally {
       setLoading(false);
     }
@@ -207,7 +215,7 @@ export default function SignUpPage() {
         setStep(3); // Still advance so user sees retry
       }
     } catch (err) {
-      setError(err.message || t("networkError"));
+      setError(getCleanError(err, "networkError"));
       setStep(3);
     } finally {
       setLoading(false);
@@ -235,7 +243,7 @@ export default function SignUpPage() {
         setError(res.message || t("incorrectOtp"));
       }
     } catch (err) {
-      setError(err.message || t("incorrectOtp"));
+      setError(getCleanError(err, "incorrectOtp"));
     } finally {
       setLoading(false);
     }
@@ -253,7 +261,7 @@ export default function SignUpPage() {
         setError(res.message || "Failed to resend email OTP");
       }
     } catch (err) {
-      setError(err.message || t("networkError"));
+      setError(getCleanError(err, "networkError"));
     } finally {
       setLoading(false);
     }
@@ -284,7 +292,7 @@ export default function SignUpPage() {
         setError(res.message || "Registration failed");
       }
     } catch (err) {
-      setError(err.message || "Registration failed. Please try again.");
+      setError(getCleanError(err, "networkError"));
     } finally {
       setLoading(false);
     }
