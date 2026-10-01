@@ -3,37 +3,122 @@ import {
   getAuth,
   GoogleAuthProvider,
   signInWithPopup,
-  RecaptchaVerifier,
-  signInWithPhoneNumber,
   signOut,
 } from "firebase/auth";
 
-// Firebase configuration using Vite environment variables
-// Replace with your Firebase console project settings in frontend/.env
+/**
+ * Central Firebase Configuration
+ * Emergency Response Coordinator
+ *
+ * Uses Vite environment variables via import.meta.env
+ * Lazy-initialized only when Google OAuth is explicitly requested
+ */
+const env = (typeof import.meta !== "undefined" && import.meta.env) ? import.meta.env : {};
+
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDemo-Placeholder-KeyForBuild2026",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "emergency-response-coordinator.firebaseapp.com",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "emergency-response-coordinator",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "emergency-response-coordinator.appspot.com",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "123456789012",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:123456789012:web:abcdef123456",
+  apiKey: env.VITE_FIREBASE_API_KEY,
+  authDomain: env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: env.VITE_FIREBASE_APP_ID,
 };
 
-// Initialize Firebase App singleton safely
-const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-const auth = getAuth(app);
+/**
+ * Validate that required Firebase configuration fields exist and are not placeholders
+ */
+export function isFirebaseConfigured() {
+  const { apiKey, projectId, appId } = firebaseConfig;
 
-// Configure Google Auth Provider with account selector
-const googleProvider = new GoogleAuthProvider();
-googleProvider.setCustomParameters({
-  prompt: "select_account",
-});
+  if (
+    !apiKey ||
+    typeof apiKey !== "string" ||
+    !apiKey.trim() ||
+    apiKey.includes("Placeholder") ||
+    apiKey.includes("Demo")
+  ) {
+    return false;
+  }
+
+  if (!projectId || typeof projectId !== "string" || !projectId.trim()) {
+    return false;
+  }
+
+  if (!appId || typeof appId !== "string" || !appId.trim()) {
+    return false;
+  }
+
+  return true;
+}
+
+// Development Diagnostic (never logs full API key or secrets)
+if (typeof import.meta !== "undefined" && import.meta.env && import.meta.env.DEV) {
+  const isConfigured = isFirebaseConfigured();
+  console.log(
+    `[Firebase Diagnostic] Configuration present: ${isConfigured}${
+      isConfigured && firebaseConfig.projectId ? ` (Project: ${firebaseConfig.projectId})` : ""
+    }`
+  );
+}
+
+// Lazy Singletons
+let firebaseApp = null;
+let firebaseAuth = null;
+let googleProvider = null;
 
 /**
- * Perform real Google OAuth Sign-In
- * Supports both Popup (desktop browsers) and Redirect (mobile/Capacitor WebView)
+ * Lazy-initialize Firebase only when Google Authentication is requested.
+ * Prevents module-load crashes when Firebase is not configured or when
+ * users authenticate via Mobile OTP or Email OTP.
+ */
+export function getFirebaseAuth() {
+  if (!isFirebaseConfigured()) {
+    return null;
+  }
+
+  if (!firebaseAuth) {
+    try {
+      firebaseApp = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+      firebaseAuth = getAuth(firebaseApp);
+    } catch (err) {
+      console.warn("Failed to initialize Firebase Auth:", err.message);
+      return null;
+    }
+  }
+
+  return firebaseAuth;
+}
+
+/**
+ * Perform Google OAuth Sign-In
+ * Only initializes Firebase upon user action
  */
 export async function signInWithGoogleOAuth() {
+  // 1. Verify Firebase configuration before attempting initialization
+  if (!isFirebaseConfigured()) {
+    return {
+      success: false,
+      error: "Google sign-in is not configured. Please try another sign-in method.",
+    };
+  }
+
+  // 2. Lazy-initialize auth instance
+  const auth = getFirebaseAuth();
+  if (!auth) {
+    return {
+      success: false,
+      error: "Google sign-in is not configured. Please try another sign-in method.",
+    };
+  }
+
+  // 3. Initialize Google Auth Provider singleton
+  if (!googleProvider) {
+    googleProvider = new GoogleAuthProvider();
+    googleProvider.setCustomParameters({
+      prompt: "select_account",
+    });
+  }
+
   try {
     const result = await signInWithPopup(auth, googleProvider);
     const user = result.user;
@@ -47,11 +132,13 @@ export async function signInWithGoogleOAuth() {
       idToken: await user.getIdToken(),
     };
   } catch (error) {
-    console.error("Google OAuth error:", error);
-    
-    // Provide user-friendly message based on Firebase error code
+    console.error("Google OAuth error code:", error.code);
+
     let userMessage = "Google authentication failed. Please try again.";
-    if (error.code === "auth/popup-closed-by-user") {
+
+    if (error.code === "auth/api-key-not-valid" || error.code === "auth/invalid-api-key") {
+      userMessage = "Google sign-in is not configured. Please try another sign-in method.";
+    } else if (error.code === "auth/popup-closed-by-user") {
       userMessage = "Google sign-in was closed before completing.";
     } else if (error.code === "auth/cancelled-popup-request") {
       userMessage = "Sign-in cancelled.";
@@ -59,8 +146,8 @@ export async function signInWithGoogleOAuth() {
       userMessage = "Network error. Please check your internet connection.";
     } else if (error.code === "auth/account-exists-with-different-credential") {
       userMessage = "An account already exists with the same email using a different sign-in method.";
-    } else if (error.message) {
-      userMessage = error.message;
+    } else if (error.code === "auth/operation-not-allowed") {
+      userMessage = "Google sign-in is not enabled in this Firebase project.";
     }
 
     return {
@@ -72,55 +159,14 @@ export async function signInWithGoogleOAuth() {
 }
 
 /**
- * Real Firebase Phone Auth with reCAPTCHA verifier
+ * Safe Firebase Sign Out (only invokes signOut if Firebase was initialized)
  */
-export function setupRecaptcha(containerId = "recaptcha-container") {
-  if (typeof window === "undefined") return null;
-
-  if (window.recaptchaVerifier) {
+export async function firebaseSignOut() {
+  if (firebaseAuth) {
     try {
-      window.recaptchaVerifier.clear();
-    } catch {
-      // ignore
+      await signOut(firebaseAuth);
+    } catch (err) {
+      console.warn("Firebase sign out warning:", err);
     }
   }
-
-  window.recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
-    size: "invisible",
-    callback: () => {
-      // reCAPTCHA solved
-    },
-    "expired-callback": () => {
-      console.warn("reCAPTCHA expired. Resetting...");
-    },
-  });
-
-  return window.recaptchaVerifier;
 }
-
-export async function sendFirebasePhoneOtp(formattedPhoneNumber, appVerifier) {
-  try {
-    const confirmationResult = await signInWithPhoneNumber(auth, formattedPhoneNumber, appVerifier);
-    window.confirmationResult = confirmationResult;
-    return {
-      success: true,
-      confirmationResult,
-    };
-  } catch (error) {
-    console.error("Firebase phone auth error:", error);
-    return {
-      success: false,
-      error: error.message || "Failed to send phone OTP via Firebase",
-    };
-  }
-}
-
-export async function firebaseSignOut() {
-  try {
-    await signOut(auth);
-  } catch (err) {
-    console.warn("Firebase sign out warning:", err);
-  }
-}
-
-export { auth, googleProvider };

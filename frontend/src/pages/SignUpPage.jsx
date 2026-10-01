@@ -25,11 +25,37 @@ export default function SignUpPage() {
   const t = (key) => getAuthText(key, citizenLanguage);
 
   const getCleanError = (err, fallbackKey = "networkError") => {
-    const msg = (err?.message || String(err || "")).toLowerCase();
-    if (msg.includes("failed to fetch") || msg.includes("networkerror") || msg.includes("load failed") || msg.includes("connection refused")) {
+    const raw = (err?.message || (typeof err === "string" ? err : "")).toLowerCase();
+    if (
+      raw.includes("failed to fetch") ||
+      raw.includes("networkerror") ||
+      raw.includes("load failed") ||
+      raw.includes("connection refused") ||
+      raw.includes("network request failed")
+    ) {
       return t("networkError");
     }
-    return err?.message || t(fallbackKey);
+    if (raw.includes("unexpected token") || raw.includes("not valid json") || raw.includes("doctype")) {
+      return "The authentication service returned an unexpected response. Please try again.";
+    }
+    if (raw.includes("not available yet") || raw.includes("404") || raw.includes("cannot post")) {
+      return "The authentication service is not available yet. Please try again shortly.";
+    }
+    if (raw.includes("expired") || raw.includes("expire")) {
+      return t("otpExpired");
+    }
+    if (
+      raw.includes("incorrect") ||
+      raw.includes("invalid otp") ||
+      raw.includes("wrong otp") ||
+      raw.includes("mismatch")
+    ) {
+      return t("incorrectOtp");
+    }
+    if (raw.includes("too soon") || raw.includes("wait before") || raw.includes("cooldown")) {
+      return t("resendTooSoon");
+    }
+    return err?.message || (typeof err === "string" ? err : t(fallbackKey));
   };
 
   // Hidden file inputs for Camera & Gallery

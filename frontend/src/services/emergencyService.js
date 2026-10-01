@@ -18,19 +18,32 @@ const apiRequest = async (endpoint, options = {}) => {
       ...options,
     });
 
-    const data = await response.json();
+    const contentType = (response.headers.get("content-type") || "").toLowerCase();
+    let data = null;
+
+    if (contentType.includes("application/json") || contentType.includes("+json")) {
+      try {
+        data = await response.json();
+      } catch {
+        data = null;
+      }
+    } else {
+      await response.text();
+    }
 
     if (!response.ok) {
       return {
         success: false,
-        error: data.message || "Something went wrong",
+        error: data?.message || (response.status >= 500
+          ? "The emergency response server is temporarily unavailable."
+          : "Unable to process emergency request."),
         data: null,
       };
     }
 
     return {
       success: true,
-      data,
+      data: data || {},
     };
   } catch (error) {
     console.error("API Error:", error);
@@ -38,7 +51,7 @@ const apiRequest = async (endpoint, options = {}) => {
     return {
       success: false,
       error:
-        "Unable to connect to the emergency response server.",
+        "Unable to connect to the emergency response server. Please check your internet connection.",
       data: null,
     };
   }

@@ -35,6 +35,12 @@ export default function LoginPage() {
     ) {
       return t("networkError");
     }
+    if (raw.includes("unexpected token") || raw.includes("not valid json") || raw.includes("doctype")) {
+      return "The authentication service returned an unexpected response. Please try again.";
+    }
+    if (raw.includes("not available yet") || raw.includes("404") || raw.includes("cannot post")) {
+      return "The authentication service is not available yet. Please try again shortly.";
+    }
     if (raw.includes("expired") || raw.includes("expire")) {
       return t("otpExpired");
     }
@@ -48,6 +54,9 @@ export default function LoginPage() {
     }
     if (raw.includes("too soon") || raw.includes("wait before") || raw.includes("cooldown")) {
       return t("resendTooSoon");
+    }
+    if (raw.includes("google sign-in is not configured") || raw.includes("api-key-not-valid") || raw.includes("invalid-api-key")) {
+      return "Google sign-in is not configured. Please try another sign-in method.";
     }
     if (raw.includes("google") || raw.includes("oauth") || raw.includes("popup")) {
       return t("googleAuthFailed");
