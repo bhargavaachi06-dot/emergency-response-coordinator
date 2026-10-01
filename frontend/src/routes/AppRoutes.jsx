@@ -21,11 +21,21 @@ import HelperActiveResponse  from '../pages/HelperActiveResponse';
 // Landing page
 import LandingPage           from '../pages/LandingPage';
 
+// Auth pages
+import LoginPage             from '../pages/LoginPage';
+import SignUpPage            from '../pages/SignUpPage';
+
 export default function AppRoutes() {
   return (
     <Routes>
       {/* Default route */}
       <Route path="/"                            element={<LandingPage />} />
+
+      {/* Authentication routes */}
+      <Route path="/login"                       element={<LoginPage />} />
+      <Route path="/signin"                      element={<Navigate to="/login" replace />} />
+      <Route path="/signup"                      element={<SignUpPage />} />
+      <Route path="/register"                    element={<Navigate to="/signup" replace />} />
 
       {/* Citizen routes */}
       <Route path="/citizen"                     element={<CitizenDashboard />} />

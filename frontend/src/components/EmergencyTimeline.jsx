@@ -5,9 +5,13 @@ export function EmergencyTimeline({ steps }) {
         let dotClass = '';
         let dotIcon = 'bi-circle';
 
-        if (step.done && !step.active)  { dotClass = 'done';   dotIcon = 'bi-check-lg'; }
-        else if (step.active)           { dotClass = 'active'; dotIcon = 'bi-arrow-right'; }
-        else                            { dotClass = '';       dotIcon = 'bi-circle'; }
+        if (step.done && !step.active) {
+          dotClass = 'done';
+          dotIcon = 'bi-check-lg';
+        } else if (step.active) {
+          dotClass = 'active';
+          dotIcon = 'bi-arrow-right';
+        }
 
         return (
           <li key={idx} className="timeline-item">

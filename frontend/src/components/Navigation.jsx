@@ -17,7 +17,7 @@ const ROLE_LABELS = {
 export function TopNavbar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { currentRole, switchRole, currentUser, openLangModal, currentLangMeta } = useApp();
+  const { currentRole, switchRole, currentUser, openLangModal, currentLangMeta, isAuthenticated, logout } = useApp();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -131,7 +131,7 @@ export function TopNavbar() {
           </button>
         </nav>
 
-        {/* Right: Language Switcher, Role Badge, Mobile Toggle */}
+        {/* Right: Language Switcher, Auth Buttons / Role Badge, Mobile Toggle */}
         <div className="top-nav-right">
           {/* Language Selector Button */}
           <button
@@ -145,15 +145,52 @@ export function TopNavbar() {
             <span>{currentLangMeta?.nativeName || 'English'}</span>
           </button>
 
-          {/* Current Role Badge */}
-          {roleInfo && (
-            <div
-              className="top-nav-role-badge"
-              title={`Active session role: ${roleInfo.label}`}
-              aria-label={`Role: ${roleInfo.label}`}
-            >
-              <span className="top-nav-role-dot" aria-hidden="true"></span>
-              <span>{currentUser?.name ? `${currentUser.name} (${roleInfo.label})` : roleInfo.label}</span>
+          {/* Authentication State */}
+          {isAuthenticated ? (
+            <div className="top-nav-user-cluster">
+              <div
+                className="top-nav-role-badge"
+                title={`Logged in: ${currentUser?.email || currentUser?.name}`}
+                aria-label={`User: ${currentUser?.name}`}
+              >
+                {currentUser?.profile_photo ? (
+                  <img
+                    src={currentUser.profile_photo}
+                    alt={currentUser.name}
+                    className="top-nav-avatar"
+                  />
+                ) : (
+                  <span className="top-nav-role-dot" aria-hidden="true"></span>
+                )}
+                <span>{currentUser?.name || currentUser?.email} ({roleInfo?.label || 'Citizen'})</span>
+              </div>
+              <button
+                type="button"
+                className="top-nav-logout-btn"
+                onClick={logout}
+                title="Logout"
+                aria-label="Logout"
+              >
+                <i className="bi bi-box-arrow-right"></i>
+              </button>
+            </div>
+          ) : (
+            <div className="top-nav-auth-buttons">
+              <button
+                type="button"
+                className="top-nav-login-btn"
+                onClick={() => handleNavigate('/login')}
+              >
+                <i className="bi bi-box-arrow-in-right me-1"></i>
+                <span>Login</span>
+              </button>
+              <button
+                type="button"
+                className="top-nav-signup-btn"
+                onClick={() => handleNavigate('/signup')}
+              >
+                <span>Sign Up</span>
+              </button>
             </div>
           )}
 
@@ -221,6 +258,39 @@ export function TopNavbar() {
               <i className="bi bi-translate me-2 text-warning" aria-hidden="true"></i>
               <span>Language ({currentLangMeta?.nativeName || 'English'})</span>
             </button>
+
+            {isAuthenticated ? (
+              <button
+                type="button"
+                className="mobile-nav-item text-danger"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  logout();
+                }}
+              >
+                <i className="bi bi-box-arrow-right me-2" aria-hidden="true"></i>
+                <span>Logout ({currentUser?.name || currentUser?.email})</span>
+              </button>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className="mobile-nav-item"
+                  onClick={() => handleNavigate('/login')}
+                >
+                  <i className="bi bi-box-arrow-in-right me-2 text-primary" aria-hidden="true"></i>
+                  <span>Login</span>
+                </button>
+                <button
+                  type="button"
+                  className="mobile-nav-item"
+                  onClick={() => handleNavigate('/signup')}
+                >
+                  <i className="bi bi-person-plus-fill me-2 text-success" aria-hidden="true"></i>
+                  <span>Sign Up</span>
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}

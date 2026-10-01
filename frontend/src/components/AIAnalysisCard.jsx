@@ -1,5 +1,3 @@
-import React from 'react';
-
 export function AIAnalysisCard({ ai, compact = false }) {
   if (!ai) return null;
 

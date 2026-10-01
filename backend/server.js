@@ -4,6 +4,7 @@ const pool = require("./db");
 const { analyzeEmergency } = require("./services/aiService");
 const hindsightService = require("./services/hindsightService");
 const initDatabase = require("./services/databaseInit");
+const authRoutes = require("./routes/authRoutes");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -11,6 +12,11 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
+
+// ==========================================
+// AUTHENTICATION ROUTES
+// ==========================================
+app.use("/api/auth", authRoutes);
 
 // ==========================================
 // HOME

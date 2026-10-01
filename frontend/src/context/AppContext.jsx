@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import {
   createContext,
   useContext,
@@ -6,6 +7,7 @@ import {
 } from "react";
 
 import { emergencyService } from "../services/emergencyService";
+import { authService } from "../services/authService";
 import {
   LANGUAGES,
   TRANSLATIONS,
@@ -73,6 +75,8 @@ export function AppProvider({ children }) {
   // CURRENT USER
   // ------------------------------------------------
 
+  const [authToken, setAuthToken] = useState(() => authService.getToken());
+
   const [currentUser, setCurrentUser] = useState(() => {
     const savedRole =
       localStorage.getItem("emergency_role");
@@ -86,6 +90,49 @@ export function AppProvider({ children }) {
 
     return DEMO_USERS[ROLES.CITIZEN];
   });
+
+  // Restore authenticated session on startup if valid token exists
+  useEffect(() => {
+    let isMounted = true;
+    async function restoreSession() {
+      const token = authService.getToken();
+      if (token) {
+        try {
+          const profile = await authService.getProfile();
+          if (isMounted && profile) {
+            setCurrentUser(profile);
+            if (profile.role) {
+              localStorage.setItem("emergency_role", profile.role.toLowerCase());
+            }
+          }
+        } catch (e) {
+          console.warn("Session restore error:", e);
+        }
+      }
+    }
+    restoreSession();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const login = (token, user) => {
+    authService.setToken(token);
+    setAuthToken(token);
+    if (user) {
+      setCurrentUser(user);
+      if (user.role) {
+        localStorage.setItem("emergency_role", user.role.toLowerCase());
+      }
+    }
+  };
+
+  const logout = async () => {
+    await authService.logout();
+    setAuthToken(null);
+    setCurrentUser(DEMO_USERS[ROLES.CITIZEN]);
+    localStorage.setItem("emergency_role", ROLES.CITIZEN);
+  };
 
   // ------------------------------------------------
   // EMERGENCIES
@@ -879,7 +926,9 @@ export function AppProvider({ children }) {
   // ------------------------------------------------
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadEmergencies();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ------------------------------------------------
@@ -891,6 +940,10 @@ export function AppProvider({ children }) {
     currentRole: currentUser?.role || ROLES.COORDINATOR,
     setCurrentRole: switchRole,
     switchRole,
+    authToken,
+    isAuthenticated: Boolean(authToken && currentUser && !currentUser.id?.toString().includes("-demo")),
+    login,
+    logout,
 
     emergencies,
     submittedEmergency,

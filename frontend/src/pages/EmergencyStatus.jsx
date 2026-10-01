@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+
 import { useApp } from '../context/AppContext';
 import { AppLayout } from '../layouts/AppLayout';
 import { PriorityBadge, StatusBadge } from '../components/Badges';
@@ -9,7 +9,6 @@ import { MapView } from '../components/MapView';
 import { DEMO_EMERGENCIES } from '../data/demoData';
 
 export default function EmergencyStatus() {
-  const navigate = useNavigate();
   const { submittedEmergency, emergencies } = useApp();
   const emergency = submittedEmergency || emergencies[0] || DEMO_EMERGENCIES[0];
 
@@ -21,7 +20,7 @@ export default function EmergencyStatus() {
   if (typeof ai === "string") {
     try {
       ai = JSON.parse(ai);
-    } catch (e) {
+    } catch {
       // ignore
     }
   }

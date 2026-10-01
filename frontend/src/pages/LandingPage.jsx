@@ -50,7 +50,7 @@ const EMERGENCY_TYPES = [
 
 export default function LandingPage() {
   const navigate = useNavigate();
-  const { switchRole } = useApp();
+  const { switchRole, isAuthenticated } = useApp();
 
   const handleReportEmergency = (typeKey) => {
     switchRole('citizen');
@@ -113,6 +113,39 @@ export default function LandingPage() {
                 <span>Open Command Center</span>
               </button>
             </div>
+
+            {/* Authentication prompt for unauthenticated users */}
+            {!isAuthenticated && (
+              <div className="hero-auth-card">
+                <div className="auth-card-info">
+                  <span className="auth-card-title">
+                    <i className="bi bi-shield-check text-success me-2"></i>
+                    Secure Citizen &amp; Responder Access
+                  </span>
+                  <span className="auth-card-sub">
+                    Sign in to track reports, receive dispatch notifications, and access response history.
+                  </span>
+                </div>
+                <div className="auth-card-buttons">
+                  <button
+                    type="button"
+                    className="btn-landing-login"
+                    onClick={() => navigate("/login")}
+                  >
+                    <i className="bi bi-box-arrow-in-right me-1"></i>
+                    <span>Login</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-landing-signup"
+                    onClick={() => navigate("/signup")}
+                  >
+                    <i className="bi bi-person-plus-fill me-1"></i>
+                    <span>Create Account</span>
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Supporting Points */}
             <div className="hero-supporting-points" aria-label="Core Capabilities">

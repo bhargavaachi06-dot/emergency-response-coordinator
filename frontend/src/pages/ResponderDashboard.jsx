@@ -1,9 +1,8 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { AppLayout } from '../layouts/AppLayout';
 import { PriorityBadge, StatusBadge } from '../components/Badges';
-import { DEMO_EMERGENCIES, DEMO_RESPONDER } from '../data/demoData';
+import { DEMO_RESPONDER } from '../data/demoData';
 
 const STATUS_FLOW = ['pending', 'accepted', 'en-route', 'arrived', 'completed'];
 

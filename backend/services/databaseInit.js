@@ -19,9 +19,16 @@ const SCHEMA_QUERIES = [
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     email VARCHAR(150) UNIQUE NOT NULL,
-    password_hash TEXT NOT NULL,
-    role VARCHAR(30) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    password_hash TEXT,
+    role VARCHAR(30) DEFAULT 'citizen',
+    mobile VARCHAR(30),
+    mobile_verified BOOLEAN DEFAULT FALSE,
+    email_verified BOOLEAN DEFAULT FALSE,
+    profile_photo TEXT,
+    auth_provider VARCHAR(50) DEFAULT 'local',
+    google_id VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   );`,
 
   // 2. Emergencies table
@@ -104,7 +111,33 @@ const SCHEMA_QUERIES = [
     file_size INTEGER,
     data_url TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-  );`
+  );`,
+
+  // 9. OTPs table (for cryptographically secure, hashed OTP verification)
+  `CREATE TABLE IF NOT EXISTS otps (
+    id SERIAL PRIMARY KEY,
+    identifier VARCHAR(150) NOT NULL,
+    type VARCHAR(20) NOT NULL,
+    otp_hash VARCHAR(255) NOT NULL,
+    salt VARCHAR(64) NOT NULL,
+    attempts INTEGER DEFAULT 0,
+    max_attempts INTEGER DEFAULT 5,
+    expires_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    used BOOLEAN DEFAULT FALSE
+  );`,
+  `CREATE INDEX IF NOT EXISTS idx_otps_identifier ON otps(identifier, type);`
+];
+
+const MIGRATION_QUERIES = [
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS mobile VARCHAR(30);`,
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS mobile_verified BOOLEAN DEFAULT FALSE;`,
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT FALSE;`,
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_photo TEXT;`,
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS auth_provider VARCHAR(50) DEFAULT 'local';`,
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id VARCHAR(100);`,
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;`,
+  `ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL;`
 ];
 
 const DEFAULT_RESPONDERS = [
@@ -166,6 +199,15 @@ async function initDatabase(dbPool = pool) {
     // 1. Create all required tables if they don't already exist
     for (const query of SCHEMA_QUERIES) {
       await dbPool.query(query);
+    }
+
+    // 1b. Run safe migration queries to add new auth columns if missing
+    for (const migQuery of MIGRATION_QUERIES) {
+      try {
+        await dbPool.query(migQuery);
+      } catch (migErr) {
+        console.warn("Migration notice:", migErr.message);
+      }
     }
 
     // 2. Seed baseline responders safely (only if not already present by name)

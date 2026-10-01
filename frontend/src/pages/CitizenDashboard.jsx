@@ -37,13 +37,7 @@ export default function CitizenDashboard() {
   const latestStatus =
     myEmergencies[0]?.status || null;
 
-  // ---------------------------------------------
-  // REPORT EMERGENCY
-  // ---------------------------------------------
 
-  const openReportPage = () => {
-    navigate("/citizen/report");
-  };
 
   return (
     <AppLayout title="Citizen Dashboard">

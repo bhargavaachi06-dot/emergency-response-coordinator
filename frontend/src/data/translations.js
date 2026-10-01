@@ -3421,3 +3421,15 @@ export function speakText(text, langCode = 'en') {
     return false;
   }
 }
+
+import { AUTH_TRANSLATIONS } from './authTranslations';
+
+// Merge authentication translations into existing TRANSLATIONS objects
+for (const langCode in AUTH_TRANSLATIONS) {
+  if (TRANSLATIONS[langCode]) {
+    Object.assign(TRANSLATIONS[langCode], AUTH_TRANSLATIONS[langCode]);
+  }
+}
+
+export { AUTH_TRANSLATIONS };
+
