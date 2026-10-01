@@ -1,14 +1,17 @@
-import { BrowserRouter } from 'react-router-dom';
+import { BrowserRouter, useNavigate } from 'react-router-dom';
 import { AppProvider, useApp } from './context/AppContext';
 import AppRoutes from './routes/AppRoutes';
 import { LanguageModal } from './components/LanguageModal';
+import { SplashScreen } from './components/SplashScreen';
 
 /**
  * Inner Application Wrapper
- * Manages global first-launch language modal and navbar language switcher
+ * Manages startup splash screen, first-launch language flow, and global modals
  */
 function AppContent() {
+  const navigate = useNavigate();
   const {
+    isAuthLoading,
     hasLanguageSet,
     citizenLanguage,
     setCitizenLanguage,
@@ -16,20 +19,33 @@ function AppContent() {
     closeLangModal,
   } = useApp();
 
+  // 1. Startup Splash: Displayed while session validation runs
+  if (isAuthLoading) {
+    return <SplashScreen message="Initializing Emergency Response Coordinator..." />;
+  }
+
+  // 2. First-Launch Language Selection Screen:
+  // Must appear before any application routing on a fresh installation.
+  // After selecting a language, immediately saves and navigates to /login.
+  // Never routes to Home / directly on first launch.
+  if (!hasLanguageSet) {
+    return (
+      <LanguageModal
+        isOpen={true}
+        isFirstLaunch={true}
+        currentLanguage={citizenLanguage || 'en'}
+        onConfirm={(code) => {
+          setCitizenLanguage(code);
+          navigate('/login', { replace: true });
+        }}
+      />
+    );
+  }
+
   return (
     <>
-      {/* 1. First-launch language selection screen (before entering main application) */}
-      {!hasLanguageSet && (
-        <LanguageModal
-          isOpen={true}
-          isFirstLaunch={true}
-          currentLanguage={citizenLanguage || 'en'}
-          onConfirm={(code) => setCitizenLanguage(code)}
-        />
-      )}
-
-      {/* 2. Top navbar language switcher modal */}
-      {hasLanguageSet && isLangModalOpen && (
+      {/* 3. Top Navbar Language Switcher Modal (for returning users changing language in-app) */}
+      {isLangModalOpen && (
         <LanguageModal
           isOpen={isLangModalOpen}
           isFirstLaunch={false}
@@ -42,7 +58,7 @@ function AppContent() {
         />
       )}
 
-      {/* 3. Main Application Routing */}
+      {/* 4. Main Application Routing with protected page guards */}
       <AppRoutes />
     </>
   );

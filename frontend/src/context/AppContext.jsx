@@ -76,6 +76,7 @@ export function AppProvider({ children }) {
   // ------------------------------------------------
 
   const [authToken, setAuthToken] = useState(() => authService.getToken());
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
 
   const [currentUser, setCurrentUser] = useState(() => {
     const savedRole =
@@ -99,17 +100,39 @@ export function AppProvider({ children }) {
       if (token) {
         try {
           const profile = await authService.getProfile();
-          if (isMounted && profile) {
-            setCurrentUser(profile);
-            if (profile.role) {
-              localStorage.setItem("emergency_role", profile.role.toLowerCase());
+          if (isMounted) {
+            if (profile) {
+              setCurrentUser(profile);
+              setAuthToken(token);
+              if (profile.role) {
+                localStorage.setItem("emergency_role", profile.role.toLowerCase());
+              }
+            } else {
+              // Token expired or invalid
+              authService.clearToken();
+              setAuthToken(null);
+              setCurrentUser(DEMO_USERS[ROLES.CITIZEN]);
             }
           }
         } catch (e) {
           console.warn("Session restore error:", e);
+          if (isMounted) {
+            authService.clearToken();
+            setAuthToken(null);
+            setCurrentUser(DEMO_USERS[ROLES.CITIZEN]);
+          }
+        }
+      } else {
+        if (isMounted) {
+          setAuthToken(null);
         }
       }
+
+      if (isMounted) {
+        setIsAuthLoading(false);
+      }
     }
+
     restoreSession();
     return () => {
       isMounted = false;
@@ -125,6 +148,7 @@ export function AppProvider({ children }) {
         localStorage.setItem("emergency_role", user.role.toLowerCase());
       }
     }
+    setIsAuthLoading(false);
   };
 
   const logout = async () => {
@@ -132,6 +156,7 @@ export function AppProvider({ children }) {
     setAuthToken(null);
     setCurrentUser(DEMO_USERS[ROLES.CITIZEN]);
     localStorage.setItem("emergency_role", ROLES.CITIZEN);
+    setIsAuthLoading(false);
   };
 
   // ------------------------------------------------
@@ -941,6 +966,7 @@ export function AppProvider({ children }) {
     setCurrentRole: switchRole,
     switchRole,
     authToken,
+    isAuthLoading,
     isAuthenticated: Boolean(authToken && currentUser && !currentUser.id?.toString().includes("-demo")),
     login,
     logout,

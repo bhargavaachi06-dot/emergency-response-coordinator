@@ -70,6 +70,12 @@ export function TopNavbar() {
     }
   };
 
+  const handleLogout = async () => {
+    setMobileMenuOpen(false);
+    await logout();
+    navigate('/login', { replace: true });
+  };
+
   return (
     <header className="top-navbar-root" role="banner">
       <div className="top-navbar-container">
@@ -167,7 +173,7 @@ export function TopNavbar() {
               <button
                 type="button"
                 className="top-nav-logout-btn"
-                onClick={logout}
+                onClick={handleLogout}
                 title="Logout"
                 aria-label="Logout"
               >
@@ -263,10 +269,7 @@ export function TopNavbar() {
               <button
                 type="button"
                 className="mobile-nav-item text-danger"
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  logout();
-                }}
+                onClick={handleLogout}
               >
                 <i className="bi bi-box-arrow-right me-2" aria-hidden="true"></i>
                 <span>Logout ({currentUser?.name || currentUser?.email})</span>
