@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { SplashScreen } from '../components/SplashScreen';
 
@@ -29,39 +29,30 @@ import SignUpPage            from '../pages/SignUpPage';
 
 /**
  * Protected Route Wrapper
- * Guarantees that only authenticated users can access protected application pages.
- * Redirects unauthenticated users to /login, preserving target path for post-login return.
+ * Temporarily bypassed for demo: allows users to access all core application routes
+ * as guest without requiring authentication.
+ * To re-enable strict authentication later, re-arm the redirect check.
  */
 function ProtectedRoute({ children }) {
-  const { isAuthenticated, isAuthLoading } = useApp();
-  const location = useLocation();
+  const { isAuthLoading } = useApp();
 
   if (isAuthLoading) {
-    return <SplashScreen message="Verifying session..." />;
+    return <SplashScreen message="Initializing Emergency Response Coordinator..." />;
   }
 
-  if (!isAuthenticated) {
-    // Preserve requested route for post-login return unless the user visited root
-    const redirectState = location.pathname !== '/' ? { from: location.pathname + location.search } : undefined;
-    return <Navigate to="/login" state={redirectState} replace />;
-  }
-
+  // Authentication requirement temporarily bypassed for demo: all core routes are directly accessible as guest
   return children;
 }
 
 /**
  * Public Auth Route Wrapper
- * Redirects already authenticated users away from Login/SignUp to Home (/).
+ * Renders Login and SignUp pages if someone manually navigates to them.
  */
 function PublicAuthRoute({ children }) {
-  const { isAuthenticated, isAuthLoading } = useApp();
+  const { isAuthLoading } = useApp();
 
   if (isAuthLoading) {
-    return <SplashScreen message="Verifying session..." />;
-  }
-
-  if (isAuthenticated) {
-    return <Navigate to="/" replace />;
+    return <SplashScreen message="Initializing Emergency Response Coordinator..." />;
   }
 
   return children;

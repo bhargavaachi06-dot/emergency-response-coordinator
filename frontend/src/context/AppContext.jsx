@@ -79,17 +79,14 @@ export function AppProvider({ children }) {
   const [isAuthLoading, setIsAuthLoading] = useState(true);
 
   const [currentUser, setCurrentUser] = useState(() => {
-    const savedRole =
-      localStorage.getItem("emergency_role");
-
-    if (
-      savedRole &&
-      DEMO_USERS[savedRole]
-    ) {
-      return DEMO_USERS[savedRole];
-    }
-
-    return DEMO_USERS[ROLES.CITIZEN];
+    const savedRole = localStorage.getItem("emergency_role");
+    const role = savedRole && Object.values(ROLES).includes(savedRole) ? savedRole : ROLES.CITIZEN;
+    return {
+      mode: "guest",
+      id: "guest-session",
+      name: "Guest User",
+      role,
+    };
   });
 
   // Restore authenticated session on startup if valid token exists
@@ -108,23 +105,27 @@ export function AppProvider({ children }) {
                 localStorage.setItem("emergency_role", profile.role.toLowerCase());
               }
             } else {
-              // Token expired or invalid
+              // Token expired or invalid -> cleanly continue in guest mode
               authService.clearToken();
               setAuthToken(null);
-              setCurrentUser(DEMO_USERS[ROLES.CITIZEN]);
+              const savedRole = localStorage.getItem("emergency_role") || ROLES.CITIZEN;
+              setCurrentUser({ mode: "guest", id: "guest-session", name: "Guest User", role: savedRole });
             }
           }
-        } catch (e) {
-          console.warn("Session restore error:", e);
+        } catch {
+          // Gracefully continue in guest mode without showing blocking startup errors
           if (isMounted) {
             authService.clearToken();
             setAuthToken(null);
-            setCurrentUser(DEMO_USERS[ROLES.CITIZEN]);
+            const savedRole = localStorage.getItem("emergency_role") || ROLES.CITIZEN;
+            setCurrentUser({ mode: "guest", id: "guest-session", name: "Guest User", role: savedRole });
           }
         }
       } else {
         if (isMounted) {
           setAuthToken(null);
+          const savedRole = localStorage.getItem("emergency_role") || ROLES.CITIZEN;
+          setCurrentUser({ mode: "guest", id: "guest-session", name: "Guest User", role: savedRole });
         }
       }
 
@@ -154,8 +155,9 @@ export function AppProvider({ children }) {
   const logout = async () => {
     await authService.logout();
     setAuthToken(null);
-    setCurrentUser(DEMO_USERS[ROLES.CITIZEN]);
-    localStorage.setItem("emergency_role", ROLES.CITIZEN);
+    const savedRole = localStorage.getItem("emergency_role") || ROLES.CITIZEN;
+    setCurrentUser({ mode: "guest", id: "guest-session", name: "Guest User", role: savedRole });
+    localStorage.setItem("emergency_role", savedRole);
     setIsAuthLoading(false);
   };
 
@@ -238,7 +240,7 @@ export function AppProvider({ children }) {
   // ------------------------------------------------
 
   const switchRole = (role) => {
-    if (!DEMO_USERS[role]) {
+    if (!Object.values(ROLES).includes(role) && !DEMO_USERS[role]) {
       return;
     }
 
@@ -247,9 +249,20 @@ export function AppProvider({ children }) {
       role
     );
 
-    setCurrentUser(
-      DEMO_USERS[role]
-    );
+    setCurrentUser((prev) => {
+      if (prev && prev.mode === "guest") {
+        return {
+          mode: "guest",
+          id: "guest-session",
+          name: "Guest User",
+          role,
+        };
+      }
+      return {
+        ...(prev || {}),
+        role,
+      };
+    });
   };
 
   // ------------------------------------------------
@@ -967,7 +980,8 @@ export function AppProvider({ children }) {
     switchRole,
     authToken,
     isAuthLoading,
-    isAuthenticated: Boolean(authToken && currentUser && !currentUser.id?.toString().includes("-demo")),
+    isGuest: Boolean(!authToken || currentUser?.mode === "guest"),
+    isAuthenticated: Boolean(authToken && currentUser && currentUser.mode !== "guest" && !currentUser.id?.toString().includes("-demo")),
     login,
     logout,
 

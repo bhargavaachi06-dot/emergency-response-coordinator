@@ -26,8 +26,8 @@ function AppContent() {
 
   // 2. First-Launch Language Selection Screen:
   // Must appear before any application routing on a fresh installation.
-  // After selecting a language, immediately saves and navigates to /login.
-  // Never routes to Home / directly on first launch.
+  // After selecting a language, immediately saves and navigates directly to Home (/).
+  // Flow: Splash -> Preferred Language (if required) -> Home
   if (!hasLanguageSet) {
     return (
       <LanguageModal
@@ -36,7 +36,7 @@ function AppContent() {
         currentLanguage={citizenLanguage || 'en'}
         onConfirm={(code) => {
           setCitizenLanguage(code);
-          navigate('/login', { replace: true });
+          navigate('/', { replace: true });
         }}
       />
     );
