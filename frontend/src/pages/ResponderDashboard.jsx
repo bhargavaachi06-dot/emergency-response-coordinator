@@ -4,20 +4,20 @@ import { AppLayout } from '../layouts/AppLayout';
 import { PriorityBadge, StatusBadge } from '../components/Badges';
 import { DEMO_RESPONDER } from '../data/demoData';
 
-const STATUS_FLOW = ['pending', 'accepted', 'en-route', 'arrived', 'completed'];
+const STATUS_FLOW = ['dispatched', 'accepted', 'en-route', 'arrived', 'completed'];
 
 const STATUS_ACTIONS = {
-  pending:   { label: 'ACCEPT',    next: 'accepted',  btnClass: 'btn-primary-custom', icon: 'bi-check-lg' },
-  accepted:  { label: 'EN ROUTE',  next: 'en-route',  btnClass: 'btn-primary-custom', icon: 'bi-truck' },
-  'en-route':{ label: 'ARRIVED',   next: 'arrived',   btnClass: 'btn-primary-custom', icon: 'bi-geo-alt-fill' },
-  arrived:   { label: 'COMPLETED', next: 'completed', btnClass: 'btn-primary-custom', icon: 'bi-check-circle-fill' },
-  completed: { label: 'COMPLETED', next: null,        btnClass: 'btn-outline-custom',  icon: 'bi-check-circle-fill' },
+  dispatched: { label: 'ACCEPT DISPATCH', next: 'accepted',  color: '#0284C7', icon: 'bi-check-lg' },
+  accepted:   { label: 'MARK EN ROUTE',  next: 'en-route',  color: '#D97706', icon: 'bi-truck' },
+  'en-route': { label: 'MARK ARRIVED',   next: 'arrived',   color: '#0284C7', icon: 'bi-geo-alt-fill' },
+  arrived:    { label: 'MARK COMPLETED', next: 'completed', color: '#16A34A', icon: 'bi-check-circle-fill' },
+  completed:  { label: 'COMPLETED',      next: null,        color: '#64748B', icon: 'bi-check-circle-fill' },
 };
 
 function IncidentAssignment({ emergency, responderType }) {
   const [status, setStatus] = useState('en-route');
 
-  const action = STATUS_ACTIONS[status];
+  const action = STATUS_ACTIONS[status] || STATUS_ACTIONS.dispatched;
   const progressIdx = STATUS_FLOW.indexOf(status);
   const responderIcons = { Ambulance: '🚑', Police: '👮', 'Fire/Rescue': '🚒' };
 
@@ -26,77 +26,115 @@ function IncidentAssignment({ emergency, responderType }) {
   };
 
   return (
-    <div className="section-card mb-4">
-      <div className="section-card-header">
+    <div className="clay-card mb-4" style={{ padding: '24px' }}>
+      <div className="d-flex align-items-start justify-content-between flex-wrap gap-2 pb-3 mb-3 border-bottom">
         <div>
-          <span className="emergency-id">#{emergency.id}</span>
-          <div className="emergency-type mt-1">{emergency.type}</div>
+          <span style={{ fontSize: '12px', fontWeight: 800, color: '#0284C7', fontFamily: 'monospace' }}>
+            #{emergency.emergency_code || emergency.id}
+          </span>
+          <div style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A', marginTop: 2 }}>
+            {emergency.type}
+          </div>
         </div>
-        <div className="d-flex gap-2">
+        <div className="d-flex gap-2 flex-wrap">
           <PriorityBadge priority={emergency.priority} />
           <StatusBadge status={status} />
         </div>
       </div>
-      <div className="section-card-body">
+
+      <div className="d-flex flex-column gap-3 mb-4">
         <div className="info-row">
-          <span className="info-label">Location</span>
-          <span className="info-value">{emergency.location?.address}</span>
+          <span className="info-label" style={{ fontWeight: 700, color: '#64748B' }}>Location</span>
+          <span className="info-value" style={{ fontWeight: 600, color: '#0F172A' }}>
+            {emergency.location?.address || emergency.location_text || 'Coordinates available'}
+          </span>
         </div>
         <div className="info-row">
-          <span className="info-label">Description</span>
-          <span className="info-value">{emergency.description}</span>
+          <span className="info-label" style={{ fontWeight: 700, color: '#64748B' }}>Instructions</span>
+          <span className="info-value" style={{ color: '#334155' }}>
+            {emergency.description || 'Proceed to incident location with emergency warning equipment.'}
+          </span>
         </div>
         <div className="info-row">
-          <span className="info-label">Assignment</span>
-          <span className="info-value">
+          <span className="info-label" style={{ fontWeight: 700, color: '#64748B' }}>Assignment</span>
+          <span className="info-value" style={{ fontWeight: 700, color: '#0F172A' }}>
             <span style={{ fontSize: 18 }}>{responderIcons[responderType] || '🔵'}</span>
             {' '}{responderType}
           </span>
         </div>
-
-        {/* Progress bar */}
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 12, color: '#64748b', marginBottom: 6 }}>Response Progress</div>
-          <div style={{ display: 'flex', gap: 4 }}>
-            {STATUS_FLOW.slice(0, 5).map((s, i) => (
-              <div
-                key={s}
-                style={{
-                  flex: 1, height: 6, borderRadius: 3,
-                  background: i <= progressIdx ? '#1d4ed8' : '#e2e8f0',
-                  transition: 'background 0.3s',
-                }}
-              />
-            ))}
-          </div>
-          <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4, textTransform: 'capitalize' }}>
-            {status.replace('-', ' ')}
-          </div>
-        </div>
-
-        {/* Action button */}
-        {action?.next && (
-          <button
-            className={`${action.btnClass} w-100`}
-            style={{ justifyContent: 'center', fontSize: 14, padding: '12px' }}
-            onClick={handleAction}
-            id={`status-btn-${emergency.id}`}
-          >
-            <i className={`bi ${action.icon}`}></i>
-            {action.label}
-          </button>
-        )}
-        {status === 'completed' && (
-          <div style={{
-            background: '#dcfce7', border: '1px solid #bbf7d0',
-            borderRadius: 8, padding: '12px', textAlign: 'center',
-            fontSize: 14, fontWeight: 700, color: '#166534',
-          }}>
-            <i className="bi bi-check-circle-fill me-2"></i>
-            Incident Completed
-          </div>
-        )}
       </div>
+
+      {/* Status progression tracker */}
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: 8 }}>
+          Status Progression: {status.replace('-', ' ')}
+        </div>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {STATUS_FLOW.map((s, i) => (
+            <div
+              key={s}
+              style={{
+                flex: 1,
+                height: 8,
+                borderRadius: 4,
+                background: i <= progressIdx ? '#16A34A' : '#E2E8F0',
+                transition: 'background 0.3s ease',
+              }}
+            />
+          ))}
+        </div>
+        <div className="d-flex justify-content-between mt-2 text-muted" style={{ fontSize: '11px', fontWeight: 600 }}>
+          <span>DISPATCHED</span>
+          <span>ACCEPTED</span>
+          <span>EN ROUTE</span>
+          <span>ARRIVED</span>
+          <span>COMPLETED</span>
+        </div>
+      </div>
+
+      {/* Large tactile action button */}
+      {action?.next && (
+        <button
+          className="clay-button w-100"
+          style={{
+            justifyContent: 'center',
+            fontSize: '15px',
+            fontWeight: 800,
+            padding: '14px 20px',
+            minHeight: '52px',
+            background: action.color === '#16A34A'
+              ? 'linear-gradient(145deg, #16A34A 0%, #15803D 100%)'
+              : action.color === '#D97706'
+              ? 'linear-gradient(145deg, #D97706 0%, #B45309 100%)'
+              : 'linear-gradient(145deg, #0284C7 0%, #0369A1 100%)',
+            color: '#FFFFFF',
+            border: 'none',
+            boxShadow: 'var(--clay-shadow-md)',
+          }}
+          onClick={handleAction}
+          id={`status-btn-${emergency.id}`}
+        >
+          <i className={`bi ${action.icon} me-2`}></i>
+          {action.label}
+        </button>
+      )}
+
+      {status === 'completed' && (
+        <div style={{
+          background: '#F0FDF4',
+          border: '1.5px solid #BBF7D0',
+          borderRadius: '14px',
+          padding: '14px',
+          textAlign: 'center',
+          fontSize: '14.5px',
+          fontWeight: 800,
+          color: '#166534',
+          boxShadow: 'var(--clay-shadow-sm)',
+        }}>
+          <i className="bi bi-check-circle-fill me-2"></i>
+          Incident Response Completed
+        </div>
+      )}
     </div>
   );
 }
@@ -110,76 +148,75 @@ export default function ResponderDashboard() {
 
   return (
     <AppLayout title="Professional Responder" subtitle="Your assigned incidents">
-      {/* Responder profile */}
-      <div style={{
-        background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-        borderRadius: 14, padding: '20px 24px',
-        marginBottom: 24, color: '#fff',
-        display: 'flex', alignItems: 'center', gap: 16,
-        border: '1px solid #334155',
-      }}>
-        <div style={{
-          width: 52, height: 52, background: '#dc2626',
-          borderRadius: 12, display: 'flex', alignItems: 'center',
-          justifyContent: 'center', fontSize: 22, flexShrink: 0,
-        }}>
-          🚑
+      {/* Responder profile in White Clay Card */}
+      <div
+        className="clay-card mb-4"
+        style={{
+          background: '#FFFFFF',
+          padding: '24px 28px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16,
+        }}
+      >
+        <div className="d-flex align-items-center gap-3">
+          <div style={{
+            width: 54,
+            height: 54,
+            background: 'linear-gradient(145deg, #DC2626 0%, #B91C1C 100%)',
+            borderRadius: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 24,
+            color: '#FFFFFF',
+            boxShadow: 'var(--clay-shadow-red)',
+            flexShrink: 0,
+          }}>
+            🚑
+          </div>
+          <div>
+            <div style={{ fontWeight: 800, fontSize: 18, color: '#0F172A', marginBottom: 2 }}>
+              {responder.name}
+            </div>
+            <div style={{ fontSize: 13.5, color: '#64748B' }}>
+              {responder.crew}
+            </div>
+          </div>
         </div>
-        <div>
-          <div style={{ fontWeight: 800, fontSize: 17, marginBottom: 2 }}>
-            {responder.name}
-          </div>
-          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', marginBottom: 6 }}>
-            {responder.crew}
-          </div>
-          <div className="d-flex gap-2">
-            <span style={{
-              background: 'rgba(22,163,74,0.15)', border: '1px solid rgba(22,163,74,0.3)',
-              color: '#4ade80', borderRadius: 20, padding: '3px 10px',
-              fontSize: 11, fontWeight: 600,
-            }}>
-              ● ON DUTY
-            </span>
-            <span style={{
-              background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)',
-              color: 'rgba(255,255,255,0.6)', borderRadius: 20, padding: '3px 10px',
-              fontSize: 11,
-            }}>
-              {responder.type}
-            </span>
-          </div>
+
+        <div className="d-flex align-items-center gap-2">
+          <span style={{
+            background: '#F0FDF4',
+            border: '1px solid #BBF7D0',
+            color: '#166534',
+            borderRadius: '9999px',
+            padding: '6px 14px',
+            fontSize: '12px',
+            fontWeight: 700,
+            boxShadow: 'var(--clay-shadow-sm)',
+          }}>
+            ● Unit On-Duty &amp; Dispatched
+          </span>
         </div>
       </div>
 
-      {/* Assigned Incidents */}
-      <div style={{ marginBottom: 14 }}>
-        <h2 style={{ fontSize: 15, fontWeight: 700, color: '#0f172a', margin: '0 0 14px' }}>
-          Assigned Incidents ({assigned.length})
+      {/* Incident Assignments */}
+      <div>
+        <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A', marginBottom: 16 }}>
+          <i className="bi bi-card-checklist me-2 text-primary"></i>
+          Active Assignments ({assigned.length})
         </h2>
 
-        <div className="row g-4">
-          {assigned.map((emergency) => (
-            <div key={emergency.id} className="col-lg-6">
-              <IncidentAssignment
-                emergency={emergency}
-                responderType={responder.type}
-              />
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Safety note */}
-      <div style={{
-        background: '#eff6ff', border: '1px solid #bfdbfe',
-        borderRadius: 10, padding: '14px 18px',
-        display: 'flex', alignItems: 'flex-start', gap: 10,
-        fontSize: 13,
-      }}>
-        <i className="bi bi-shield-check-fill" style={{ color: '#1d4ed8', fontSize: 16, flexShrink: 0, marginTop: 1 }}></i>
-        <div style={{ color: '#1e40af' }}>
-          Update your status as you progress. Coordinators and the reporting citizen can track your location and ETA in real-time.
-        </div>
+        {assigned.map((emg) => (
+          <IncidentAssignment
+            key={emg.id}
+            emergency={emg}
+            responderType="Ambulance"
+          />
+        ))}
       </div>
     </AppLayout>
   );

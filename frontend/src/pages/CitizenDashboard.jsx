@@ -11,94 +11,79 @@ export default function CitizenDashboard() {
   const {
     currentUser,
     emergencies = [],
+    openLangModal,
   } = useApp();
 
-  // ---------------------------------------------
-  // CITIZEN EMERGENCIES
-  // ---------------------------------------------
+  const myEmergencies = emergencies.slice(0, 3);
 
-  const myEmergencies =
-    emergencies.slice(0, 3);
+  const active = myEmergencies.filter(
+    (e) => String(e.status).toUpperCase() !== "RESOLVED"
+  ).length;
 
-  const active =
-    myEmergencies.filter(
-      (e) =>
-        String(e.status).toUpperCase() !==
-        "RESOLVED"
-    ).length;
+  const resolved = myEmergencies.filter(
+    (e) => String(e.status).toUpperCase() === "RESOLVED"
+  ).length;
 
-  const resolved =
-    myEmergencies.filter(
-      (e) =>
-        String(e.status).toUpperCase() ===
-        "RESOLVED"
-    ).length;
-
-  const latestStatus =
-    myEmergencies[0]?.status || null;
-
-
+  const latestStatus = myEmergencies[0]?.status || null;
 
   return (
     <AppLayout title="Citizen Dashboard">
+      {/* Welcome Header */}
+      <div className="page-header d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div>
+          <h1 className="page-title">
+            Welcome, {currentUser?.name?.split(" ")[0] || "Citizen"} 👋
+          </h1>
+          <p className="page-subtitle">
+            Report an emergency, check response status, or view past records.
+          </p>
+        </div>
 
-      {/* ----------------------------------------- */}
-      {/* WELCOME */}
-      {/* ----------------------------------------- */}
-
-      <div className="page-header">
-        <h1 className="page-title">
-          Welcome,{" "}
-          {currentUser?.name?.split(" ")[0] ||
-            "Citizen"}{" "}
-          👋
-        </h1>
-
-        <p className="page-subtitle">
-          Report an emergency or track the
-          status of your existing reports.
-        </p>
+        <button
+          type="button"
+          className="clay-button"
+          style={{ fontSize: '13px', padding: '8px 16px', minHeight: '40px' }}
+          onClick={openLangModal}
+        >
+          <i className="bi bi-translate text-primary"></i>
+          Language Settings
+        </button>
       </div>
 
-      {/* ----------------------------------------- */}
-      {/* EMERGENCY CTA */}
-      {/* ----------------------------------------- */}
-
+      {/* Emergency CTA Banner - White Clay Card */}
       <div
+        className="clay-card mb-4"
         style={{
-          background:
-            "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
-          borderRadius: 14,
+          background: "#FFFFFF",
+          border: "2px solid #FECACA",
           padding: "28px 24px",
-          marginBottom: 24,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           flexWrap: "wrap",
-          gap: 16,
-          border: "1px solid #334155",
+          gap: 20,
+          boxShadow: "0 10px 28px rgba(220, 38, 38, 0.08), var(--clay-shadow-card)",
         }}
       >
-        <div>
+        <div style={{ maxWidth: '580px' }}>
           <div
             style={{
-              fontSize: 11,
-              fontWeight: 600,
-              color:
-                "rgba(255,255,255,0.4)",
+              fontSize: 11.5,
+              fontWeight: 800,
+              color: "#DC2626",
               textTransform: "uppercase",
               letterSpacing: "1px",
-              marginBottom: 6,
+              marginBottom: 4,
             }}
           >
-            Emergency Reporting
+            🚨 Immediate Assistance
           </div>
 
           <div
             style={{
-              fontSize: 20,
+              fontSize: 22,
               fontWeight: 800,
-              color: "#fff",
+              color: "#0F172A",
               marginBottom: 4,
             }}
           >
@@ -107,20 +92,14 @@ export default function CitizenDashboard() {
 
           <div
             style={{
-              fontSize: 13.5,
-              color:
-                "rgba(255,255,255,0.55)",
+              fontSize: 14,
+              color: "#64748B",
+              lineHeight: 1.5,
             }}
           >
-            Professional responders will be
-            notified immediately after AI
-            analysis.
+            Responders and emergency coordinators are notified immediately upon report verification.
           </div>
         </div>
-
-        {/* --------------------------------------- */}
-        {/* REPORT BUTTON */}
-        {/* --------------------------------------- */}
 
         <Link
           to="/citizen/report"
@@ -130,29 +109,16 @@ export default function CitizenDashboard() {
           style={{
             fontSize: 16,
             padding: "14px 32px",
-            textDecoration: "none",
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 8,
-            cursor: "pointer",
-            pointerEvents: "auto",
-            position: "relative",
-            zIndex: 10,
+            minHeight: "52px",
           }}
         >
-          <i className="bi bi-exclamation-triangle-fill"></i>
-
+          <i className="bi bi-exclamation-octagon-fill"></i>
           REPORT EMERGENCY
         </Link>
       </div>
 
-      {/* ----------------------------------------- */}
-      {/* STAT CARDS */}
-      {/* ----------------------------------------- */}
-
+      {/* Stat Cards Row */}
       <div className="row g-3 mb-4">
-
         <div className="col-sm-4">
           <StatCard
             value={active}
@@ -175,9 +141,7 @@ export default function CitizenDashboard() {
           <StatCard
             value={
               latestStatus
-                ? String(
-                    latestStatus
-                  ).replaceAll("_", " ")
+                ? String(latestStatus).replaceAll("_", " ")
                 : "—"
             }
             label="Latest Status"
@@ -185,19 +149,21 @@ export default function CitizenDashboard() {
             color="blue"
           />
         </div>
-
       </div>
 
-      {/* ----------------------------------------- */}
-      {/* RECENT EMERGENCIES */}
-      {/* ----------------------------------------- */}
-
-      <div className="section-card">
-
-        <div className="section-card-header">
-
-          <h2 className="section-card-title">
-            <i className="bi bi-clock-history text-muted"></i>
+      {/* Recent Emergencies Table Card */}
+      <div className="clay-card" style={{ padding: '0', overflow: 'hidden' }}>
+        <div
+          style={{
+            padding: '18px 24px',
+            borderBottom: '1px solid var(--er-border, #E2E8F0)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <h2 style={{ fontSize: '15px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+            <i className="bi bi-clock-history text-primary me-2"></i>
             Recent Emergency Reports
           </h2>
 
@@ -205,171 +171,43 @@ export default function CitizenDashboard() {
             type="button"
             className="btn-outline-custom"
             style={{
-              fontSize: 12,
+              fontSize: 12.5,
               padding: "6px 14px",
+              minHeight: "36px",
             }}
-            onClick={() =>
-              navigate(
-                "/citizen/history"
-              )
-            }
+            onClick={() => navigate("/citizen/history")}
           >
-            View All
+            View All History
           </button>
-
         </div>
 
         {myEmergencies.length === 0 ? (
-
           <EmptyState
             icon="bi-shield-check"
             title="No active emergencies"
             description="You have no emergency reports. Stay safe!"
           />
-
         ) : (
-
-          <div
-            className="section-card-body"
-            style={{
-              padding: "0",
-            }}
-          >
-
-            <div className="table-responsive">
-
-              <table
-                className="table table-hover mb-0"
-                style={{
-                  fontSize: 13.5,
-                }}
-              >
-
-                <thead
-                  style={{
-                    background: "#f8fafc",
-                    fontSize: 11.5,
-                    textTransform:
-                      "uppercase",
-                    letterSpacing:
-                      "0.5px",
-                  }}
-                >
-
-                  <tr>
-
-                    <th className="ps-4 py-3 border-0 text-muted fw-600">
-                      ID
-                    </th>
-
-                    <th className="py-3 border-0 text-muted fw-600">
-                      Type
-                    </th>
-
-                    <th className="py-3 border-0 text-muted fw-600">
-                      Priority
-                    </th>
-
-                    <th className="py-3 border-0 text-muted fw-600">
-                      Status
-                    </th>
-
-                    <th className="py-3 border-0 text-muted fw-600">
-                      Reported
-                    </th>
-
-                  </tr>
-
-                </thead>
-
-                <tbody>
-
-                  {myEmergencies.map(
-                    (emergency) => (
-                      <EmergencyRow
-                        key={emergency.id}
-                        emergency={
-                          emergency
-                        }
-                      />
-                    )
-                  )}
-
-                </tbody>
-
-              </table>
-
-            </div>
-
+          <div className="table-responsive">
+            <table className="table table-hover mb-0" style={{ fontSize: 13.5 }}>
+              <thead>
+                <tr>
+                  <th className="ps-4 py-3 border-0">ID</th>
+                  <th className="py-3 border-0">Type</th>
+                  <th className="py-3 border-0">Priority</th>
+                  <th className="py-3 border-0">Status</th>
+                  <th className="py-3 border-0">Reported</th>
+                </tr>
+              </thead>
+              <tbody>
+                {myEmergencies.map((e) => (
+                  <EmergencyRow key={e.id} emergency={e} />
+                ))}
+              </tbody>
+            </table>
           </div>
-
         )}
-
       </div>
-
-      {/* ----------------------------------------- */}
-      {/* SAFETY INFORMATION */}
-      {/* ----------------------------------------- */}
-
-      <div
-        style={{
-          background: "#eff6ff",
-          border:
-            "1px solid #bfdbfe",
-          borderRadius: 10,
-          padding: "16px 18px",
-          display: "flex",
-          alignItems:
-            "flex-start",
-          gap: 12,
-          marginTop: 24,
-        }}
-      >
-
-        <i
-          className="bi bi-info-circle-fill"
-          style={{
-            color: "#1d4ed8",
-            fontSize: 18,
-            flexShrink: 0,
-            marginTop: 2,
-          }}
-        ></i>
-
-        <div>
-
-          <div
-            style={{
-              fontWeight: 600,
-              fontSize: 13.5,
-              color: "#1e40af",
-              marginBottom: 4,
-            }}
-          >
-            Important Reminder
-          </div>
-
-          <div
-            style={{
-              fontSize: 13,
-              color: "#1d4ed8",
-              lineHeight: 1.6,
-            }}
-          >
-            For life-threatening emergencies,
-            always call{" "}
-            <strong>112</strong>{" "}
-            (National Emergency Number)
-            first. This platform assists in
-            coordinating a faster response but
-            does not replace official emergency
-            services.
-          </div>
-
-        </div>
-
-      </div>
-
     </AppLayout>
   );
 }

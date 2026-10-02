@@ -25,63 +25,27 @@ export default function EmergencyConfirmation() {
   })();
   const t = TRANSLATIONS[savedLang] || TRANSLATIONS.en;
 
-  // =====================================================
-  // Safety check
-  // =====================================================
-
   if (!emergency && !loading) {
     return (
-      <AppLayout
-        title="Emergency Received"
-        subtitle="Emergency information"
-      >
+      <AppLayout title="Emergency Confirmation">
         <div className="row justify-content-center">
           <div className="col-lg-7 col-xl-6">
-
-            <div className="section-card">
-              <div className="section-card-body text-center py-5">
-
-                <i
-                  className="bi bi-exclamation-circle"
-                  style={{
-                    fontSize: 48,
-                    color: "#dc2626",
-                  }}
-                ></i>
-
-                <h2
-                  style={{
-                    fontSize: 20,
-                    fontWeight: 700,
-                    marginTop: 16,
-                  }}
-                >
-                  Emergency information not found
-                </h2>
-
-                <p
-                  style={{
-                    color: "#64748b",
-                    fontSize: 14,
-                  }}
-                >
-                  Please return to the dashboard and
-                  submit the emergency again.
-                </p>
-
-                <button
-                  className="btn-primary-custom"
-                  onClick={() =>
-                    navigate("/citizen")
-                  }
-                >
-                  <i className="bi bi-house"></i>
-                  Back to Dashboard
-                </button>
-
-              </div>
+            <div className="clay-card text-center py-5">
+              <i className="bi bi-exclamation-circle text-danger" style={{ fontSize: 48 }}></i>
+              <h2 style={{ fontSize: 20, fontWeight: 700, marginTop: 16 }}>
+                Emergency information not found
+              </h2>
+              <p style={{ color: "#64748B", fontSize: 14 }}>
+                Please return to the dashboard and submit the emergency again.
+              </p>
+              <button
+                className="clay-button"
+                onClick={() => navigate("/citizen")}
+              >
+                <i className="bi bi-house me-2"></i>
+                Back to Dashboard
+              </button>
             </div>
-
           </div>
         </div>
       </AppLayout>
@@ -90,20 +54,13 @@ export default function EmergencyConfirmation() {
 
   if (!emergency) {
     return (
-      <AppLayout
-        title="Emergency Received"
-        subtitle="Loading emergency information..."
-      >
+      <AppLayout title="Emergency Confirmation" subtitle="Loading emergency record...">
         <div className="text-center py-5">
-          <span className="spinner-border"></span>
+          <span className="spinner-border text-primary"></span>
         </div>
       </AppLayout>
     );
   }
-
-  // =====================================================
-  // Backend data
-  // =====================================================
 
   const emergencyCode =
     emergency.emergency_code ||
@@ -128,13 +85,8 @@ export default function EmergencyConfirmation() {
     emergency.location_text ||
     emergency.locationText ||
     (latitude && longitude
-      ? `Lat: ${latitude}, Lng: ${longitude}`
+      ? `Lat: ${Number(latitude).toFixed(5)}, Lng: ${Number(longitude).toFixed(5)}`
       : "Location not available");
-
-  const createdAt =
-    emergency.created_at ||
-    emergency.createdAt ||
-    emergency.reportedAt;
 
   const photosCount = Number(emergency.photos_count || (Array.isArray(emergency.media) ? emergency.media.filter(m => m.media_type === 'photo' || m.type === 'photo').length : 0));
   const videosCount = Number(emergency.videos_count || (Array.isArray(emergency.media) ? emergency.media.filter(m => m.media_type === 'video' || m.type === 'video').length : 0));
@@ -148,12 +100,7 @@ export default function EmergencyConfirmation() {
     evidenceText = parts.join(', ');
   }
 
-  let ai =
-    emergency.ai_analysis ||
-    emergency.ai ||
-    emergency.analysis ||
-    null;
-
+  let ai = emergency.ai_analysis || emergency.ai || emergency.analysis || null;
   if (typeof ai === "string") {
     try {
       ai = JSON.parse(ai);
@@ -162,519 +109,233 @@ export default function EmergencyConfirmation() {
     }
   }
 
-  // =====================================================
-  // Status helpers
-  // =====================================================
-
-  const normalizedStatus =
-    String(status).toUpperCase();
-
-  const isAnalyzing =
-    normalizedStatus === "ANALYZING";
-
-  const isDispatched =
-    [
-      "DISPATCHED",
-      "RESPONDERS_EN_ROUTE",
-      "ARRIVED",
-      "RESOLVED",
-    ].includes(normalizedStatus);
-
-  const isResponding =
-    [
-      "RESPONDERS_EN_ROUTE",
-      "ARRIVED",
-    ].includes(normalizedStatus);
-
-  const isResolved =
-    normalizedStatus === "RESOLVED";
-
-  // =====================================================
-  // Timeline
-  // =====================================================
+  const normalizedStatus = String(status).toUpperCase();
+  const isAnalyzing = normalizedStatus === "ANALYZING";
+  const isDispatched = ["DISPATCHED", "RESPONDERS_EN_ROUTE", "ARRIVED", "RESOLVED"].includes(normalizedStatus);
+  const isResponding = ["RESPONDERS_EN_ROUTE", "ARRIVED"].includes(normalizedStatus);
+  const isResolved = normalizedStatus === "RESOLVED";
 
   const timelineSteps = [
-    {
-      label: "Emergency Reported",
-      done: true,
-    },
-    {
-      label: "AI Analysis",
-      done:
-        !isAnalyzing &&
-        Boolean(ai),
-      active:
-        isAnalyzing,
-    },
-    {
-      label: "Coordinator Review",
-      done:
-        isDispatched,
-      active:
-        !isDispatched &&
-        !isAnalyzing,
-    },
-    {
-      label: "Responders Dispatched",
-      done:
-        isDispatched,
-    },
-    {
-      label: "Response",
-      done:
-        isResponding ||
-        isResolved,
-      active:
-        isResponding,
-    },
-    {
-      label: "Resolved",
-      done:
-        isResolved,
-      active:
-        false,
-    },
+    { label: "Emergency Reported", done: true },
+    { label: "AI Analysis", done: !isAnalyzing && Boolean(ai), active: isAnalyzing },
+    { label: "Coordinator Review", done: isDispatched, active: !isDispatched && !isAnalyzing },
+    { label: "Responders Dispatched", done: isDispatched },
+    { label: "Response", done: isResponding || isResolved, active: isResponding },
+    { label: "Resolved", done: isResolved, active: false },
   ];
 
   return (
-    <AppLayout
-      title="Emergency Received"
-      subtitle="Your report has been received"
-    >
+    <AppLayout title="Emergency Confirmation" subtitle="Your report has been received">
       <div className="row justify-content-center">
         <div className="col-lg-7 col-xl-6">
           <BackButton fallback="/citizen" />
 
-          {/* =================================================
-              Success Banner
-          ================================================= */}
-
+          {/* Calm Confirmation Experience: White Clay Central Card */}
           <div
+            className="clay-card mb-4"
             style={{
-              background:
-                "linear-gradient(135deg, #166534 0%, #15803d 100%)",
-              borderRadius: 14,
-              padding: "24px",
-              display: "flex",
-              alignItems: "center",
-              gap: 16,
-              marginBottom: 24,
-              color: "#fff",
+              background: '#FFFFFF',
+              border: '1.5px solid var(--er-green-border, #BBF7D0)',
+              borderRadius: '24px',
+              padding: '28px',
+              boxShadow: 'var(--clay-shadow-card)',
+              position: 'relative',
+              overflow: 'hidden',
             }}
           >
+            {/* Top confirmation banner */}
+            <div className="d-flex align-items-center gap-3 mb-4">
+              <div
+                style={{
+                  width: '56px',
+                  height: '56px',
+                  background: 'linear-gradient(145deg, #16A34A 0%, #15803D 100%)',
+                  borderRadius: '16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '26px',
+                  color: '#FFFFFF',
+                  boxShadow: 'var(--clay-shadow-green)',
+                  flexShrink: 0,
+                }}
+              >
+                <i className="bi bi-check-circle-fill"></i>
+              </div>
 
+              <div>
+                <h1 style={{ fontSize: '22px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+                  Emergency report submitted
+                </h1>
+                <p style={{ fontSize: '14px', color: '#64748B', margin: '4px 0 0 0' }}>
+                  {t.confirmedSubtitle || "Your emergency report has been received and routed for response."}
+                </p>
+              </div>
+            </div>
+
+            {/* Reference Number in Soft Sunken Groove */}
             <div
               style={{
-                width: 52,
-                height: 52,
-                background:
-                  "rgba(255,255,255,0.15)",
-                borderRadius: 12,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 24,
-                flexShrink: 0,
+                textAlign: 'center',
+                padding: '16px',
+                background: '#F8FAFC',
+                border: '1px solid #E2E8F0',
+                borderRadius: '16px',
+                marginBottom: '24px',
+                boxShadow: 'var(--clay-shadow-inset)',
               }}
             >
-              <i className="bi bi-check-circle-fill"></i>
+              <div style={{ fontSize: '11.5px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>
+                {t.emergencyReference || "Incident Reference"}
+              </div>
+              <div style={{ fontSize: '32px', fontWeight: 800, color: '#0F172A', fontFamily: 'monospace', letterSpacing: '-0.5px' }}>
+                #{emergencyCode}
+              </div>
             </div>
 
-            <div>
-
-              <div
-                style={{
-                  fontWeight: 800,
-                  fontSize: 18,
-                  marginBottom: 4,
-                }}
-              >
-                {t.confirmedTitle || "Emergency Report Received"}
+            {/* Incident Summary Rows */}
+            <div className="d-flex flex-column gap-3 mb-4">
+              <div className="d-flex justify-content-between align-items-center pb-2 border-bottom">
+                <span style={{ fontSize: '13px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
+                  Emergency Type
+                </span>
+                <span style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A' }}>
+                  {emergencyType}
+                </span>
               </div>
 
-              <div
-                style={{
-                  fontSize: 13.5,
-                  opacity: 0.9,
-                  lineHeight: 1.45,
-                }}
-              >
-                {t.confirmedSubtitle} {t.coordinatorReviewing}
+              <div className="d-flex justify-content-between align-items-start pb-2 border-bottom">
+                <span style={{ fontSize: '13px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
+                  Location
+                </span>
+                <span style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', textAlign: 'right', maxWidth: '65%' }}>
+                  {locationText}
+                </span>
               </div>
 
+              <div className="d-flex justify-content-between align-items-center pb-2 border-bottom">
+                <span style={{ fontSize: '13px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
+                  Evidence Status
+                </span>
+                <span
+                  style={{
+                    background: totalMedia > 0 ? '#F0FDF4' : '#F1F5F9',
+                    border: totalMedia > 0 ? '1px solid #BBF7D0' : '1px solid #CBD5E1',
+                    color: totalMedia > 0 ? '#166534' : '#64748B',
+                    padding: '4px 12px',
+                    borderRadius: '9999px',
+                    fontSize: '12.5px',
+                    fontWeight: 700,
+                  }}
+                >
+                  {evidenceText}
+                </span>
+              </div>
+
+              <div className="d-flex justify-content-between align-items-center pb-2 border-bottom">
+                <span style={{ fontSize: '13px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
+                  Submission Status
+                </span>
+                <span
+                  style={{
+                    background: '#EFF6FF',
+                    border: '1px solid #BFDBFE',
+                    color: '#1D4ED8',
+                    padding: '4px 12px',
+                    borderRadius: '9999px',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  {normalizedStatus.replaceAll('_', ' ')}
+                </span>
+              </div>
+            </div>
+
+            {/* Human in the loop assurance */}
+            <div
+              style={{
+                background: '#F0FDF4',
+                border: '1px solid #BBF7D0',
+                borderRadius: '14px',
+                padding: '14px 18px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                fontSize: '13px',
+                color: '#166534',
+                lineHeight: 1.45,
+              }}
+            >
+              <i className="bi bi-person-check-fill text-success fs-5"></i>
+              <span>{t.hitlNotice || "A human coordinator is reviewing this report and coordinating appropriate responders."}</span>
             </div>
           </div>
 
-          {/* =================================================
-              Emergency Reference
-          ================================================= */}
-
-          <div className="section-card mb-4">
-
-            <div className="section-card-header">
-
-              <h2 className="section-card-title">
-                <i className="bi bi-hash text-muted"></i>
-                {t.emergencyReference || "Emergency Reference"}
-              </h2>
-
-              <span
-                className={`badge-status ${
-                  isResolved
-                    ? "badge-resolved"
-                    : isAnalyzing
-                    ? "badge-analyzing"
-                    : "badge-dispatched"
-                }`}
-              >
-                {normalizedStatus.replaceAll(
-                  "_",
-                  " "
-                )}
-              </span>
-
-            </div>
-
-            <div className="section-card-body">
-
-              <div
-                style={{
-                  textAlign: "center",
-                  padding: "16px 0",
-                  borderBottom:
-                    "1px solid #f1f5f9",
-                  marginBottom: 20,
-                }}
-              >
-
-                <div
-                  style={{
-                    fontSize: 13,
-                    color: "#64748b",
-                    marginBottom: 6,
-                  }}
-                >
-                  {t.emergencyReference || "Emergency Reference"}
-                </div>
-
-                <div
-                  style={{
-                    fontSize: 32,
-                    fontWeight: 800,
-                    color: "#0f172a",
-                    fontFamily: "monospace",
-                  }}
-                >
-                  {emergencyCode}
-                </div>
-
-              </div>
-
-              <div className="row g-3">
-
-                <div className="col-6">
-
-                  <div className="info-label">
-                    Type
-                  </div>
-
-                  <div className="info-value">
-                    {emergencyType}
-                  </div>
-
-                </div>
-
-                <div className="col-6">
-
-                  <div className="info-label">
-                    Reported At
-                  </div>
-
-                  <div className="info-value">
-
-                    {createdAt
-                      ? new Date(
-                          createdAt
-                        ).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })
-                      : "—"}
-
-                  </div>
-
-                </div>
-
-                <div className="col-12">
-
-                  <div className="info-label">
-                    Location
-                  </div>
-
-                  <div className="info-value">
-                    {locationText}
-                  </div>
-
-                </div>
-
-                <div className="col-12">
-
-                  <div className="info-label">
-                    Evidence / Media
-                  </div>
-
-                  <div className="info-value d-flex align-items-center gap-2">
-                    {totalMedia > 0 ? (
-                      <span className="badge bg-success text-white py-1 px-2" style={{ fontSize: '12px' }}>
-                        {evidenceText}
-                      </span>
-                    ) : (
-                      <span className="text-secondary" style={{ fontSize: '13px' }}>
-                        {t.noEvidence || 'Photo or video not provided'}
-                      </span>
-                    )}
-                  </div>
-
-                </div>
-
-                {emergency.description && (
-                  <div className="col-12">
-                    <div className="info-label">
-                      Description
-                    </div>
-                    <div className="info-value text-secondary" style={{ fontSize: '13px', lineHeight: 1.5 }}>
-                      {emergency.description}
-                    </div>
-                  </div>
-                )}
-
-                <div className="col-6">
-
-                  <div className="info-label">
-                    Severity
-                  </div>
-
-                  <div className="info-value">
-                    {emergency.severity ||
-                      "Pending AI analysis"}
-                  </div>
-
-                </div>
-
-                <div className="col-6">
-
-                  <div className="info-label">
-                    Priority
-                  </div>
-
-                  <div className="info-value">
-                    {emergency.priority ||
-                      "Pending AI analysis"}
-                  </div>
-
-                </div>
-
-                <div className="col-12 mt-3 pt-3 border-top">
-                  <div className="p-3 rounded-2" style={{ background: 'rgba(56, 189, 248, 0.08)', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
-                    <div className="d-flex align-items-start gap-2">
-                      <i className="bi bi-person-check-fill text-info mt-1" aria-hidden="true"></i>
-                      <div style={{ fontSize: '12.5px', color: '#cbd5e1', lineHeight: 1.45 }}>
-                        <strong>{t.hitlNotice || 'Your emergency report has been received. A human coordinator will review the available information and coordinate the appropriate response.'}</strong>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-              </div>
-            </div>
-          </div>
-
-          {/* =================================================
-              AI Analysis
-          ================================================= */}
-
+          {/* AI Decision Support (if available) */}
           {ai && (
             <div className="mb-4">
-
-              <h2
-                style={{
-                  fontSize: 14,
-                  fontWeight: 700,
-                  color: "#0f172a",
-                  marginBottom: 10,
-                }}
-              >
-                AI Analysis Result
-              </h2>
-
               <AIAnalysisCard ai={ai} />
-
-              <div
-                style={{
-                  fontSize: 11.5,
-                  color: "#64748b",
-                  marginTop: 8,
-                }}
-              >
-                <i className="bi bi-info-circle me-1"></i>
-                AI provides decision support. Final
-                emergency response decisions remain
-                with the coordinator.
-              </div>
-
             </div>
           )}
 
-          {/* =================================================
-              Timeline
-          ================================================= */}
+          {/* Progress Timeline */}
+          <div className="clay-card mb-4" style={{ background: '#FFFFFF', padding: '24px' }}>
+            <h2 style={{ fontSize: '15px', fontWeight: 800, color: '#0F172A', marginBottom: '18px' }}>
+              <i className="bi bi-list-check me-2 text-primary"></i>
+              {t.responseTimeline || "Response Timeline"}
+            </h2>
 
-          <div className="section-card mb-4">
+            <div className="d-flex flex-column gap-3">
+              {timelineSteps.map((step, index) => (
+                <div key={step.label} className="d-flex align-items-center gap-3">
+                  <div
+                    style={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: "50%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                      background: step.done ? "#16A34A" : step.active ? "#0284C7" : "#F1F5F9",
+                      color: step.done || step.active ? "#FFFFFF" : "#64748B",
+                      border: step.done ? "1px solid #16A34A" : step.active ? "1px solid #0284C7" : "1px solid #CBD5E1",
+                      boxShadow: "var(--clay-shadow-sm)",
+                    }}
+                  >
+                    {step.done ? <i className="bi bi-check fs-6"></i> : <span style={{ fontSize: 11, fontWeight: 700 }}>{index + 1}</span>}
+                  </div>
 
-            <div className="section-card-header">
-
-              <h2 className="section-card-title">
-                <i className="bi bi-list-check text-muted"></i>
-                {t.responseTimeline || "Response Timeline"}
-              </h2>
-
-            </div>
-
-            <div className="section-card-body">
-
-              <div className="timeline">
-
-                {timelineSteps.map(
-                  (step, index) => (
-                    <div
-                      key={step.label}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 12,
-                        marginBottom:
-                          index ===
-                          timelineSteps.length - 1
-                            ? 0
-                            : 16,
-                      }}
-                    >
-
-                      <div
-                        style={{
-                          width: 28,
-                          height: 28,
-                          borderRadius: "50%",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent:
-                            "center",
-                          flexShrink: 0,
-
-                          background:
-                            step.done
-                              ? "#16a34a"
-                              : step.active
-                              ? "#f59e0b"
-                              : "#e2e8f0",
-
-                          color:
-                            step.done ||
-                            step.active
-                              ? "#fff"
-                              : "#64748b",
-                        }}
-                      >
-                        {step.done ? (
-                          <i className="bi bi-check"></i>
-                        ) : (
-                          <span
-                            style={{
-                              fontSize: 11,
-                              fontWeight: 700,
-                            }}
-                          >
-                            {index + 1}
-                          </span>
-                        )}
-                      </div>
-
-                      <div>
-
-                        <div
-                          style={{
-                            fontSize: 13,
-                            fontWeight:
-                              step.active ||
-                              step.done
-                                ? 700
-                                : 500,
-                            color:
-                              step.active
-                                ? "#b45309"
-                                : step.done
-                                ? "#166534"
-                                : "#64748b",
-                          }}
-                        >
-                          {step.label}
-                        </div>
-
-                        {step.active && (
-                          <div
-                            style={{
-                              fontSize: 11,
-                              color: "#94a3b8",
-                              marginTop: 2,
-                            }}
-                          >
-                            In progress
-                          </div>
-                        )}
-
-                      </div>
-
+                  <div>
+                    <div style={{ fontSize: '13.5px', fontWeight: step.active || step.done ? 700 : 500, color: step.done ? '#166534' : step.active ? '#0284C7' : '#64748B' }}>
+                      {step.label}
                     </div>
-                  )
-                )}
-
-              </div>
-
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 
-          {/* =================================================
-              Track Emergency
-          ================================================= */}
-
+          {/* Action Navigation */}
           <button
             className="btn-primary-custom w-100"
-            style={{
-              justifyContent: "center",
-              fontSize: 15,
-              padding: "13px",
-            }}
-            onClick={() =>
-              navigate("/citizen/status")
-            }
+            style={{ minHeight: '52px', fontSize: '15px' }}
+            onClick={() => navigate("/citizen/status")}
             id="track-emergency-btn"
           >
-            <i className="bi bi-map"></i>
+            <i className="bi bi-map me-1"></i>
             {t.trackEmergency || "Track Emergency"}
           </button>
 
           <button
-            className="btn-outline-custom w-100 mt-2"
-            style={{
-              justifyContent: "center",
-            }}
-            onClick={() =>
-              navigate("/citizen")
-            }
+            className="btn-outline-custom w-100 mt-3"
+            style={{ minHeight: '48px', fontSize: '14px' }}
+            onClick={() => navigate("/citizen")}
           >
             {t.back || "Back to Dashboard"}
           </button>
-
         </div>
       </div>
     </AppLayout>

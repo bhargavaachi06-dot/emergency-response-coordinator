@@ -89,10 +89,10 @@ export default function EmergencyDetails() {
     return (
       <AppLayout title="Incident Not Found" subtitle={`No emergency matching "${id}"`}>
         <div className="clean-section-card text-center py-5">
-          <i className="bi bi-exclamation-triangle text-danger" style={{ fontSize: 44 }}></i>
-          <h2 className="mt-3 fw-bold text-white">Emergency Not Found</h2>
+          <i className="bi bi-exclamation-triangle text-danger" style={{ fontSize: 48 }}></i>
+          <h2 className="mt-3 fw-bold text-dark">Emergency Not Found</h2>
           <p className="text-secondary">{error || `Could not find incident #${id}`}</p>
-          <button className="btn-primary-send mt-3" style={{ maxWidth: '280px', margin: '0 auto' }} onClick={() => navigate('/coordinator')}>
+          <button className="btn-emergency mt-3" style={{ maxWidth: '280px', margin: '0 auto' }} onClick={() => navigate('/coordinator')}>
             Back to Command Center
           </button>
         </div>
@@ -175,7 +175,7 @@ export default function EmergencyDetails() {
       title={`Incident #${emergencyCode}`}
       subtitle={`${emergency.type || 'Emergency'} · Public Safety Record`}
     >
-      <div style={{ maxWidth: '960px', margin: '0 auto', paddingBottom: '40px' }}>
+      <div style={{ maxWidth: '1000px', margin: '0 auto', paddingBottom: '40px' }}>
         {/* Navigation row */}
         <div className="mb-3">
           <BackButton fallback="/coordinator" />
@@ -183,8 +183,8 @@ export default function EmergencyDetails() {
 
         {/* Action Notice */}
         {actionMsg && (
-          <div className="alert alert-success d-flex align-items-center gap-2 p-3 rounded-3 mb-3" style={{ background: 'rgba(34, 197, 94, 0.15)', border: '1px solid #22c55e', color: '#86efac' }}>
-            <i className="bi bi-check-circle-fill"></i>
+          <div className="alert-emergency d-flex align-items-center gap-2 p-3 rounded-3 mb-3" style={{ background: '#F0FDF4', border: '1.5px solid #BBF7D0', color: '#166534' }}>
+            <i className="bi bi-check-circle-fill text-success fs-5"></i>
             <span>{actionMsg}</span>
           </div>
         )}
@@ -196,13 +196,13 @@ export default function EmergencyDetails() {
           <div className="clean-section-body p-4">
             <div className="d-flex justify-content-between align-items-start flex-wrap gap-3">
               <div>
-                <span className="text-info fw-bold font-monospace small text-uppercase">
+                <span className="text-primary fw-bold font-monospace small text-uppercase">
                   Incident Reference #{emergencyCode}
                 </span>
-                <h1 className="text-white fw-bold m-0 mt-1 fs-3" id="inc-header-title">
+                <h1 className="text-dark fw-bold m-0 mt-1 fs-3" id="inc-header-title">
                   {emergency.type}
                 </h1>
-                <div className="d-flex align-items-center gap-2 mt-2 flex-wrap">
+                <div className="d-flex align-items-center gap-2 mt-3 flex-wrap">
                   {emergency.severity && <SeverityBadge severity={emergency.severity} />}
                   <PriorityBadge priority={emergency.priority} />
                   <StatusBadge status={emergency.status} />
@@ -232,15 +232,16 @@ export default function EmergencyDetails() {
             ===================================================== */}
         <section className="clean-section-card mb-3" aria-labelledby="inc-location-title">
           <div className="clean-section-header">
-            <i className="bi bi-geo-alt-fill text-danger"></i>
+            <i className="bi bi-geo-alt-fill text-danger fs-5"></i>
             <h2 className="clean-section-title" id="inc-location-title">Location</h2>
           </div>
           <div className="clean-section-body p-3">
-            <div className="mb-2 text-white fw-semibold">
+            <div className="mb-3 text-dark fw-bold" style={{ fontSize: '15px' }}>
+              <i className="bi bi-pin-map-fill text-danger me-2"></i>
               {emergency.location_text || emergency.location?.address || `${emergencyLat.toFixed(5)}, ${emergencyLng.toFixed(5)}`}
             </div>
-            <div className="rounded-3 overflow-hidden border border-secondary border-opacity-25" style={{ height: '320px' }}>
-              <MapView markers={mapMarkers} center={[emergencyLat, emergencyLng]} height={320} />
+            <div className="rounded-3 overflow-hidden border border-secondary border-opacity-25" style={{ height: '340px' }}>
+              <MapView markers={mapMarkers} center={[emergencyLat, emergencyLng]} height={340} />
             </div>
           </div>
         </section>
@@ -250,11 +251,11 @@ export default function EmergencyDetails() {
             ===================================================== */}
         <section className="clean-section-card mb-3" aria-labelledby="inc-desc-title">
           <div className="clean-section-header">
-            <i className="bi bi-card-text text-info"></i>
+            <i className="bi bi-card-text text-info fs-5"></i>
             <h2 className="clean-section-title" id="inc-desc-title">Description</h2>
           </div>
           <div className="clean-section-body p-3">
-            <p className="text-light m-0" style={{ fontSize: '14.5px', lineHeight: 1.6 }}>
+            <p className="text-dark m-0" style={{ fontSize: '15px', lineHeight: 1.65 }}>
               {emergency.description || 'No detailed description provided by the reporting citizen.'}
             </p>
           </div>
@@ -266,12 +267,12 @@ export default function EmergencyDetails() {
         <section className="clean-section-card mb-3" aria-labelledby="inc-evidence-title">
           <div className="clean-section-header d-flex justify-content-between align-items-center">
             <div className="d-flex align-items-center gap-2">
-              <i className="bi bi-camera-reels-fill text-info"></i>
+              <i className="bi bi-camera-reels-fill text-primary fs-5"></i>
               <h2 className="clean-section-title m-0" id="inc-evidence-title">
-                Evidence
+                PHOTO / VIDEO EVIDENCE
               </h2>
             </div>
-            <span className={`badge ${mediaList.length > 0 ? 'bg-success' : 'bg-secondary'}`} style={{ fontSize: '11px' }}>
+            <span className={`badge ${mediaList.length > 0 ? 'bg-success' : 'bg-secondary'}`} style={{ fontSize: '12px', padding: '6px 12px', borderRadius: '9999px' }}>
               {mediaList.length > 0 ? `${mediaList.length} File${mediaList.length > 1 ? 's' : ''}` : 'No Media'}
             </span>
           </div>
@@ -281,18 +282,18 @@ export default function EmergencyDetails() {
               <div>
                 {/* Active Media Viewer */}
                 {activeMedia && (
-                  <div className="p-2 rounded-3 mb-3" style={{ background: '#0F172A', border: '1px solid #26344D' }}>
+                  <div className="p-3 rounded-3 mb-3" style={{ background: '#F8FAFC', border: '1.5px solid #E2E8F0', boxShadow: 'var(--clay-shadow-sm)' }}>
                     <div className="d-flex align-items-center justify-content-between px-2 py-1 mb-2 text-secondary small">
-                      <span className="fw-semibold text-light text-truncate" style={{ maxWidth: '70%' }}>
+                      <span className="fw-bold text-dark text-truncate" style={{ maxWidth: '70%', fontSize: '13.5px' }}>
                         {activeMedia.media_type === 'video' ? '🎥 ' : '📷 '}
                         {activeMedia.file_name || `Evidence #${activeMediaIndex + 1}`}
                       </span>
-                      <span className="badge bg-dark border border-secondary text-info text-uppercase">
+                      <span className="badge bg-light text-primary border border-primary-subtle text-uppercase" style={{ fontSize: '11px' }}>
                         {activeMedia.media_type || 'Media'}
                       </span>
                     </div>
 
-                    <div className="text-center" style={{ maxHeight: '340px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div className="text-center" style={{ maxHeight: '360px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       {activeMedia.media_type === 'video' ? (
                         <video
                           key={activeMedia.data_url || activeMedia.id}
@@ -301,20 +302,20 @@ export default function EmergencyDetails() {
                           muted
                           playsInline
                           preload="metadata"
-                          style={{ maxWidth: '100%', maxHeight: '320px', borderRadius: '6px' }}
+                          style={{ maxWidth: '100%', maxHeight: '340px', borderRadius: '12px' }}
                         />
                       ) : (
                         <img
                           key={activeMedia.data_url || activeMedia.id}
                           src={activeMedia.data_url}
                           alt={activeMedia.file_name || 'Emergency visual evidence'}
-                          style={{ maxWidth: '100%', maxHeight: '320px', objectFit: 'contain', borderRadius: '6px' }}
+                          style={{ maxWidth: '100%', maxHeight: '340px', objectFit: 'contain', borderRadius: '12px' }}
                         />
                       )}
                     </div>
 
                     {/* File Information */}
-                    <div className="d-flex align-items-center justify-content-between px-2 pt-2 text-secondary" style={{ fontSize: '11px' }}>
+                    <div className="d-flex align-items-center justify-content-between px-2 pt-2 text-secondary" style={{ fontSize: '12px' }}>
                       <span>Size: {activeMedia.file_size ? `${(activeMedia.file_size / 1024).toFixed(1)} KB` : 'Standard'}</span>
                       <span>MIME: {activeMedia.mime_type || (activeMedia.media_type === 'video' ? 'video/mp4' : 'image/jpeg')}</span>
                     </div>
@@ -331,15 +332,16 @@ export default function EmergencyDetails() {
                         role="button"
                         tabIndex={0}
                         style={{
-                          width: '68px',
-                          height: '54px',
-                          borderRadius: '6px',
+                          width: '74px',
+                          height: '58px',
+                          borderRadius: '10px',
                           overflow: 'hidden',
-                          border: activeMediaIndex === idx ? '2px solid #38BDF8' : '1px solid #26344D',
-                          background: '#0F172A',
+                          border: activeMediaIndex === idx ? '2.5px solid #0284C7' : '1.5px solid #CBD5E1',
+                          background: '#F1F5F9',
                           cursor: 'pointer',
                           flexShrink: 0,
                           position: 'relative',
+                          boxShadow: 'var(--clay-shadow-sm)',
                         }}
                       >
                         {m.media_type === 'video' ? (
@@ -373,10 +375,10 @@ export default function EmergencyDetails() {
         <section className="clean-section-card mb-3" aria-labelledby="inc-ai-title">
           <div className="clean-section-header d-flex justify-content-between align-items-center">
             <div className="d-flex align-items-center gap-2">
-              <i className="bi bi-cpu text-info"></i>
+              <i className="bi bi-cpu text-primary fs-5"></i>
               <h2 className="clean-section-title m-0" id="inc-ai-title">AI Assessment</h2>
             </div>
-            <span className="badge bg-dark border border-info text-info" style={{ fontSize: '11px' }}>
+            <span className="badge bg-primary-subtle text-primary border border-primary-subtle" style={{ fontSize: '11px', padding: '5px 10px', borderRadius: '9999px' }}>
               Decision Support
             </span>
           </div>
@@ -387,12 +389,12 @@ export default function EmergencyDetails() {
                 <div className="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
                   <div>
                     <span className="text-secondary small d-block">Triage Evaluation</span>
-                    <span className="text-white fw-bold">{ai.category || emergency.type}</span>
+                    <span className="text-dark fw-bold fs-5">{ai.category || emergency.type}</span>
                   </div>
                   {ai.confidence && (
                     <div>
                       <span className="text-secondary small d-block">Confidence</span>
-                      <span className="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25">
+                      <span className="badge bg-primary-subtle text-primary border border-primary-subtle fs-6">
                         {Math.round(ai.confidence * (ai.confidence <= 1 ? 100 : 1))}%
                       </span>
                     </div>
@@ -400,15 +402,15 @@ export default function EmergencyDetails() {
                 </div>
 
                 {ai.reasoning && (
-                  <div className="p-3 rounded-2 mb-3" style={{ background: '#0F172A', border: '1px solid #26344D', fontSize: '13.5px', color: '#cbd5e1' }}>
-                    <div className="text-info fw-bold small text-uppercase mb-1">Operational Assessment:</div>
+                  <div className="p-3 rounded-3 mb-3" style={{ background: '#F8FAFC', border: '1.5px solid #E2E8F0', fontSize: '14px', color: '#1E293B', boxShadow: 'var(--clay-shadow-inset)' }}>
+                    <div className="text-primary fw-bold small text-uppercase mb-1">Operational Assessment:</div>
                     {ai.reasoning}
                   </div>
                 )}
 
                 {/* Evidence Assessment Evaluation */}
                 {evidenceAssessment && (
-                  <div className="p-3 rounded-2 mb-3" style={{ background: '#0F172A', border: '1px solid #26344D', fontSize: '13px' }}>
+                  <div className="p-3 rounded-3 mb-3" style={{ background: '#F8FAFC', border: '1.5px solid #E2E8F0', fontSize: '13.5px', boxShadow: 'var(--clay-shadow-inset)' }}>
                     <div className="text-warning fw-bold small text-uppercase mb-2">Visual Evidence Assessment:</div>
                     <div className="d-flex gap-3 mb-2 flex-wrap">
                       <span><strong>Consistency:</strong> {evidenceAssessment.consistency || 'Assessed'}</span>
@@ -425,7 +427,7 @@ export default function EmergencyDetails() {
                 )}
 
                 {/* Memory Context */}
-                <div className="p-3 rounded-2" style={{ background: '#0F172A', border: '1px solid #26344D', fontSize: '13px' }}>
+                <div className="p-3 rounded-3" style={{ background: '#F8FAFC', border: '1.5px solid #E2E8F0', fontSize: '13.5px', boxShadow: 'var(--clay-shadow-inset)' }}>
                   <div className="text-primary fw-bold small text-uppercase mb-1">
                     <i className="bi bi-database-fill-check me-1"></i>
                     Hindsight Memory Context:
@@ -450,15 +452,15 @@ export default function EmergencyDetails() {
         {/* =====================================================
             7. HUMAN COORDINATOR REVIEW (Clearly Separated)
             ===================================================== */}
-        <section className="clean-section-card mb-3" style={{ borderLeft: '4px solid #22C55E' }} aria-labelledby="inc-human-title">
+        <section className="clean-section-card mb-3" style={{ borderLeft: '5px solid #16A34A' }} aria-labelledby="inc-human-title">
           <div className="clean-section-header d-flex justify-content-between align-items-center">
             <div className="d-flex align-items-center gap-2">
-              <i className="bi bi-person-check-fill text-success"></i>
+              <i className="bi bi-person-check-fill text-success fs-5"></i>
               <h2 className="clean-section-title m-0" id="inc-human-title">
                 Human Coordinator Review
               </h2>
             </div>
-            <span className="badge bg-success" style={{ fontSize: '11px' }}>
+            <span className="badge bg-success" style={{ fontSize: '11px', padding: '5px 10px', borderRadius: '9999px' }}>
               Final Authority
             </span>
           </div>
@@ -469,7 +471,7 @@ export default function EmergencyDetails() {
             </p>
 
             {verdictNotice && (
-              <div className="alert alert-success py-2 px-3 mb-3 rounded-2 small">
+              <div className="alert alert-success py-2 px-3 mb-3 rounded-3 small fw-bold">
                 ✓ {verdictNotice}
               </div>
             )}
@@ -478,6 +480,7 @@ export default function EmergencyDetails() {
               <button
                 type="button"
                 className={`btn btn-sm ${coordinatorVerdict === 'verified' ? 'btn-success' : 'btn-outline-success'}`}
+                style={{ borderRadius: '12px', padding: '8px 16px', fontWeight: 600 }}
                 onClick={() => {
                   setCoordinatorVerdict('verified');
                   setVerdictNotice('Evidence verified consistent by coordinator.');
@@ -491,6 +494,7 @@ export default function EmergencyDetails() {
               <button
                 type="button"
                 className={`btn btn-sm ${coordinatorVerdict === 'unclear' ? 'btn-warning text-dark' : 'btn-outline-warning'}`}
+                style={{ borderRadius: '12px', padding: '8px 16px', fontWeight: 600 }}
                 onClick={() => {
                   setCoordinatorVerdict('unclear');
                   setVerdictNotice('Flagged for field verification by arriving units.');
@@ -504,6 +508,7 @@ export default function EmergencyDetails() {
               <button
                 type="button"
                 className={`btn btn-sm ${coordinatorVerdict === 'authorized' ? 'btn-info text-dark' : 'btn-outline-info'}`}
+                style={{ borderRadius: '12px', padding: '8px 16px', fontWeight: 600 }}
                 onClick={() => {
                   setCoordinatorVerdict('authorized');
                   setVerdictNotice('Coordinator confirmed dispatch authorization.');
@@ -522,7 +527,7 @@ export default function EmergencyDetails() {
             ===================================================== */}
         <section className="clean-section-card mb-3" aria-labelledby="inc-responders-title">
           <div className="clean-section-header">
-            <i className="bi bi-truck-front-fill text-danger"></i>
+            <i className="bi bi-truck-front-fill text-danger fs-5"></i>
             <h2 className="clean-section-title" id="inc-responders-title">Responders</h2>
           </div>
 
@@ -533,14 +538,14 @@ export default function EmergencyDetails() {
                 <div className="text-secondary small fw-bold text-uppercase mb-2">Deployed Units:</div>
                 <div className="d-flex flex-column gap-2">
                   {emergency.responders.map((r, ri) => (
-                    <div key={ri} className="d-flex align-items-center justify-content-between p-2 rounded-2" style={{ background: '#0F172A', border: '1px solid #26344D' }}>
-                      <div className="d-flex align-items-center gap-2">
-                        <span className="fs-5">
+                    <div key={ri} className="d-flex align-items-center justify-content-between p-3 rounded-3" style={{ background: '#FFFFFF', border: '1.5px solid #E2E8F0', boxShadow: 'var(--clay-shadow-sm)' }}>
+                      <div className="d-flex align-items-center gap-3">
+                        <span className="fs-4">
                           {(r.type || '').toLowerCase().includes('ambulance') ? '🚑' : '👮'}
                         </span>
                         <div>
-                          <div className="fw-bold text-white small">{r.name || r.type}</div>
-                          {r.eta && <div className="text-secondary" style={{ fontSize: '11px' }}>ETA: {r.eta}</div>}
+                          <div className="fw-bold text-dark">{r.name || r.type}</div>
+                          {r.eta && <div className="text-secondary" style={{ fontSize: '12px' }}>ETA: {r.eta}</div>}
                         </div>
                       </div>
                       <StatusBadge status={r.status || 'Dispatched'} />
@@ -556,7 +561,8 @@ export default function EmergencyDetails() {
             <div className="d-flex gap-2 flex-wrap">
               <button
                 type="button"
-                className="btn-dispatch-action"
+                className="clay-button"
+                style={{ background: '#FFFFFF', border: '1.5px solid #E2E8F0', borderRadius: '14px', padding: '10px 18px', fontWeight: 700 }}
                 onClick={() => handleDispatch('Ambulance')}
                 disabled={dispatching['Ambulance']}
               >
@@ -564,8 +570,8 @@ export default function EmergencyDetails() {
               </button>
               <button
                 type="button"
-                className="btn-dispatch-action"
-                style={{ background: '#1D4ED8', borderColor: '#3B82F6' }}
+                className="clay-button"
+                style={{ background: '#FFFFFF', border: '1.5px solid #E2E8F0', borderRadius: '14px', padding: '10px 18px', fontWeight: 700 }}
                 onClick={() => handleDispatch('Police')}
                 disabled={dispatching['Police']}
               >
@@ -573,8 +579,8 @@ export default function EmergencyDetails() {
               </button>
               <button
                 type="button"
-                className="btn-dispatch-action"
-                style={{ background: '#D97706', borderColor: '#F59E0B' }}
+                className="clay-button"
+                style={{ background: '#FFFFFF', border: '1.5px solid #E2E8F0', borderRadius: '14px', padding: '10px 18px', fontWeight: 700 }}
                 onClick={handleNotifyHelpers}
                 disabled={notifying}
               >
@@ -589,7 +595,7 @@ export default function EmergencyDetails() {
             ===================================================== */}
         <section className="clean-section-card mb-3" aria-labelledby="inc-timeline-title">
           <div className="clean-section-header">
-            <i className="bi bi-clock-history text-primary"></i>
+            <i className="bi bi-clock-history text-primary fs-5"></i>
             <h2 className="clean-section-title" id="inc-timeline-title">Timeline</h2>
           </div>
 
@@ -600,6 +606,7 @@ export default function EmergencyDetails() {
               <button
                 type="button"
                 className="btn btn-outline-success"
+                style={{ borderRadius: '14px', padding: '10px 20px', fontWeight: 700 }}
                 onClick={handleResolve}
                 disabled={resolving || (emergency.status || '').toUpperCase() === 'RESOLVED'}
               >

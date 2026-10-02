@@ -1,94 +1,109 @@
 /* =====================================================
    Emergency Response Coordinator — SignUp Page Styles
+   White Claymorphism Theme
    ===================================================== */
 
 .signup-stepper {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 24px;
+  margin-bottom: 28px;
   padding: 0 10px;
 }
 
 .step-dot {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  background: #e2e8f0;
-  color: #64748b;
-  font-size: 12px;
+  background: #FFFFFF;
+  border: 1.5px solid var(--er-border, #E2E8F0);
+  color: var(--er-gray, #64748B);
+  font-size: 13px;
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: var(--clay-shadow-sm);
   transition: all 0.2s ease;
 }
 
 .step-dot.active {
-  background: #dc2626;
-  color: #ffffff;
+  background: linear-gradient(145deg, #DC2626 0%, #B91C1C 100%);
+  color: #FFFFFF;
+  border-color: #DC2626;
+  box-shadow: var(--clay-shadow-red);
 }
 
 .step-dot.done {
-  background: #16a34a;
-  color: #ffffff;
+  background: var(--er-green, #16A34A);
+  color: #FFFFFF;
+  border-color: var(--er-green, #16A34A);
+  box-shadow: var(--clay-shadow-green);
 }
 
 .step-line {
   flex: 1;
-  height: 2px;
-  background: #e2e8f0;
-  max-width: 40px;
-  margin: 0 4px;
+  height: 3px;
+  background: var(--er-border, #E2E8F0);
+  max-width: 44px;
+  margin: 0 6px;
+  border-radius: 2px;
+  transition: background 0.2s ease;
 }
 
 .step-line.active {
-  background: #16a34a;
+  background: var(--er-green, #16A34A);
 }
 
 /* Photo upload box */
 .photo-upload-box {
-  background: #f8fafc;
-  border: 1px dashed #cbd5e1;
-  border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 22px;
+  background: #F8FAFC;
+  border: 2px dashed #CBD5E1;
+  border-radius: var(--radius-md, 16px);
+  padding: 20px;
+  margin-bottom: 24px;
+  box-shadow: var(--clay-shadow-inset);
 }
 
 .optional-tag {
   font-size: 11px;
   font-weight: 700;
-  color: #64748b;
-  background: #e2e8f0;
-  padding: 2px 8px;
-  border-radius: 10px;
+  color: var(--er-gray, #64748B);
+  background: #FFFFFF;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill, 9999px);
+  border: 1px solid var(--er-border, #E2E8F0);
   text-transform: uppercase;
+  letter-spacing: 0.4px;
+  box-shadow: var(--clay-shadow-sm);
 }
 
 .photo-action-container {
   display: flex;
   align-items: center;
-  gap: 16px;
-  margin-top: 8px;
+  gap: 18px;
+  margin-top: 12px;
 }
 
 .photo-placeholder-circle {
-  width: 60px;
-  height: 60px;
+  width: 68px;
+  height: 68px;
   border-radius: 50%;
-  background: #e2e8f0;
-  color: #94a3b8;
-  font-size: 24px;
+  background: #FFFFFF;
+  border: 1.5px solid var(--er-border, #E2E8F0);
+  color: var(--er-gray, #94A3B8);
+  font-size: 26px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-shadow: var(--clay-shadow-sm);
 }
 
 .photo-preview-wrapper {
   position: relative;
-  width: 60px;
-  height: 60px;
+  width: 68px;
+  height: 68px;
   flex-shrink: 0;
 }
 
@@ -97,59 +112,63 @@
   height: 100%;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid #16a34a;
+  border: 2.5px solid var(--er-green, #16A34A);
+  box-shadow: var(--clay-shadow-sm);
 }
 
 .btn-remove-photo {
   position: absolute;
   top: -4px;
   right: -4px;
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  background: #dc2626;
-  color: #ffffff;
+  background: var(--er-red, #DC2626);
+  color: #FFFFFF;
   border: none;
-  font-size: 11px;
+  font-size: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 .photo-buttons-group {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   flex-wrap: wrap;
 }
 
 .btn-photo-action {
-  padding: 8px 12px;
-  background: #ffffff;
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
-  font-size: 12px;
+  padding: 10px 14px;
+  background: #FFFFFF;
+  border: 1.5px solid var(--er-border, #CBD5E1);
+  border-radius: var(--radius-sm, 12px);
+  font-size: 13px;
   font-weight: 600;
-  color: #334155;
+  color: var(--er-slate, #334155);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  transition: all 0.2s ease;
+  min-height: 42px;
+  box-shadow: var(--clay-shadow-sm);
+  transition: all 0.16s ease;
 }
 
 .btn-photo-action:hover:not(:disabled) {
-  background: #f1f5f9;
-  border-color: #94a3b8;
+  background: #F8FAFC;
+  border-color: #94A3B8;
+  transform: translateY(-1px);
 }
 
 /* Verified status badges */
 .verified-status-badges {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   justify-content: center;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 22px;
 }
 
 .verified-status-badges.stack {
@@ -164,22 +183,22 @@
 .completion-actions {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-top: 24px;
+  gap: 12px;
+  margin-top: 26px;
 }
 
 .btn-auth-skip {
   background: none;
   border: none;
-  color: #64748b;
-  font-size: 13px;
+  color: var(--er-gray, #64748B);
+  font-size: 13.5px;
   font-weight: 600;
   cursor: pointer;
-  padding: 8px;
+  padding: 10px;
   text-decoration: underline;
-  transition: color 0.2s ease;
+  transition: color 0.16s ease;
 }
 
 .btn-auth-skip:hover {
-  color: #0f172a;
+  color: var(--er-navy, #0F172A);
 }

@@ -1,5 +1,7 @@
+
 /* =====================================================
    Emergency Response Coordinator — Startup Splash Screen
+   White Claymorphism Theme
    ===================================================== */
 
 .splash-screen-root {
@@ -8,12 +10,13 @@
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: linear-gradient(155deg, #0b1523 0%, #102138 60%, #162b46 100%);
+  height: 100dvh;
+  background-color: #FFFFFF;
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 99999;
-  color: #ffffff;
+  color: var(--er-navy, #0F172A);
   padding: 24px;
   box-sizing: border-box;
 }
@@ -32,30 +35,29 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 68px;
-  height: 68px;
-  background: rgba(220, 38, 38, 0.18);
-  border: 2px solid rgba(220, 38, 38, 0.45);
-  color: #ef4444;
-  font-size: 34px;
-  border-radius: 18px;
-  margin-bottom: 22px;
-  box-shadow: 0 0 28px rgba(220, 38, 38, 0.38);
+  width: 74px;
+  height: 74px;
+  background: linear-gradient(145deg, #DC2626 0%, #B91C1C 100%);
+  color: #FFFFFF;
+  font-size: 36px;
+  border-radius: var(--radius-lg, 20px);
+  margin-bottom: 24px;
+  box-shadow: 0 10px 24px rgba(220, 38, 38, 0.35);
   animation: splashPulse 2.2s infinite ease-in-out;
 }
 
 .splash-brand-title {
-  font-size: 23px;
+  font-size: 24px;
   font-weight: 800;
-  color: #ffffff;
+  color: var(--er-navy, #0F172A);
   letter-spacing: -0.02em;
-  margin: 0 0 10px 0;
-  line-height: 1.3;
+  margin: 0 0 8px 0;
+  line-height: 1.25;
 }
 
 .splash-brand-tagline {
-  font-size: 14px;
-  color: #94a3b8;
+  font-size: 14.5px;
+  color: var(--er-gray, #64748B);
   margin: 0 0 32px 0;
   line-height: 1.5;
 }
@@ -64,20 +66,21 @@
   display: inline-flex;
   align-items: center;
   gap: 12px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  padding: 10px 20px;
-  border-radius: 24px;
+  background: #F8FAFC;
+  border: 1.5px solid var(--er-border, #E2E8F0);
+  padding: 10px 22px;
+  border-radius: var(--radius-pill, 9999px);
   font-size: 13.5px;
-  font-weight: 500;
-  color: #e2e8f0;
+  font-weight: 600;
+  color: var(--er-slate, #334155);
+  box-shadow: var(--clay-shadow-sm);
 }
 
 .splash-spinner {
   width: 16px;
   height: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.25);
-  border-top-color: #ef4444;
+  border: 2.5px solid #CBD5E1;
+  border-top-color: var(--er-red, #DC2626);
   border-radius: 50%;
   animation: splashSpin 0.75s linear infinite;
   flex-shrink: 0;
@@ -97,11 +100,11 @@
 @keyframes splashPulse {
   0%, 100% {
     transform: scale(1);
-    box-shadow: 0 0 28px rgba(220, 38, 38, 0.35);
+    box-shadow: 0 8px 20px rgba(220, 38, 38, 0.3);
   }
   50% {
-    transform: scale(1.06);
-    box-shadow: 0 0 42px rgba(220, 38, 38, 0.6);
+    transform: scale(1.05);
+    box-shadow: 0 12px 28px rgba(220, 38, 38, 0.45);
   }
 }
 
