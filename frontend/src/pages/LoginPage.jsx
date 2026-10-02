@@ -8,13 +8,13 @@ import { TopNavbar } from "../components/Navigation";
 import "./LoginPage.css";
 
 const COUNTRY_CODES = [
-  { code: "+91", label: "India (+91)", flag: "🇮🇳" },
-  { code: "+1", label: "US / Canada (+1)", flag: "🇺🇸" },
-  { code: "+44", label: "UK (+44)", flag: "🇬🇧" },
-  { code: "+971", label: "UAE (+971)", flag: "🇦🇪" },
-  { code: "+61", label: "Australia (+61)", flag: "🇦🇺" },
-  { code: "+65", label: "Singapore (+65)", flag: "🇸🇬" },
-  { code: "+966", label: "Saudi Arabia (+966)", flag: "🇸🇦" },
+  { code: "+91", label: "India (+91)", shortLabel: "IN +91", flag: "🇮🇳" },
+  { code: "+1", label: "US / Canada (+1)", shortLabel: "US +1", flag: "🇺🇸" },
+  { code: "+44", label: "UK (+44)", shortLabel: "UK +44", flag: "🇬🇧" },
+  { code: "+971", label: "UAE (+971)", shortLabel: "UAE +971", flag: "🇦🇪" },
+  { code: "+61", label: "Australia (+61)", shortLabel: "AU +61", flag: "🇦🇺" },
+  { code: "+65", label: "Singapore (+65)", shortLabel: "SG +65", flag: "🇸🇬" },
+  { code: "+966", label: "Saudi Arabia (+966)", shortLabel: "SA +966", flag: "🇸🇦" },
 ];
 
 export default function LoginPage() {
@@ -33,10 +33,10 @@ export default function LoginPage() {
       raw.includes("connection refused") ||
       raw.includes("network request failed")
     ) {
-      return t("networkError");
+      return "Unable to connect to the emergency response server. Please try again.";
     }
     if (raw.includes("unexpected token") || raw.includes("not valid json") || raw.includes("doctype")) {
-      return "The authentication service returned an unexpected response. Please try again.";
+      return "Unable to connect to the emergency response server. Please try again.";
     }
     if (raw.includes("not available yet") || raw.includes("404") || raw.includes("cannot post")) {
       return "The authentication service is not available yet. Please try again shortly.";
@@ -55,8 +55,13 @@ export default function LoginPage() {
     if (raw.includes("too soon") || raw.includes("wait before") || raw.includes("cooldown")) {
       return t("resendTooSoon");
     }
-    if (raw.includes("google sign-in is not configured") || raw.includes("api-key-not-valid") || raw.includes("invalid-api-key")) {
-      return "Google sign-in is not configured. Please try another sign-in method.";
+    if (
+      raw.includes("google sign-in is not configured") ||
+      raw.includes("google sign-in is temporarily unavailable") ||
+      raw.includes("api-key-not-valid") ||
+      raw.includes("invalid-api-key")
+    ) {
+      return "Google sign-in is temporarily unavailable. Please try another sign-in method.";
     }
     if (raw.includes("google") || raw.includes("oauth") || raw.includes("popup")) {
       return t("googleAuthFailed");
@@ -120,13 +125,29 @@ export default function LoginPage() {
     return () => clearInterval(timer);
   }, [googleCountdown]);
 
-  // Handle successful login completion
+  // Handle successful login redirect based on role or returnUrl
   const handleLoginSuccess = (token, user) => {
     if (setAuthSession) {
-      setAuthSession(token, user);
+      setAuthSession(user, token);
     }
-    const fromPath = location.state?.from || "/";
-    navigate(fromPath, { replace: true });
+
+    const searchParams = new URLSearchParams(location.search);
+    const returnUrl = searchParams.get("returnUrl");
+    if (returnUrl) {
+      navigate(returnUrl, { replace: true });
+      return;
+    }
+
+    const role = (user?.role || "citizen").toLowerCase();
+    if (role === "coordinator") {
+      navigate("/coordinator", { replace: true });
+    } else if (role === "responder") {
+      navigate("/responder", { replace: true });
+    } else if (role === "helper") {
+      navigate("/helper", { replace: true });
+    } else {
+      navigate("/citizen", { replace: true });
+    }
   };
 
   // -----------------------------------------------------------
@@ -373,91 +394,59 @@ export default function LoginPage() {
   // Check if current flow is in OTP entry state
   const isOtpStep = (authMethod === "mobile" && mobileOtpSent) || (authMethod === "email" && emailOtpSent);
 
+  const selectedCountry = COUNTRY_CODES.find((c) => c.code === countryCode) || COUNTRY_CODES[0];
+  const selectedGoogleCountry = COUNTRY_CODES.find((c) => c.code === googleCountryCode) || COUNTRY_CODES[0];
+
   return (
     <div className={`auth-page-root ${isRtl ? "rtl" : "ltr"}`} dir={isRtl ? "rtl" : "ltr"}>
       <TopNavbar />
 
-      <main className="auth-main-layout">
-        <div className="auth-layout-container">
-          {/* Left Visual Panel: Desktop only (compact public-safety overview) */}
-          <aside className="auth-visual-panel" aria-label="Emergency Response Coordinator Overview">
-            <div className="visual-panel-content">
-              <div className="visual-brand-badge" aria-hidden="true">
-                <i className="bi bi-shield-shaded"></i>
-              </div>
-              <h1 className="visual-brand-title">Emergency Response Coordinator</h1>
-              <p className="visual-brand-tagline">{t("brandTagline")}</p>
-
-              <div className="visual-benefit-card">
-                <ul className="visual-benefit-list">
-                  <li className="visual-benefit-item">
-                    <span className="benefit-icon" aria-hidden="true">
-                      <i className="bi bi-check2"></i>
-                    </span>
-                    <span className="benefit-label">{t("benefitOtp")}</span>
-                  </li>
-                  <li className="visual-benefit-item">
-                    <span className="benefit-icon" aria-hidden="true">
-                      <i className="bi bi-check2"></i>
-                    </span>
-                    <span className="benefit-label">{t("benefitGoogle")}</span>
-                  </li>
-                  <li className="visual-benefit-item">
-                    <span className="benefit-icon" aria-hidden="true">
-                      <i className="bi bi-check2"></i>
-                    </span>
-                    <span className="benefit-label">{t("benefitHuman")}</span>
-                  </li>
-                </ul>
-              </div>
-
-              <div className="visual-system-pill">
-                <span className="system-status-dot" aria-hidden="true"></span>
-                <span className="system-status-text">Public Safety &amp; Coordination Platform</span>
-              </div>
-            </div>
-          </aside>
-
-          {/* Right Login Card: Dominates on mobile, paired on desktop */}
-          <section className="auth-card" aria-labelledby="login-card-title">
-            {/* Brand Header */}
-            <div className="auth-card-header">
-              <div className="auth-card-brand">
-                <div className="auth-card-icon" aria-hidden="true">
-                  <i className="bi bi-shield-shaded"></i>
-                </div>
-                <span className="auth-card-app-name">Emergency Response Coordinator</span>
-              </div>
-
-              <h2 id="login-card-title" className="auth-title">
-                {t("welcomeBack")}
-              </h2>
-              <p className="auth-subtitle">{t("signInToContinue")}</p>
-            </div>
-
-            {/* Accessible Feedback Alerts */}
-            {error && (
-              <div className="auth-alert error" role="alert" aria-live="assertive">
-                <i className="bi bi-exclamation-triangle-fill alert-icon" aria-hidden="true"></i>
-                <span className="alert-text">{error}</span>
-              </div>
-            )}
-
-            {successMsg && !error && (
-              <div className="auth-alert success" role="status" aria-live="polite">
-                <i className="bi bi-check-circle-fill alert-icon" aria-hidden="true"></i>
-                <span className="alert-text">{successMsg}</span>
-              </div>
-            )}
-
+      <main className="auth-main-layout" id="main-content">
+        <div className="auth-card-container">
+          <section className="auth-card clay-card" aria-labelledby="login-card-title">
             {/* Google Mobile Verification Flow */}
             {googleMobileStep ? (
               <div className="google-mobile-step">
-                <div className="step-badge">
-                  <i className="bi bi-phone-fill me-1" aria-hidden="true"></i>
-                  <span>{t("verifyMobileNumber")}</span>
+                <button
+                  type="button"
+                  className="btn-back-link"
+                  onClick={() => {
+                    setGoogleMobileStep(false);
+                    setGoogleOtpSent(false);
+                    setGoogleOtp("");
+                    setError(null);
+                  }}
+                  disabled={loading}
+                >
+                  <i className="bi bi-arrow-left me-1" aria-hidden="true"></i>
+                  <span>Back</span>
+                </button>
+
+                <div className="auth-card-header text-center">
+                  <div className="auth-badge-icon">
+                    <i className="bi bi-phone-fill"></i>
+                  </div>
+                  <h1 id="login-card-title" className="auth-title">
+                    {t("verifyMobileNumber")}
+                  </h1>
+                  <p className="auth-subtitle">{t("googleLinkMobilePrompt")}</p>
                 </div>
-                <p className="step-desc">{t("googleLinkMobilePrompt")}</p>
+
+                {/* Compact Reserved Feedback Region */}
+                <div className="auth-feedback-area" aria-live="polite">
+                  {error && (
+                    <div className="auth-alert error" role="alert">
+                      <i className="bi bi-exclamation-circle-fill alert-icon" aria-hidden="true"></i>
+                      <span className="alert-text">{error}</span>
+                    </div>
+                  )}
+                  {successMsg && !error && (
+                    <div className="auth-alert success" role="status">
+                      <i className="bi bi-check-circle-fill alert-icon" aria-hidden="true"></i>
+                      <span className="alert-text">{successMsg}</span>
+                    </div>
+                  )}
+                </div>
 
                 {!googleOtpSent ? (
                   <form onSubmit={handleSendGoogleMobileOtp} className="auth-form-panel">
@@ -465,43 +454,47 @@ export default function LoginPage() {
                       <label className="form-label" htmlFor="google-mobile-input">
                         {t("mobileNumber")}
                       </label>
-                      <div className="phone-input-row">
-                        <select
-                          id="google-country-code"
-                          className="country-select"
-                          value={googleCountryCode}
-                          onChange={(e) => setGoogleCountryCode(e.target.value)}
-                          disabled={loading}
-                          aria-label={t("countryCode")}
-                        >
-                          {COUNTRY_CODES.map((c) => (
-                            <option key={c.code} value={c.code}>
-                              {c.flag} {c.code}
-                            </option>
-                          ))}
-                        </select>
-                        <div className="phone-field-wrapper">
-                          <input
-                            id="google-mobile-input"
-                            type="tel"
-                            inputMode="numeric"
-                            autoComplete="tel-national"
-                            className="form-input phone-number-input"
-                            placeholder={t("mobilePlaceholder")}
-                            value={googleMobileNumber}
-                            onChange={(e) => setGoogleMobileNumber(e.target.value)}
+                      <div className="phone-unified-container">
+                        <div className="country-trigger">
+                          <span className="country-flag">{selectedGoogleCountry.flag}</span>
+                          <span className="country-code-text">{selectedGoogleCountry.shortLabel || selectedGoogleCountry.code}</span>
+                          <i className="bi bi-chevron-down country-caret" aria-hidden="true"></i>
+                          <select
+                            id="google-country-code"
+                            className="country-select-hidden"
+                            value={googleCountryCode}
+                            onChange={(e) => setGoogleCountryCode(e.target.value)}
                             disabled={loading}
-                            required
-                            autoFocus
-                          />
+                            aria-label={t("countryCode")}
+                          >
+                            {COUNTRY_CODES.map((c) => (
+                              <option key={c.code} value={c.code}>
+                                {c.flag} {c.label}
+                              </option>
+                            ))}
+                          </select>
                         </div>
+                        <div className="unified-divider" aria-hidden="true" />
+                        <input
+                          id="google-mobile-input"
+                          type="tel"
+                          inputMode="numeric"
+                          autoComplete="tel-national"
+                          className="phone-unified-input"
+                          placeholder={t("mobilePlaceholder")}
+                          value={googleMobileNumber}
+                          onChange={(e) => setGoogleMobileNumber(e.target.value.replace(/[^\d]/g, ""))}
+                          disabled={loading}
+                          required
+                          autoFocus
+                        />
                       </div>
                     </div>
 
                     <button
                       id="btn-send-google-mobile-otp"
                       type="submit"
-                      className="btn-auth-primary"
+                      className="btn-clay-primary"
                       disabled={loading || !googleMobileNumber.trim()}
                     >
                       {loading ? (
@@ -510,10 +503,7 @@ export default function LoginPage() {
                           <span>{t("sendingOtp")}</span>
                         </>
                       ) : (
-                        <>
-                          <i className="bi bi-arrow-right-circle-fill btn-icon" aria-hidden="true"></i>
-                          <span>{t("sendOtp")}</span>
-                        </>
+                        <span>{t("sendOtp")}</span>
                       )}
                     </button>
                   </form>
@@ -554,7 +544,7 @@ export default function LoginPage() {
                     <button
                       id="btn-verify-google-mobile-otp"
                       type="submit"
-                      className="btn-auth-primary"
+                      className="btn-clay-primary"
                       disabled={loading || googleOtp.length !== 6}
                     >
                       {loading ? (
@@ -563,57 +553,82 @@ export default function LoginPage() {
                           <span>{t("verifying")}</span>
                         </>
                       ) : (
-                        <>
-                          <i className="bi bi-check-circle-fill btn-icon" aria-hidden="true"></i>
-                          <span>{t("verifyAndLogin")}</span>
-                        </>
+                        <span>{t("verifyAndLogin")}</span>
                       )}
                     </button>
                   </form>
                 )}
-
-                <button
-                  type="button"
-                  className="btn-auth-secondary"
-                  onClick={() => {
-                    setGoogleMobileStep(false);
-                    setGoogleOtpSent(false);
-                    setGoogleOtp("");
-                    setError(null);
-                  }}
-                  disabled={loading}
-                >
-                  <i className="bi bi-arrow-left me-1" aria-hidden="true"></i>
-                  <span>Back to Login Options</span>
-                </button>
               </div>
             ) : (
               <>
-                {/* Method Switcher Tabs (Hidden during active OTP verification to keep focus) */}
+                {/* Top Card Header */}
+                {!isOtpStep ? (
+                  <div className="auth-card-header text-center">
+                    <div className="auth-badge-icon" aria-hidden="true">
+                      🚨
+                    </div>
+                    <h1 id="login-card-title" className="auth-title">
+                      {t("welcomeBack")}
+                    </h1>
+                    <p className="auth-subtitle">{t("signInToContinue")}</p>
+                  </div>
+                ) : (
+                  <div className="otp-step-header text-center">
+                    <button
+                      type="button"
+                      className="btn-back-link"
+                      onClick={() => {
+                        if (authMethod === "mobile") {
+                          setMobileOtpSent(false);
+                          setMobileOtp("");
+                        } else {
+                          setEmailOtpSent(false);
+                          setEmailOtp("");
+                        }
+                        setError(null);
+                      }}
+                      aria-label={authMethod === "mobile" ? t("changeNumber") : t("changeEmail")}
+                    >
+                      <i className="bi bi-arrow-left me-1" aria-hidden="true"></i>
+                      <span>{authMethod === "mobile" ? t("changeNumber") : t("changeEmail")}</span>
+                    </button>
+
+                    <div className="auth-badge-icon" aria-hidden="true">
+                      <i className="bi bi-shield-check"></i>
+                    </div>
+
+                    <h1 id="login-card-title" className="auth-title">
+                      {authMethod === "mobile" ? t("verifyYourMobile") : t("verifyYourEmail")}
+                    </h1>
+                    <p className="auth-subtitle">
+                      {t("otpSentTo")}{" "}
+                      <strong className="otp-target-text">
+                        {authMethod === "mobile" ? `${countryCode} ${mobileNumber}` : email}
+                      </strong>
+                    </p>
+                  </div>
+                )}
+
+                {/* Method Switcher Segmented Control */}
                 {!isOtpStep && (
-                  <div className="method-switcher-wrap">
-                    <span className="method-switcher-title">{t("howToSignIn")}</span>
-                    <div className="method-switcher" role="tablist" aria-label="Sign in method">
+                  <div className="method-switcher-section">
+                    <span className="method-switcher-label">{t("howToSignIn")}</span>
+                    <div className="segmented-control" role="tablist" aria-label="Sign in method">
                       <button
                         type="button"
                         id="tab-mobile"
                         role="tab"
                         aria-selected={authMethod === "mobile"}
                         aria-controls="panel-mobile"
-                        className={`method-tab-btn ${authMethod === "mobile" ? "active" : ""}`}
+                        className={`segmented-tab ${authMethod === "mobile" ? "active" : ""}`}
                         onClick={() => {
                           setAuthMethod("mobile");
                           setError(null);
                           setSuccessMsg(null);
                         }}
                       >
-                        <div className="method-tab-content">
-                          <i className="bi bi-phone-fill method-tab-icon" aria-hidden="true"></i>
-                          <div className="method-tab-text">
-                            <span className="method-tab-label">{t("mobile")}</span>
-                            <span className="method-tab-badge">OTP</span>
-                          </div>
-                        </div>
+                        <span className="tab-icon" aria-hidden="true">📱</span>
+                        <span>{t("mobile")}</span>
                       </button>
 
                       <button
@@ -622,24 +637,35 @@ export default function LoginPage() {
                         role="tab"
                         aria-selected={authMethod === "email"}
                         aria-controls="panel-email"
-                        className={`method-tab-btn ${authMethod === "email" ? "active" : ""}`}
+                        className={`segmented-tab ${authMethod === "email" ? "active" : ""}`}
                         onClick={() => {
                           setAuthMethod("email");
                           setError(null);
                           setSuccessMsg(null);
                         }}
                       >
-                        <div className="method-tab-content">
-                          <i className="bi bi-envelope-fill method-tab-icon" aria-hidden="true"></i>
-                          <div className="method-tab-text">
-                            <span className="method-tab-label">{t("email")}</span>
-                            <span className="method-tab-badge">OTP</span>
-                          </div>
-                        </div>
+                        <span className="tab-icon" aria-hidden="true">✉</span>
+                        <span>{t("email")}</span>
                       </button>
                     </div>
                   </div>
                 )}
+
+                {/* Compact Reserved Feedback Region */}
+                <div className="auth-feedback-area" aria-live="polite">
+                  {error && (
+                    <div className="auth-alert error" role="alert">
+                      <i className="bi bi-exclamation-circle-fill alert-icon" aria-hidden="true"></i>
+                      <span className="alert-text">{error}</span>
+                    </div>
+                  )}
+                  {successMsg && !error && (
+                    <div className="auth-alert success" role="status">
+                      <i className="bi bi-check-circle-fill alert-icon" aria-hidden="true"></i>
+                      <span className="alert-text">{successMsg}</span>
+                    </div>
+                  )}
+                </div>
 
                 {/* METHOD A: MOBILE LOGIN */}
                 {authMethod === "mobile" && (
@@ -650,43 +676,47 @@ export default function LoginPage() {
                           <label className="form-label" htmlFor="login-mobile-input">
                             {t("mobileNumber")}
                           </label>
-                          <div className="phone-input-row">
-                            <select
-                              id="login-country-code"
-                              className="country-select"
-                              value={countryCode}
-                              onChange={(e) => setCountryCode(e.target.value)}
-                              disabled={loading}
-                              aria-label={t("countryCode")}
-                            >
-                              {COUNTRY_CODES.map((c) => (
-                                <option key={c.code} value={c.code}>
-                                  {c.flag} {c.code}
-                                </option>
-                              ))}
-                            </select>
-                            <div className="phone-field-wrapper">
-                              <input
-                                id="login-mobile-input"
-                                type="tel"
-                                inputMode="numeric"
-                                autoComplete="tel-national"
-                                className="form-input phone-number-input"
-                                placeholder={t("mobilePlaceholder")}
-                                value={mobileNumber}
-                                onChange={(e) => setMobileNumber(e.target.value)}
+                          <div className="phone-unified-container">
+                            <div className="country-trigger">
+                              <span className="country-flag">{selectedCountry.flag}</span>
+                              <span className="country-code-text">{selectedCountry.shortLabel || selectedCountry.code}</span>
+                              <i className="bi bi-chevron-down country-caret" aria-hidden="true"></i>
+                              <select
+                                id="login-country-code"
+                                className="country-select-hidden"
+                                value={countryCode}
+                                onChange={(e) => setCountryCode(e.target.value)}
                                 disabled={loading}
-                                required
-                                autoFocus
-                              />
+                                aria-label={t("countryCode")}
+                              >
+                                {COUNTRY_CODES.map((c) => (
+                                  <option key={c.code} value={c.code}>
+                                    {c.flag} {c.label}
+                                  </option>
+                                ))}
+                              </select>
                             </div>
+                            <div className="unified-divider" aria-hidden="true" />
+                            <input
+                              id="login-mobile-input"
+                              type="tel"
+                              inputMode="numeric"
+                              autoComplete="tel-national"
+                              className="phone-unified-input"
+                              placeholder={t("mobilePlaceholder")}
+                              value={mobileNumber}
+                              onChange={(e) => setMobileNumber(e.target.value.replace(/[^\d]/g, ""))}
+                              disabled={loading}
+                              required
+                              autoFocus
+                            />
                           </div>
                         </div>
 
                         <button
                           id="btn-send-mobile-otp"
                           type="submit"
-                          className="btn-auth-primary"
+                          className="btn-clay-primary"
                           disabled={loading || !mobileNumber.trim()}
                         >
                           {loading ? (
@@ -695,41 +725,12 @@ export default function LoginPage() {
                               <span>{t("sendingOtp")}</span>
                             </>
                           ) : (
-                            <>
-                              <i className="bi bi-arrow-right-circle-fill btn-icon" aria-hidden="true"></i>
-                              <span>{t("sendOtp")}</span>
-                            </>
+                            <span>{t("sendOtp")}</span>
                           )}
                         </button>
                       </form>
                     ) : (
                       <form onSubmit={handleVerifyMobileOtp} className="otp-verification-panel" aria-label="Verify mobile OTP">
-                        <div className="otp-step-header">
-                          <div className="otp-step-icon" aria-hidden="true">
-                            <i className="bi bi-shield-check"></i>
-                          </div>
-                          <h3 className="otp-step-title">{t("verifyYourMobile")}</h3>
-                          <p className="otp-step-subtitle">
-                            {t("otpSentTo")}{" "}
-                            <strong className="otp-destination">
-                              {countryCode} {mobileNumber}
-                            </strong>
-                          </p>
-                          <button
-                            type="button"
-                            className="btn-change-target"
-                            onClick={() => {
-                              setMobileOtpSent(false);
-                              setMobileOtp("");
-                              setError(null);
-                            }}
-                            aria-label={t("changeNumber")}
-                          >
-                            <i className="bi bi-pencil-square me-1" aria-hidden="true"></i>
-                            <span>{t("changeNumber")}</span>
-                          </button>
-                        </div>
-
                         <div className="form-group otp-group">
                           <label className="form-label otp-label" htmlFor="mobile-login-otp-digit-0">
                             {t("enterOtpHint")}
@@ -765,7 +766,7 @@ export default function LoginPage() {
                         <button
                           id="btn-verify-mobile-otp"
                           type="submit"
-                          className="btn-auth-primary"
+                          className="btn-clay-primary"
                           disabled={loading || mobileOtp.length !== 6}
                         >
                           {loading ? (
@@ -774,10 +775,7 @@ export default function LoginPage() {
                               <span>{t("verifying")}</span>
                             </>
                           ) : (
-                            <>
-                              <i className="bi bi-check-circle-fill btn-icon" aria-hidden="true"></i>
-                              <span>{t("verifyAndLogin")}</span>
-                            </>
+                            <span>{t("verifyAndLogin")}</span>
                           )}
                         </button>
                       </form>
@@ -794,13 +792,16 @@ export default function LoginPage() {
                           <label className="form-label" htmlFor="login-email-input">
                             {t("emailAddress")}
                           </label>
-                          <div className="input-with-icon">
-                            <i className="bi bi-envelope-fill input-icon" aria-hidden="true"></i>
+                          <div className="email-unified-container">
+                            <span className="email-prefix-icon" aria-hidden="true">
+                              <i className="bi bi-envelope-fill"></i>
+                            </span>
+                            <div className="unified-divider" aria-hidden="true" />
                             <input
                               id="login-email-input"
                               type="email"
                               autoComplete="email"
-                              className="form-input"
+                              className="email-unified-input"
                               placeholder={t("emailPlaceholder")}
                               value={email}
                               onChange={(e) => setEmail(e.target.value)}
@@ -814,7 +815,7 @@ export default function LoginPage() {
                         <button
                           id="btn-send-email-otp"
                           type="submit"
-                          className="btn-auth-primary"
+                          className="btn-clay-primary"
                           disabled={loading || !email.trim()}
                         >
                           {loading ? (
@@ -823,39 +824,12 @@ export default function LoginPage() {
                               <span>{t("sendingOtp")}</span>
                             </>
                           ) : (
-                            <>
-                              <i className="bi bi-arrow-right-circle-fill btn-icon" aria-hidden="true"></i>
-                              <span>{t("sendOtp")}</span>
-                            </>
+                            <span>{t("sendOtp")}</span>
                           )}
                         </button>
                       </form>
                     ) : (
                       <form onSubmit={handleVerifyEmailOtp} className="otp-verification-panel" aria-label="Verify email OTP">
-                        <div className="otp-step-header">
-                          <div className="otp-step-icon" aria-hidden="true">
-                            <i className="bi bi-shield-check"></i>
-                          </div>
-                          <h3 className="otp-step-title">{t("verifyYourEmail")}</h3>
-                          <p className="otp-step-subtitle">
-                            {t("otpSentTo")}{" "}
-                            <strong className="otp-destination">{email}</strong>
-                          </p>
-                          <button
-                            type="button"
-                            className="btn-change-target"
-                            onClick={() => {
-                              setEmailOtpSent(false);
-                              setEmailOtp("");
-                              setError(null);
-                            }}
-                            aria-label={t("changeEmail")}
-                          >
-                            <i className="bi bi-pencil-square me-1" aria-hidden="true"></i>
-                            <span>{t("changeEmail")}</span>
-                          </button>
-                        </div>
-
                         <div className="form-group otp-group">
                           <label className="form-label otp-label" htmlFor="email-login-otp-digit-0">
                             {t("enterOtpHint")}
@@ -891,7 +865,7 @@ export default function LoginPage() {
                         <button
                           id="btn-verify-email-otp"
                           type="submit"
-                          className="btn-auth-primary"
+                          className="btn-clay-primary"
                           disabled={loading || emailOtp.length !== 6}
                         >
                           {loading ? (
@@ -900,10 +874,7 @@ export default function LoginPage() {
                               <span>{t("verifying")}</span>
                             </>
                           ) : (
-                            <>
-                              <i className="bi bi-check-circle-fill btn-icon" aria-hidden="true"></i>
-                              <span>{t("verifyAndLogin")}</span>
-                            </>
+                            <span>{t("verifyAndLogin")}</span>
                           )}
                         </button>
                       </form>
@@ -915,14 +886,16 @@ export default function LoginPage() {
                 {!isOtpStep && (
                   <>
                     <div className="auth-divider">
-                      <span>{t("or")}</span>
+                      <span className="auth-divider-line" aria-hidden="true" />
+                      <span className="auth-divider-text">{t("or")}</span>
+                      <span className="auth-divider-line" aria-hidden="true" />
                     </div>
 
                     <div className="auth-social-section">
                       <button
                         id="btn-google-login"
                         type="button"
-                        className="btn-google-oauth"
+                        className="btn-google-clay"
                         onClick={handleGoogleLogin}
                         disabled={loading}
                         aria-label={t("continueWithGoogle")}
@@ -957,16 +930,16 @@ export default function LoginPage() {
                         )}
                       </button>
                     </div>
+
+                    {/* Footer Switcher */}
+                    <div className="auth-card-footer">
+                      <span className="footer-prompt">Don't have an account? </span>
+                      <Link to="/signup" className="auth-link">
+                        {t("createAccount")}
+                      </Link>
+                    </div>
                   </>
                 )}
-
-                {/* Footer Switcher */}
-                <div className="auth-card-footer">
-                  <span className="footer-prompt">{t("dontHaveAccount")} </span>
-                  <Link to="/signup" className="auth-link">
-                    {t("createAccount")}
-                  </Link>
-                </div>
               </>
             )}
           </section>

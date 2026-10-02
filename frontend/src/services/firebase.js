@@ -98,7 +98,7 @@ export async function signInWithGoogleOAuth() {
   if (!isFirebaseConfigured()) {
     return {
       success: false,
-      error: "Google sign-in is not configured. Please try another sign-in method.",
+      error: "Google sign-in is temporarily unavailable. Please try another sign-in method.",
     };
   }
 
@@ -107,7 +107,7 @@ export async function signInWithGoogleOAuth() {
   if (!auth) {
     return {
       success: false,
-      error: "Google sign-in is not configured. Please try another sign-in method.",
+      error: "Google sign-in is temporarily unavailable. Please try another sign-in method.",
     };
   }
 
@@ -137,7 +137,9 @@ export async function signInWithGoogleOAuth() {
     let userMessage = "Google authentication failed. Please try again.";
 
     if (error.code === "auth/api-key-not-valid" || error.code === "auth/invalid-api-key") {
-      userMessage = "Google sign-in is not configured. Please try another sign-in method.";
+      userMessage = "Google sign-in is temporarily unavailable. Please try another sign-in method.";
+    } else if (error.code === "auth/operation-not-allowed") {
+      userMessage = "Google sign-in is temporarily unavailable. Please try another sign-in method.";
     } else if (error.code === "auth/popup-closed-by-user") {
       userMessage = "Google sign-in was closed before completing.";
     } else if (error.code === "auth/cancelled-popup-request") {
@@ -146,8 +148,6 @@ export async function signInWithGoogleOAuth() {
       userMessage = "Network error. Please check your internet connection.";
     } else if (error.code === "auth/account-exists-with-different-credential") {
       userMessage = "An account already exists with the same email using a different sign-in method.";
-    } else if (error.code === "auth/operation-not-allowed") {
-      userMessage = "Google sign-in is not enabled in this Firebase project.";
     }
 
     return {
