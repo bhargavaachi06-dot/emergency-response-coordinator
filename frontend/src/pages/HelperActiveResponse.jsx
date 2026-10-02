@@ -36,8 +36,8 @@ export default function HelperActiveResponse() {
       <div
         className="clay-card mb-4"
         style={{
-          background: '#FFFFFF',
-          border: '1.5px solid #FDE68A',
+          background: 'var(--er-surface, #FFFFFF)',
+          border: '1.5px solid var(--er-amber-border, #FDE68A)',
           padding: '24px 28px',
           display: 'flex',
           alignItems: 'center',

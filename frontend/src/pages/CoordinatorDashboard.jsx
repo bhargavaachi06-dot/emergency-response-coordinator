@@ -372,7 +372,7 @@ export default function CoordinatorDashboard() {
     return ai || null;
   }, [selectedDetails, currentEmergency]);
 
-  // Map center and markers
+  // Map center — only use real emergency coordinates; never default to Delhi
   const mapCenter = useMemo(() => {
     if (currentEmergency) {
       const lat = Number(currentEmergency.latitude ?? currentEmergency.location?.lat);
@@ -381,7 +381,8 @@ export default function CoordinatorDashboard() {
         return [lat, lng];
       }
     }
-    return [28.6139, 77.2090];
+    // Return null — MapView will show a neutral no-location placeholder
+    return null;
   }, [currentEmergency]);
 
   const mapMarkers = useMemo(() => {

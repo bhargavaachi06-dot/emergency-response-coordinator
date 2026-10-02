@@ -161,7 +161,8 @@ export const DEMO_USER = {
   name: 'Alex Johnson',
   role: 'citizen',
   phone: '+91 98765 43210',
-  location: { lat: 28.6139, lng: 77.2090 },
+  // Location will be populated by real GPS — not hardcoded
+  location: null,
 };
 
 export const DEMO_COORDINATOR = {
@@ -186,7 +187,8 @@ export const DEMO_HELPER = {
   name: 'Ravi Kumar',
   role: 'helper',
   skills: ['First Aid', 'CPR Certified'],
-  location: { lat: 28.6145, lng: 77.2095 },
+  // Location will be populated by real GPS — not hardcoded
+  location: null,
   available: true,
 };
 

@@ -152,7 +152,7 @@ export default function ResponderDashboard() {
       <div
         className="clay-card mb-4"
         style={{
-          background: '#FFFFFF',
+          background: 'var(--er-surface, #FFFFFF)',
           padding: '24px 28px',
           display: 'flex',
           alignItems: 'center',

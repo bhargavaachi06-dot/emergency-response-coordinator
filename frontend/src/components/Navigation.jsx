@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useApp, ROLES } from '../context/AppContext';
+import { useSettings } from '../context/SettingsContext';
 import './Navigation.css';
 
 const ROLE_LABELS = {
@@ -18,6 +19,7 @@ export function TopNavbar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentRole, switchRole, currentUser, openLangModal, currentLangMeta, isAuthenticated, logout } = useApp();
+  const { openSettings } = useSettings();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -151,6 +153,18 @@ export function TopNavbar() {
             <span>{currentLangMeta?.nativeName || 'English'}</span>
           </button>
 
+          {/* Settings Button */}
+          <button
+            type="button"
+            className="top-nav-settings-btn"
+            onClick={openSettings}
+            aria-label="Settings"
+            title="Settings / प्राथमिकताएं"
+          >
+            <i className="bi bi-gear-fill" aria-hidden="true"></i>
+            <span>Settings</span>
+          </button>
+
           {/* Authentication State: User profile & Logout shown if logged in; no cluttering Login/Signup buttons in guest mode */}
           {isAuthenticated && (
             <div className="top-nav-user-cluster">
@@ -245,6 +259,18 @@ export function TopNavbar() {
             >
               <i className="bi bi-translate me-2 text-warning" aria-hidden="true"></i>
               <span>Language ({currentLangMeta?.nativeName || 'English'})</span>
+            </button>
+
+            <button
+              type="button"
+              className="mobile-nav-item mobile-settings-item"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                openSettings();
+              }}
+            >
+              <i className="bi bi-gear-fill me-2 text-primary" aria-hidden="true"></i>
+              <span>Settings</span>
             </button>
 
             {isAuthenticated && (

@@ -363,3 +363,74 @@
     min-height: 48px;
   }
 }
+
+/* =====================================================
+   Language Modal — Midnight Blue Dark Theme Overrides
+   ===================================================== */
+html[data-theme="dark"] .lang-modal-card {
+  background: #0B1728 !important;
+  border-color: #1E4668 !important;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.75) !important;
+}
+
+html[data-theme="dark"] .lang-modal-header {
+  background: #0B1728 !important;
+  border-bottom-color: #1E4668 !important;
+}
+
+html[data-theme="dark"] .lang-modal-title {
+  color: #F8FAFC !important;
+}
+
+html[data-theme="dark"] .lang-modal-subtitle {
+  color: #CBD5E1 !important;
+}
+
+html[data-theme="dark"] .lang-modal-close-btn {
+  background: #10243A !important;
+  border-color: #1E4668 !important;
+  color: #CBD5E1 !important;
+}
+
+html[data-theme="dark"] .lang-modal-close-btn:hover {
+  background: rgba(220, 38, 38, 0.2) !important;
+  border-color: #EF4444 !important;
+  color: #F87171 !important;
+}
+
+html[data-theme="dark"] .lang-search-box {
+  background: #0A1B2E !important;
+  border-color: #1E4668 !important;
+  color: #F8FAFC !important;
+}
+
+html[data-theme="dark"] .lang-grid-item {
+  background: #10243A !important;
+  border-color: #1E4668 !important;
+  color: #F8FAFC !important;
+}
+
+html[data-theme="dark"] .lang-grid-item:hover {
+  background: #132B45 !important;
+  border-color: #2563EB !important;
+}
+
+html[data-theme="dark"] .lang-grid-item.active {
+  background: #163653 !important;
+  border-color: #38BDF8 !important;
+  color: #38BDF8 !important;
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.22) !important;
+}
+
+html[data-theme="dark"] .lang-name-en {
+  color: #CBD5E1 !important;
+}
+
+html[data-theme="dark"] .lang-modal-footer {
+  background: #0B1728 !important;
+  border-top-color: #1E4668 !important;
+}
+
+html[data-theme="dark"] .lang-modal-first-launch {
+  background: var(--bg-primary) !important;
+}

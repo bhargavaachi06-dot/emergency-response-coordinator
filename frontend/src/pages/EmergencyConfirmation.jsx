@@ -134,7 +134,7 @@ export default function EmergencyConfirmation() {
           <div
             className="clay-card mb-4"
             style={{
-              background: '#FFFFFF',
+              background: 'var(--er-surface, #FFFFFF)',
               border: '1.5px solid var(--er-green-border, #BBF7D0)',
               borderRadius: '24px',
               padding: '28px',
@@ -281,8 +281,8 @@ export default function EmergencyConfirmation() {
           )}
 
           {/* Progress Timeline */}
-          <div className="clay-card mb-4" style={{ background: '#FFFFFF', padding: '24px' }}>
-            <h2 style={{ fontSize: '15px', fontWeight: 800, color: '#0F172A', marginBottom: '18px' }}>
+          <div className="clay-card mb-4" style={{ background: 'var(--er-surface, #FFFFFF)', padding: '24px' }}>
+            <h2 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--er-navy, #0F172A)', marginBottom: '18px' }}>
               <i className="bi bi-list-check me-2 text-primary"></i>
               {t.responseTimeline || "Response Timeline"}
             </h2>

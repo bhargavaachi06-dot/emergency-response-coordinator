@@ -54,8 +54,8 @@ export default function CitizenDashboard() {
       <div
         className="clay-card mb-4"
         style={{
-          background: "#FFFFFF",
-          border: "2px solid #FECACA",
+          background: "var(--er-surface, #FFFFFF)",
+          border: "2px solid var(--er-red-border, #FECACA)",
           padding: "28px 24px",
           display: "flex",
           alignItems: "center",

@@ -58,11 +58,11 @@ export function AIAnalysisCard({ ai, compact = false }) {
     <div
       className="clay-card ai-card"
       style={{
-        background: '#FFFFFF',
+        background: 'var(--er-surface, #FFFFFF)',
         border: '1.5px solid rgba(2, 132, 199, 0.2)',
         borderRadius: '24px',
         padding: compact ? '18px 20px' : '24px 26px',
-        color: '#0F172A',
+        color: 'var(--er-navy, #0F172A)',
         boxShadow: 'var(--clay-shadow-card)',
         position: 'relative',
         overflow: 'hidden',
@@ -299,12 +299,12 @@ export function AIAnalysisCard({ ai, compact = false }) {
               const meta = responderIcons[r] || { emoji: '🔵', color: '#64748B' };
               return (
                 <div key={r} style={{
-                  background: '#FFFFFF',
-                  border: '1.5px solid #E2E8F0',
+                  background: 'var(--er-surface-elevated, #FFFFFF)',
+                  border: '1.5px solid var(--er-border, #E2E8F0)',
                   borderRadius: '12px',
                   padding: '6px 14px',
                   fontSize: '13px',
-                  color: '#0F172A',
+                  color: 'var(--er-navy, #0F172A)',
                   fontWeight: 600,
                   display: 'flex',
                   alignItems: 'center',
@@ -324,14 +324,14 @@ export function AIAnalysisCard({ ai, compact = false }) {
       <div style={{
         marginTop: compact ? 10 : 16,
         padding: '10px 14px',
-        background: '#FFFBEB',
-        border: '1px solid #FDE68A',
+        background: 'var(--er-amber-light, #FFFBEB)',
+        border: '1px solid var(--er-amber-border, #FDE68A)',
         borderRadius: '12px',
         display: 'flex',
         alignItems: 'center',
         gap: 10,
         fontSize: '12px',
-        color: '#92400E',
+        color: 'var(--er-amber, #92400E)',
         fontWeight: 500,
         boxShadow: 'var(--clay-shadow-sm)',
       }}>

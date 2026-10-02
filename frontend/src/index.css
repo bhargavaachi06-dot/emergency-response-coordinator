@@ -4,21 +4,36 @@
    ===================================================== */
 
 :root {
+  /* Centralized Theme Tokens (Light Mode Defaults) */
+  --bg-primary:         #FFFFFF;
+  --bg-secondary:       #F8FAFC;
+  --surface:            #FFFFFF;
+  --surface-elevated:   #FFFFFF;
+  --surface-input:      #FFFFFF;
+  --text-primary:       #0F172A;
+  --text-secondary:     #334155;
+  --text-muted:         #64748B;
+  --border-color:       #E2E8F0;
+  --border-subtle:      #EDF2F7;
+  --accent-blue:        #0284C7;
+  --accent-blue-bright: #38BDF8;
+  --shadow-color:       rgba(15, 23, 42, 0.05);
+
   /* Core White Backgrounds & Surfaces */
-  --er-bg:              #FFFFFF;
-  --er-bg-subtle:       #F8FAFC;
-  --er-bg-elevated:     #FFFFFF;
-  --er-surface:         #FFFFFF;
+  --er-bg:              var(--bg-primary);
+  --er-bg-subtle:       var(--bg-secondary);
+  --er-bg-elevated:     var(--surface-elevated);
+  --er-surface:         var(--surface);
   --er-surface-sunken:  #F1F5F9;
 
   /* Typography Colors */
-  --er-navy:            #0F172A;
-  --er-slate:           #1E293B;
+  --er-navy:            var(--text-primary);
+  --er-slate:           var(--text-secondary);
   --er-slate-mid:       #334155;
-  --er-gray:            #64748B;
+  --er-gray:            var(--text-muted);
   --er-gray-light:      #F8FAFC;
-  --er-border:          #E2E8F0;
-  --er-border-subtle:   #EDF2F7;
+  --er-border:          var(--border-color);
+  --er-border-subtle:   var(--border-subtle);
   --er-white:           #FFFFFF;
 
   /* Emergency Public Safety Palette */
@@ -1095,7 +1110,7 @@ a {
   }
 }
 
-/* Reduced Motion */
+/* Reduced Motion (System Preference) */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
@@ -1103,4 +1118,413 @@ a {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* =====================================================
+   Midnight Blue Emergency Command Center Dark Theme System
+   data-theme="dark"
+   ===================================================== */
+:root[data-theme="dark"],
+html[data-theme="dark"],
+body[data-theme="dark"] {
+  /* Centralized Midnight Blue Palette Tokens */
+  --bg-primary:         #07111F;
+  --bg-secondary:       #0B1728;
+  --surface:            #10243A;
+  --surface-elevated:   #132B45;
+  --surface-input:      #0A1B2E;
+  --border-color:       #1E4668;
+  --border-subtle:      #163653;
+  --accent-blue:        #2563EB;
+  --accent-blue-bright: #38BDF8;
+  --text-primary:       #F8FAFC;
+  --text-secondary:     #CBD5E1;
+  --text-muted:         #94A3B8;
+  --shadow-color:       rgba(0, 0, 0, 0.45);
+
+  /* Core Surfaces Mapped to Midnight Blue */
+  --er-bg:              var(--bg-primary);
+  --er-bg-subtle:       var(--bg-secondary);
+  --er-bg-elevated:     var(--surface-elevated);
+  --er-surface:         var(--surface);
+  --er-surface-sunken:  var(--surface-input);
+
+  /* Typography Colors in Dark Mode */
+  --er-navy:            var(--text-primary);
+  --er-slate:           var(--text-secondary);
+  --er-slate-mid:       #94A3B8;
+  --er-gray:            var(--text-muted);
+  --er-gray-light:      #132B45;
+  --er-border:          var(--border-color);
+  --er-border-subtle:   var(--border-subtle);
+  --er-white:           var(--surface);
+
+  /* Layered Midnight Blue Clay Shadows */
+  --clay-shadow-sm:     0 4px 12px rgba(0, 0, 0, 0.35), inset 1px 1px 1px rgba(255, 255, 255, 0.05);
+  --clay-shadow-md:     0 10px 25px rgba(0, 0, 0, 0.45), inset 1px 1px 2px rgba(255, 255, 255, 0.06);
+  --clay-shadow-lg:     0 16px 36px rgba(0, 0, 0, 0.55), 0 0 20px rgba(37, 99, 235, 0.08), inset 1px 1px 2px rgba(255, 255, 255, 0.08);
+  --clay-shadow-card:   0 12px 30px rgba(0, 0, 0, 0.45), 0 0 20px rgba(37, 99, 235, 0.08), inset 1px 1px 2px rgba(255, 255, 255, 0.05);
+  --clay-shadow-inset:  inset 0 3px 8px rgba(0, 0, 0, 0.5), inset 0 -1px 3px rgba(255, 255, 255, 0.03);
+  --clay-shadow-pressed:inset 0 4px 10px rgba(0, 0, 0, 0.6);
+
+  /* Emergency Alert Light Tint Backgrounds in Dark Mode (High Contrast Distinguishable) */
+  --er-red-light:       rgba(220, 38, 38, 0.16);
+  --er-red-border:      rgba(239, 68, 68, 0.35);
+
+  --er-orange-light:    rgba(234, 88, 12, 0.16);
+  --er-orange-border:   rgba(249, 115, 22, 0.35);
+
+  --er-amber-light:     rgba(217, 119, 6, 0.16);
+  --er-amber-border:    rgba(245, 158, 11, 0.35);
+
+  --er-green-light:     rgba(22, 163, 74, 0.16);
+  --er-green-border:    rgba(34, 197, 94, 0.35);
+
+  --er-blue-light:      rgba(37, 99, 235, 0.16);
+  --er-blue-border:     rgba(56, 189, 248, 0.35);
+}
+
+/* --------------------------------------------------
+   Dark Mode Keyframe Animations (Subtle & Professional)
+   -------------------------------------------------- */
+@keyframes blueCardGlow {
+  0% {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.40), 0 0 0 rgba(37, 99, 235, 0);
+  }
+  50% {
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45), 0 0 22px rgba(37, 99, 235, 0.14);
+  }
+  100% {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.40), 0 0 0 rgba(37, 99, 235, 0);
+  }
+}
+
+@keyframes blueEdgeSweep {
+  0%, 15% {
+    transform: translateX(-150%) skewX(-20deg);
+  }
+  55%, 100% {
+    transform: translateX(250%) skewX(-20deg);
+  }
+}
+
+/* --------------------------------------------------
+   Global Elements in Midnight Blue Dark Mode
+   -------------------------------------------------- */
+html[data-theme="dark"] body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+/* Base Surfaces & Cards */
+html[data-theme="dark"] .clay-surface,
+html[data-theme="dark"] .clay-card,
+html[data-theme="dark"] .clay-card-flat,
+html[data-theme="dark"] .section-card,
+html[data-theme="dark"] .stat-card,
+html[data-theme="dark"] .emergency-card,
+html[data-theme="dark"] .clean-card,
+html[data-theme="dark"] .card {
+  background: var(--surface) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+  box-shadow: var(--clay-shadow-card);
+}
+
+/* Elevated Cards with Subtle Blue Glow Animation */
+html[data-theme="dark"] .clay-card-elevated,
+html[data-theme="dark"] .emergency-contacts-card,
+html[data-theme="dark"] .hero-auth-card,
+html[data-theme="dark"] .cc-header-panel,
+html[data-theme="dark"] .cc-ai-card,
+html[data-theme="dark"] .ai-analysis-card,
+html[data-theme="dark"] .hindsight-panel {
+  background: var(--surface) !important;
+  border-color: var(--border-color) !important;
+  animation: blueCardGlow 6s ease-in-out infinite;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle Animated Blue Edge Lighting */
+html[data-theme="dark"] .emergency-contacts-card::after,
+html[data-theme="dark"] .hero-auth-card::after,
+html[data-theme="dark"] .cc-header-panel::after,
+html[data-theme="dark"] .cc-ai-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    transparent 35%,
+    rgba(56, 189, 248, 0.08) 50%,
+    transparent 65%
+  );
+  pointer-events: none;
+  animation: blueEdgeSweep 8s ease-in-out infinite;
+}
+
+/* Interactive Card Hover in Dark Mode */
+html[data-theme="dark"] .clay-card:hover,
+html[data-theme="dark"] .section-card:hover,
+html[data-theme="dark"] .emergency-card:hover {
+  transform: translateY(-2px);
+  background: var(--surface-elevated) !important;
+  border-color: #2563EB !important;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45), 0 0 22px rgba(37, 99, 235, 0.12) !important;
+}
+
+/* --------------------------------------------------
+   Inputs & Form Controls in Dark Mode
+   -------------------------------------------------- */
+html[data-theme="dark"] input,
+html[data-theme="dark"] textarea,
+html[data-theme="dark"] select,
+html[data-theme="dark"] .clay-input,
+html[data-theme="dark"] .clay-textarea,
+html[data-theme="dark"] .clay-select,
+html[data-theme="dark"] .form-control,
+html[data-theme="dark"] .form-select {
+  background-color: var(--surface-input) !important;
+  border: 1.5px solid var(--border-color) !important;
+  color: var(--text-primary) !important;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.5) !important;
+}
+
+html[data-theme="dark"] input::placeholder,
+html[data-theme="dark"] textarea::placeholder,
+html[data-theme="dark"] .clay-input::placeholder,
+html[data-theme="dark"] .clay-textarea::placeholder {
+  color: var(--text-muted) !important;
+}
+
+html[data-theme="dark"] input:focus,
+html[data-theme="dark"] textarea:focus,
+html[data-theme="dark"] select:focus,
+html[data-theme="dark"] .clay-input:focus,
+html[data-theme="dark"] .clay-textarea:focus,
+html[data-theme="dark"] .clay-select:focus,
+html[data-theme="dark"] .form-control:focus,
+html[data-theme="dark"] .form-select:focus {
+  border-color: var(--accent-blue-bright) !important;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.14), inset 0 2px 4px rgba(0, 0, 0, 0.4) !important;
+  outline: none !important;
+}
+
+html[data-theme="dark"] select option {
+  background-color: var(--surface-input);
+  color: var(--text-primary);
+}
+
+/* --------------------------------------------------
+   Buttons in Dark Mode
+   -------------------------------------------------- */
+/* Primary Buttons */
+html[data-theme="dark"] .btn-primary,
+html[data-theme="dark"] .clay-button-primary {
+  background: var(--accent-blue) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.35);
+}
+
+html[data-theme="dark"] .btn-primary:hover,
+html[data-theme="dark"] .clay-button-primary:hover {
+  background: #3B82F6 !important;
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.45);
+}
+
+/* Secondary / Default Clay Buttons */
+html[data-theme="dark"] .clay-button,
+html[data-theme="dark"] .btn-secondary,
+html[data-theme="dark"] .btn-hero-secondary {
+  background: var(--surface-elevated) !important;
+  border: 1.5px solid var(--border-color) !important;
+  color: var(--text-secondary) !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+html[data-theme="dark"] .clay-button:hover,
+html[data-theme="dark"] .btn-secondary:hover,
+html[data-theme="dark"] .btn-hero-secondary:hover {
+  background: #19385C !important;
+  border-color: var(--accent-blue) !important;
+  color: var(--text-primary) !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45), 0 0 16px rgba(37, 99, 235, 0.12);
+}
+
+/* --------------------------------------------------
+   Modals & Dropdowns in Dark Mode
+   -------------------------------------------------- */
+html[data-theme="dark"] .modal-content,
+html[data-theme="dark"] .dropdown-menu {
+  background: var(--bg-secondary) !important;
+  border: 1.5px solid var(--border-color) !important;
+  color: var(--text-primary) !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65) !important;
+}
+
+html[data-theme="dark"] .dropdown-item {
+  color: var(--text-secondary);
+}
+
+html[data-theme="dark"] .dropdown-item:hover,
+html[data-theme="dark"] .dropdown-item:focus {
+  background: var(--surface-elevated);
+  color: var(--text-primary);
+}
+
+/* --------------------------------------------------
+   Tables in Dark Mode
+   -------------------------------------------------- */
+html[data-theme="dark"] table,
+html[data-theme="dark"] .table {
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+html[data-theme="dark"] table th,
+html[data-theme="dark"] .table th {
+  background-color: var(--surface-elevated) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+html[data-theme="dark"] table td,
+html[data-theme="dark"] .table td {
+  background-color: var(--surface) !important;
+  color: var(--text-secondary) !important;
+  border-color: var(--border-color) !important;
+}
+
+html[data-theme="dark"] table tr:hover td,
+html[data-theme="dark"] .table tr:hover td {
+  background-color: #163653 !important;
+  color: var(--text-primary) !important;
+}
+
+/* --------------------------------------------------
+   Alerts & Notifications in Dark Mode
+   -------------------------------------------------- */
+html[data-theme="dark"] .alert-success,
+html[data-theme="dark"] .clay-alert-success {
+  background: rgba(22, 163, 74, 0.16) !important;
+  border-color: rgba(34, 197, 94, 0.35) !important;
+  color: #86EFAC !important;
+}
+
+html[data-theme="dark"] .alert-warning,
+html[data-theme="dark"] .clay-alert-warning {
+  background: rgba(217, 119, 6, 0.16) !important;
+  border-color: rgba(245, 158, 11, 0.35) !important;
+  color: #FDE68A !important;
+}
+
+html[data-theme="dark"] .alert-danger,
+html[data-theme="dark"] .clay-alert-danger {
+  background: rgba(220, 38, 38, 0.16) !important;
+  border-color: rgba(239, 68, 68, 0.35) !important;
+  color: #FCA5A5 !important;
+}
+
+html[data-theme="dark"] .alert-info,
+html[data-theme="dark"] .clay-alert-info {
+  background: rgba(37, 99, 235, 0.16) !important;
+  border-color: rgba(56, 189, 248, 0.35) !important;
+  color: #93C5FD !important;
+}
+
+/* --------------------------------------------------
+   Leaflet Map in Dark Mode
+   -------------------------------------------------- */
+html[data-theme="dark"] .leaflet-container {
+  background: var(--surface-input) !important;
+  border-color: var(--border-color) !important;
+}
+
+html[data-theme="dark"] .leaflet-tile {
+  filter: brightness(0.68) invert(1) contrast(2.6) hue-rotate(200deg) saturate(0.35) brightness(0.72) !important;
+}
+
+html[data-theme="dark"] .leaflet-popup-content-wrapper {
+  background: var(--surface) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-color) !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5) !important;
+}
+
+html[data-theme="dark"] .leaflet-popup-tip {
+  background: var(--surface) !important;
+}
+
+html[data-theme="dark"] .leaflet-bar a {
+  background: var(--surface) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+html[data-theme="dark"] .leaflet-bar a:hover {
+  background: var(--surface-elevated) !important;
+  color: var(--accent-blue-bright) !important;
+}
+
+html[data-theme="dark"] .leaflet-control-attribution {
+  background: rgba(10, 27, 46, 0.88) !important;
+  color: var(--text-muted) !important;
+}
+
+html[data-theme="dark"] .leaflet-control-attribution a {
+  color: var(--accent-blue-bright) !important;
+}
+
+/* --------------------------------------------------
+   Universal Override for Inline White Backgrounds in Dark Mode
+   -------------------------------------------------- */
+html[data-theme="dark"] [style*="background: #FFFFFF"],
+html[data-theme="dark"] [style*="background: '#FFFFFF'"],
+html[data-theme="dark"] [style*="background:#FFFFFF"],
+html[data-theme="dark"] [style*="background: white"],
+html[data-theme="dark"] [style*="background:white"],
+html[data-theme="dark"] [style*="backgroundColor: #FFFFFF"],
+html[data-theme="dark"] [style*="backgroundColor: '#FFFFFF'"] {
+  background: var(--surface) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+
+/* =====================================================
+   Global Text Size Preference System
+   data-text-size="normal" | "large" | "xlarge"
+   ===================================================== */
+html[data-text-size="large"] {
+  font-size: 112%;
+}
+
+html[data-text-size="xlarge"] {
+  font-size: 124%;
+}
+
+/* =====================================================
+   Reduce Animations Preference System
+   data-reduce-animations="true"
+   ===================================================== */
+html[data-reduce-animations="true"] *,
+html[data-reduce-animations="true"] *::before,
+html[data-reduce-animations="true"] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+}
+
+/* Preserve vital emergency pulse and critical indicator animations */
+html[data-reduce-animations="true"] .status-pulse-dot,
+html[data-reduce-animations="true"] .emergency-live-pulse,
+html[data-reduce-animations="true"] .badge-pulse,
+html[data-reduce-animations="true"] .emergency-critical-beacon {
+  animation-duration: 1.5s !important;
+  animation-iteration-count: infinite !important;
 }

@@ -93,6 +93,21 @@ export const emergencyService = {
         "",
     };
 
+    // Extended location model — forward all structured address fields if provided
+    // Backward-compatible: old consumers only have lat/lng
+    const loc = reportData.location;
+    if (loc && typeof loc === 'object') {
+      if (loc.accuracy !== undefined)      payload.location_accuracy  = loc.accuracy;
+      if (loc.street !== undefined)        payload.location_street    = loc.street;
+      if (loc.area !== undefined)          payload.location_area      = loc.area;
+      if (loc.city !== undefined)          payload.location_city      = loc.city;
+      if (loc.district !== undefined)      payload.location_district  = loc.district;
+      if (loc.state !== undefined)         payload.location_state     = loc.state;
+      if (loc.postalCode !== undefined)    payload.location_postal_code = loc.postalCode;
+      if (loc.country !== undefined)       payload.location_country   = loc.country;
+      if (loc.formattedAddress !== undefined) payload.location_formatted_address = loc.formattedAddress;
+    }
+
     if (Array.isArray(reportData.media) && reportData.media.length > 0) {
       payload.media = reportData.media;
     }

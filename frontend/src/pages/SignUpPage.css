@@ -605,3 +605,101 @@
     font-size: 14px;
   }
 }
+
+/* =====================================================
+   Sign Up Page — Midnight Blue Dark Theme Overrides
+   ===================================================== */
+html[data-theme="dark"] .signup-page-wrapper {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+html[data-theme="dark"] .auth-card {
+  background: var(--surface) !important;
+  border-color: var(--border-color) !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+}
+
+html[data-theme="dark"] .auth-title {
+  color: var(--text-primary);
+}
+
+html[data-theme="dark"] .auth-subtitle {
+  color: var(--text-muted);
+}
+
+html[data-theme="dark"] .form-label {
+  color: var(--text-secondary);
+}
+
+html[data-theme="dark"] .input-prefix-container,
+html[data-theme="dark"] .phone-unified-container {
+  background: var(--surface-input) !important;
+  border-color: var(--border-color) !important;
+}
+
+html[data-theme="dark"] .prefix-input-field,
+html[data-theme="dark"] .phone-unified-input {
+  background: transparent !important;
+  color: var(--text-primary) !important;
+}
+
+html[data-theme="dark"] .prefix-input-field::placeholder,
+html[data-theme="dark"] .phone-unified-input::placeholder {
+  color: var(--text-muted) !important;
+}
+
+html[data-theme="dark"] .input-field-icon {
+  color: var(--text-muted);
+}
+
+html[data-theme="dark"] .country-trigger {
+  border-right-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+html[data-theme="dark"] .country-dropdown-menu {
+  background: var(--bg-secondary) !important;
+  border-color: var(--border-color) !important;
+}
+
+html[data-theme="dark"] .country-option {
+  color: var(--text-primary);
+}
+
+html[data-theme="dark"] .country-option:hover {
+  background: var(--surface-elevated);
+}
+
+html[data-theme="dark"] .btn-google-clay {
+  background: var(--surface-elevated) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+html[data-theme="dark"] .btn-google-clay:hover {
+  background: #19385C !important;
+  border-color: var(--accent-blue) !important;
+}
+
+html[data-theme="dark"] .auth-divider-line {
+  background: var(--border-color);
+}
+
+html[data-theme="dark"] .auth-divider-text {
+  color: var(--text-muted);
+}
+
+html[data-theme="dark"] .auth-card-footer {
+  border-top-color: var(--border-color);
+  color: var(--text-muted);
+}
+
+html[data-theme="dark"] .footer-prompt {
+  color: var(--text-muted);
+}
+
+html[data-theme="dark"] .auth-link {
+  color: var(--accent-blue-bright);
+}
+

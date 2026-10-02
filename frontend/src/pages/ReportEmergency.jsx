@@ -1,8 +1,9 @@
-import { useState, useRef, useEffect, useId } from 'react';
+import { useState, useRef, useEffect, useId, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { AppLayout } from '../layouts/AppLayout';
 import { BackButton } from '../components/BackButton';
+import GoogleLocationMap from '../components/GoogleLocationMap';
 import { EMERGENCY_TYPES } from '../data/demoData';
 import {
   LANGUAGES,
@@ -11,15 +12,33 @@ import {
   isRTL,
   speakText,
 } from '../data/translations';
+import {
+  loadGoogleMapsApi,
+  getCurrentPosition,
+  reverseGeocode,
+  isGoogleMapsConfigured,
+} from '../services/locationService';
 import './ReportEmergency.css';
 
 const INITIAL_FORM = {
   type: '',
   description: '',
+  // Location — full structured model
   lat: '',
   lng: '',
-  locationAddress: '',
-  locationStatus: '',
+  accuracy: null,
+  locationAddress: '',   // manual text fallback
+  locationStatus: '',    // '' | 'detecting' | 'geocoding' | 'detected' | 'error' | 'denied' | 'unsupported' | 'timeout'
+  locationError: '',
+  // Reverse-geocoded address parts
+  street: null,
+  area: null,
+  city: null,
+  district: null,
+  state: null,
+  postalCode: null,
+  country: null,
+  formattedAddress: null,
 };
 
 // Visual emergency cards configuration
@@ -85,6 +104,7 @@ export default function ReportEmergency() {
   const [mediaError, setMediaError] = useState('');
   const [loading, setLoading] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
+  const [mapsReady, setMapsReady] = useState(false);
   const [errors, setErrors] = useState({});
 
   // Voice recognition states
@@ -109,6 +129,15 @@ export default function ReportEmergency() {
 
   // Accessibility ID
   const langSelectId = useId();
+
+  // Pre-load Google Maps API on mount so the map is ready faster
+  useEffect(() => {
+    if (isGoogleMapsConfigured()) {
+      loadGoogleMapsApi()
+        .then(() => setMapsReady(true))
+        .catch(() => setMapsReady(false));
+    }
+  }, []);
 
   // Save language selection to localStorage & AppContext
   const handleSelectLanguage = (newCode) => {
@@ -147,37 +176,78 @@ export default function ReportEmergency() {
     }
   };
 
-  // GPS Location Detection
-  const detectLocation = () => {
+  // Full GPS + Reverse Geocoding location detection
+  const detectLocation = useCallback(async () => {
     if (!navigator.geolocation) {
-      setField('locationStatus', 'error');
+      setForm((prev) => ({
+        ...prev,
+        locationStatus: 'unsupported',
+        locationError: 'Geolocation is not supported by this browser.',
+      }));
       return;
     }
 
     setLocationLoading(true);
-    setField('locationStatus', 'detecting');
+    setForm((prev) => ({
+      ...prev,
+      locationStatus: 'detecting',
+      locationError: '',
+    }));
 
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setForm((prev) => ({
-          ...prev,
-          lat: pos.coords.latitude.toFixed(6),
-          lng: pos.coords.longitude.toFixed(6),
-          locationStatus: 'detected',
-        }));
-        setLocationLoading(false);
-      },
-      () => {
-        setField('locationStatus', 'error');
-        setLocationLoading(false);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0,
+    try {
+      const pos = await getCurrentPosition();
+      const { latitude, longitude, accuracy } = pos;
+
+      // Update coords immediately so map renders quickly
+      setForm((prev) => ({
+        ...prev,
+        lat: latitude.toFixed(6),
+        lng: longitude.toFixed(6),
+        accuracy: accuracy ? Math.round(accuracy) : null,
+        locationStatus: 'geocoding',
+        locationError: '',
+      }));
+
+      // Attempt reverse geocoding if Google Maps available
+      let addressData = {
+        street: null, area: null, city: null, district: null,
+        state: null, postalCode: null, country: null, formattedAddress: null,
+      };
+
+      if (window.google?.maps?.Geocoder || mapsReady) {
+        try {
+          addressData = await reverseGeocode(latitude, longitude);
+        } catch {
+          // Geocoding failed — GPS still valid
+        }
       }
-    );
-  };
+
+      setForm((prev) => ({
+        ...prev,
+        lat: latitude.toFixed(6),
+        lng: longitude.toFixed(6),
+        accuracy: accuracy ? Math.round(accuracy) : null,
+        locationStatus: 'detected',
+        locationError: '',
+        ...addressData,
+        // If geocoded, also populate locationAddress with formatted address
+        locationAddress: addressData.formattedAddress ||
+          prev.locationAddress ||
+          '',
+      }));
+    } catch (err) {
+      const { code, message } = err || {};
+      setForm((prev) => ({
+        ...prev,
+        locationStatus: code === 'DENIED' ? 'denied' :
+                        code === 'TIMEOUT' ? 'timeout' :
+                        code === 'UNSUPPORTED' ? 'unsupported' : 'error',
+        locationError: message || 'Could not detect location.',
+      }));
+    } finally {
+      setLocationLoading(false);
+    }
+  }, [mapsReady]);
 
   // Speech Recognition Handler
   const handleStartListening = () => {
@@ -432,13 +502,19 @@ export default function ReportEmergency() {
       const latitude = form.lat ? parseFloat(form.lat) : null;
       const longitude = form.lng ? parseFloat(form.lng) : null;
 
+      // Build rich location text for backward compat
       let locationText = 'Location not detected';
-      if (form.locationAddress.trim()) {
-        locationText = form.locationAddress.trim();
-        if (form.lat && form.lng) {
+      if (form.formattedAddress) {
+        locationText = form.formattedAddress;
+        if (latitude && longitude) {
           locationText += ` (GPS: ${form.lat}, ${form.lng})`;
         }
-      } else if (form.lat && form.lng) {
+      } else if (form.locationAddress.trim()) {
+        locationText = form.locationAddress.trim();
+        if (latitude && longitude) {
+          locationText += ` (GPS: ${form.lat}, ${form.lng})`;
+        }
+      } else if (latitude && longitude) {
         locationText = `Lat: ${form.lat}, Lng: ${form.lng}`;
       }
 
@@ -455,12 +531,28 @@ export default function ReportEmergency() {
         ? `${description}\n\n[EVIDENCE NOT SAFELY AVAILABLE — Citizen confirmed it was unsafe to capture photo/video evidence at scene]`
         : description;
 
+      // Full structured location model (backward-compatible)
+      const locationPayload = {
+        latitude,
+        longitude,
+        accuracy: form.accuracy || null,
+        street: form.street || null,
+        area: form.area || null,
+        city: form.city || null,
+        district: form.district || null,
+        state: form.state || null,
+        postalCode: form.postalCode || null,
+        country: form.country || null,
+        formattedAddress: form.formattedAddress || null,
+      };
+
       const result = await addEmergency({
         type: canonicalEmergencyType,
         description: finalDescription,
         latitude,
         longitude,
         locationText,
+        location: locationPayload,
         media: mediaPayload,
       });
 
@@ -719,11 +811,25 @@ export default function ReportEmergency() {
               <div className="clean-section-header">
                 <span className="step-badge">2</span>
                 <h2 className="clean-section-title" id="step-location-title">
-                  {t.locationSectionTitle || 'Location'}
+                  📍 {t.locationSectionTitle || 'Emergency Location'}
                 </h2>
               </div>
 
               <div className="clean-section-body">
+
+                {/* Google Map */}
+                <div className="location-map-wrapper mb-3">
+                  <GoogleLocationMap
+                    latitude={form.lat ? parseFloat(form.lat) : null}
+                    longitude={form.lng ? parseFloat(form.lng) : null}
+                    height={300}
+                    zoom={15}
+                    showInfoBar={false}
+                    showNoLocationState={true}
+                    draggable={false}
+                  />
+                </div>
+
                 {/* Use My Location button */}
                 <button
                   type="button"
@@ -732,16 +838,21 @@ export default function ReportEmergency() {
                   disabled={locationLoading}
                   aria-label={t.useMyLocation || 'Use My Location'}
                 >
-                  {locationLoading ? (
+                  {locationLoading && form.locationStatus === 'detecting' ? (
                     <>
                       <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                      <span>{t.detectingLocation || 'Detecting Location...'}</span>
+                      <span>{t.detectingLocation || 'Detecting your location…'}</span>
+                    </>
+                  ) : locationLoading && form.locationStatus === 'geocoding' ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                      <span>Reading address…</span>
                     </>
                   ) : form.locationStatus === 'detected' ? (
                     <>
                       <i className="bi bi-check-circle-fill text-success fs-5 me-2" aria-hidden="true"></i>
                       <span className="text-success fw-bold">
-                        {t.locationCaptured || 'Location Captured'} ({form.lat}, {form.lng})
+                        {t.locationCaptured || 'Your current location'}
                       </span>
                     </>
                   ) : (
@@ -752,17 +863,68 @@ export default function ReportEmergency() {
                   )}
                 </button>
 
-                {form.locationStatus === 'error' && (
+                {/* Location error states */}
+                {(form.locationStatus === 'error' || form.locationStatus === 'denied' ||
+                  form.locationStatus === 'timeout' || form.locationStatus === 'unsupported') && (
                   <div className="clean-status-banner banner-warning mt-2" role="alert">
                     <i className="bi bi-exclamation-triangle-fill me-1"></i>
-                    <span>{t.locationFailed || 'Could not fetch GPS. Please enter landmark or address below.'}</span>
+                    <span>
+                      {form.locationError ||
+                        (form.locationStatus === 'denied'
+                          ? 'Location permission was not granted. Please allow location access.'
+                          : form.locationStatus === 'unsupported'
+                          ? 'Geolocation is not supported by this browser.'
+                          : form.locationStatus === 'timeout'
+                          ? 'Location detection timed out. Please try again.'
+                          : (t.locationFailed || 'Could not fetch GPS. Please enter landmark or address below.'))}
+                    </span>
                   </div>
                 )}
 
-                {/* Location / Landmark input */}
+                {/* Location Detected Card */}
+                {form.locationStatus === 'detected' && form.lat && form.lng && (
+                  <div className="location-detected-card mt-3" role="status" aria-live="polite">
+                    <div className="location-detected-header">
+                      <i className="bi bi-check-circle-fill text-success me-2" aria-hidden="true"></i>
+                      <span className="fw-bold text-success">Location Detected ✓</span>
+                    </div>
+
+                    {/* Formatted address */}
+                    {form.formattedAddress && (
+                      <div className="location-formatted-address">
+                        {form.street && <div className="loc-addr-line">{form.street}</div>}
+                        {form.area && <div className="loc-addr-line">{form.area}</div>}
+                        <div className="loc-addr-line">
+                          {[form.city, form.state, form.postalCode].filter(Boolean).join(', ')}
+                        </div>
+                        {form.country && <div className="loc-addr-line">{form.country}</div>}
+                      </div>
+                    )}
+
+                    {/* Coordinates */}
+                    <div className="location-coords-row">
+                      <div className="loc-coord-item">
+                        <span className="loc-label">Latitude:</span>
+                        <span className="loc-value" dir="ltr">{form.lat}</span>
+                      </div>
+                      <div className="loc-coord-item">
+                        <span className="loc-label">Longitude:</span>
+                        <span className="loc-value" dir="ltr">{form.lng}</span>
+                      </div>
+                      {form.accuracy && (
+                        <div className="loc-coord-item">
+                          <span className="loc-label">Accuracy:</span>
+                          <span className="loc-value" dir="ltr">{form.accuracy} meters</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Manual Address / Landmark input */}
                 <div className="mt-3">
                   <label htmlFor="report-location-input" className="clean-field-label">
-                    {t.enterNearbyLabel || 'Landmark or Address'}
+                    {t.enterNearbyLabel || 'Landmark or Additional Address Details'}
                   </label>
                   <input
                     id="report-location-input"
@@ -1105,7 +1267,9 @@ export default function ReportEmergency() {
                     <span className="review-label">{t.summaryLocation || 'Location'}:</span>
                     <span className="review-value">
                       {form.locationStatus === 'detected'
-                        ? `${t.locationCaptured || 'Captured'} (GPS: ${form.lat}, ${form.lng})`
+                        ? (form.formattedAddress
+                            ? `${form.formattedAddress} (GPS: ${form.lat}, ${form.lng})`
+                            : `GPS: ${form.lat}, ${form.lng}`)
                         : form.locationAddress || 'Not specified'}
                     </span>
                   </div>

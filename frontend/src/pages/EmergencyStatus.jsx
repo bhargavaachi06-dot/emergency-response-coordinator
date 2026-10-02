@@ -33,8 +33,13 @@ export default function EmergencyStatus() {
   const emergency = submittedEmergency || emergencies[0] || DEMO_EMERGENCIES[0];
 
   const emergencyCode = emergency.emergency_code || emergency.id;
-  const emergencyLat = Number(emergency.latitude ?? emergency.location?.lat ?? 28.6139);
-  const emergencyLng = Number(emergency.longitude ?? emergency.location?.lng ?? 77.2090);
+  // Only use real stored coordinates — no Delhi fallback
+  const rawLat = emergency.latitude ?? emergency.location?.lat;
+  const rawLng = emergency.longitude ?? emergency.location?.lng;
+  const emergencyLat = rawLat !== undefined && rawLat !== null ? Number(rawLat) : null;
+  const emergencyLng = rawLng !== undefined && rawLng !== null ? Number(rawLng) : null;
+  const hasValidCoords = emergencyLat !== null && emergencyLng !== null &&
+                         !isNaN(emergencyLat) && !isNaN(emergencyLng);
 
   let ai = emergency.ai_analysis || emergency.ai || emergency.analysis || null;
   if (typeof ai === "string") {
@@ -45,7 +50,7 @@ export default function EmergencyStatus() {
     }
   }
 
-  const mapMarkers = [
+  const mapMarkers = hasValidCoords ? [
     { lat: emergencyLat, lng: emergencyLng, type: 'emergency', label: `#${emergencyCode}` },
     ...(emergency.responders || []).map((r, i) => ({
       lat: emergencyLat + (i + 1) * 0.003,
@@ -55,7 +60,7 @@ export default function EmergencyStatus() {
       status: r.status,
       eta: r.eta,
     })),
-  ];
+  ] : [];
 
   const currentStageIdx = getStageIndex(emergency.status);
 
@@ -136,8 +141,8 @@ export default function EmergencyStatus() {
                 <div
                   style={{
                     flex: 1,
-                    background: isActive ? '#F0F9FF' : '#FFFFFF',
-                    border: isActive ? '1.5px solid #BAE6FD' : '1px solid #E2E8F0',
+                    background: isActive ? 'var(--er-blue-light, #F0F9FF)' : 'var(--er-surface, #FFFFFF)',
+                    border: isActive ? '1.5px solid var(--er-blue-border, #BAE6FD)' : '1px solid var(--er-border, #E2E8F0)',
                     borderRadius: '14px',
                     padding: '12px 18px',
                     display: 'flex',
@@ -213,8 +218,8 @@ export default function EmergencyStatus() {
             {/* Community helpers */}
             {emergency.helpers && (
               <div style={{
-                background: '#FFFBEB',
-                border: '1px solid #FDE68A',
+                background: 'var(--er-amber-light, #FFFBEB)',
+                border: '1px solid var(--er-amber-border, #FDE68A)',
                 borderRadius: '12px',
                 padding: '12px 16px',
                 marginTop: 12,
@@ -225,7 +230,7 @@ export default function EmergencyStatus() {
               }}>
                 <span style={{ fontSize: 20 }}>🤝</span>
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#92400E' }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--er-amber, #92400E)' }}>
                     Community Helpers
                   </div>
                   <div style={{ fontSize: 12, color: '#B45309' }}>
@@ -250,7 +255,7 @@ export default function EmergencyStatus() {
             <div className="map-container" style={{ height: '440px' }}>
               <MapView
                 markers={mapMarkers}
-                center={[emergencyLat, emergencyLng]}
+                center={hasValidCoords ? [emergencyLat, emergencyLng] : null}
                 height={440}
               />
             </div>
@@ -261,7 +266,10 @@ export default function EmergencyStatus() {
             <div className="row g-3">
               <div className="col-6">
                 <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>Location</div>
-                <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A' }}>{emergency.location?.address || emergency.location_text || `${emergencyLat.toFixed(4)}, ${emergencyLng.toFixed(4)}`}</div>
+                <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A' }}>
+                  {emergency.location?.address || emergency.location_text ||
+                    (hasValidCoords ? `${emergencyLat.toFixed(4)}, ${emergencyLng.toFixed(4)}` : 'Location not available')}
+                </div>
               </div>
               <div className="col-6">
                 <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>Area</div>

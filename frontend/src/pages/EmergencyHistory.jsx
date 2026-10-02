@@ -43,7 +43,7 @@ export default function EmergencyHistory() {
         <div className="row g-3 align-items-center">
           <div className="col-md-7 col-12">
             <div className="d-flex align-items-center gap-2" style={{
-              background: '#FFFFFF',
+              background: 'var(--er-surface-sunken, #FFFFFF)',
               border: '1.5px solid var(--er-border, #E2E8F0)',
               borderRadius: '14px',
               padding: '8px 14px',
@@ -53,7 +53,7 @@ export default function EmergencyHistory() {
               <input
                 type="text"
                 className="w-100 border-0 bg-transparent"
-                style={{ outline: 'none', fontSize: '14px', color: '#0F172A' }}
+                style={{ outline: 'none', fontSize: '14px', color: 'var(--er-navy, #0F172A)' }}
                 placeholder="Search by incident code, type, location..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -81,9 +81,9 @@ export default function EmergencyHistory() {
                   padding: '7px 16px',
                   minHeight: '38px',
                   borderRadius: '12px',
-                  background: statusFilter === tab ? '#F0F9FF' : '#FFFFFF',
-                  borderColor: statusFilter === tab ? '#0284C7' : '#E2E8F0',
-                  color: statusFilter === tab ? '#0284C7' : '#475569',
+                  background: statusFilter === tab ? 'var(--er-blue-light, #F0F9FF)' : 'var(--er-surface, #FFFFFF)',
+                  borderColor: statusFilter === tab ? 'var(--er-blue, #0284C7)' : 'var(--er-border, #E2E8F0)',
+                  color: statusFilter === tab ? 'var(--er-blue, #0284C7)' : 'var(--er-slate, #475569)',
                   fontWeight: 700,
                 }}
                 onClick={() => setStatusFilter(tab)}

@@ -15,7 +15,7 @@ export default function HelperDashboard() {
       <div
         className="clay-card mb-4"
         style={{
-          background: '#FFFFFF',
+          background: 'var(--er-surface, #FFFFFF)',
           padding: '24px 28px',
           display: 'flex',
           alignItems: 'center',
@@ -106,15 +106,15 @@ export default function HelperDashboard() {
 
       {/* Nearby Emergency Alert in Tactile Clay Card */}
       {helperAvailable && (
-        <div className="clay-card mb-4" style={{ border: '2px solid #FECACA', background: '#FFFFFF' }}>
+        <div className="clay-card mb-4" style={{ border: '2px solid var(--er-red-border, #FECACA)', background: 'var(--er-surface, #FFFFFF)' }}>
           <div style={{ textAlign: 'center', marginBottom: 20 }}>
             <div className="pulse-icon">
               <i className="bi bi-exclamation-triangle-fill"></i>
             </div>
-            <div style={{ fontSize: 12, fontWeight: 800, color: '#DC2626', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 4 }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--er-red, #DC2626)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 4 }}>
               🚨 Emergency Near You
             </div>
-            <h2 style={{ fontSize: 22, fontWeight: 800, color: '#0F172A', marginBottom: 4 }}>
+            <h2 style={{ fontSize: 22, fontWeight: 800, color: 'var(--er-navy, #0F172A)', marginBottom: 4 }}>
               {NEARBY_EMERGENCY.type}
             </h2>
             <div style={{ fontSize: 13.5, color: '#64748B', marginBottom: 16 }}>

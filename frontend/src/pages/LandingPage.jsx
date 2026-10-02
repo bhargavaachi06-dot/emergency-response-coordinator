@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { TopNavbar } from '../components/Navigation';
+import EmergencyContactsSection from '../components/EmergencyContacts';
 import './LandingPage.css';
 
 const EMERGENCY_TYPES = [
@@ -209,7 +210,12 @@ export default function LandingPage() {
           </section>
 
           {/* =====================================================
-              3. ONE SHORT HUMAN-IN-THE-LOOP STATEMENT
+              3. EMERGENCY CONTACTS (DIRECT HELPLINES)
+              ===================================================== */}
+          <EmergencyContactsSection />
+
+          {/* =====================================================
+              4. ONE SHORT HUMAN-IN-THE-LOOP STATEMENT
               ===================================================== */}
           <section className="landing-hitl-section" aria-label="Governance & Safety">
             <div className="hitl-banner-compact">

@@ -434,3 +434,130 @@
     text-align: center;
   }
 }
+
+/* =====================================================
+   Landing Page — Midnight Blue Dark Mode Overrides
+   ===================================================== */
+html[data-theme="dark"] .landing-container {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+html[data-theme="dark"] .hero-kicker {
+  background: var(--surface);
+  border-color: var(--border-color);
+  color: var(--text-secondary);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+html[data-theme="dark"] .hero-title {
+  color: var(--text-primary);
+}
+
+html[data-theme="dark"] .hero-description {
+  color: var(--text-muted);
+}
+
+html[data-theme="dark"] .btn-hero-secondary {
+  background: var(--surface-elevated);
+  border-color: var(--border-color);
+  color: var(--text-secondary);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+html[data-theme="dark"] .btn-hero-secondary:hover {
+  background: #19385C;
+  border-color: var(--accent-blue);
+  color: var(--text-primary);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 0 16px rgba(37, 99, 235, 0.14);
+}
+
+html[data-theme="dark"] .hero-auth-card {
+  background: var(--surface);
+  border-color: var(--border-color);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+}
+
+html[data-theme="dark"] .auth-card-title {
+  color: var(--text-primary);
+}
+
+html[data-theme="dark"] .auth-card-sub {
+  color: var(--text-muted);
+}
+
+html[data-theme="dark"] .btn-landing-login {
+  background: var(--surface-elevated);
+  border-color: var(--border-color);
+  color: var(--text-secondary);
+}
+
+html[data-theme="dark"] .btn-landing-login:hover {
+  background: #19385C;
+  border-color: var(--accent-blue-bright);
+  color: var(--accent-blue-bright);
+}
+
+html[data-theme="dark"] .supporting-point-pill {
+  background: var(--surface);
+  border-color: var(--border-color);
+  color: var(--text-secondary);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+html[data-theme="dark"] .section-head-title {
+  color: var(--text-primary);
+}
+
+html[data-theme="dark"] .section-head-sub {
+  color: var(--text-muted);
+}
+
+html[data-theme="dark"] .type-card-compact {
+  background: var(--surface);
+  border-color: var(--border-color);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+}
+
+html[data-theme="dark"] .type-card-compact:hover,
+html[data-theme="dark"] .type-card-compact:focus-visible {
+  background: var(--surface-elevated);
+  border-color: var(--accent-blue);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45), 0 0 20px rgba(37, 99, 235, 0.12);
+}
+
+html[data-theme="dark"] .type-name {
+  color: var(--text-primary);
+}
+
+html[data-theme="dark"] .type-desc {
+  color: var(--text-muted);
+}
+
+html[data-theme="dark"] .type-arrow {
+  color: var(--text-muted);
+}
+
+html[data-theme="dark"] .hitl-banner-compact {
+  background: var(--surface);
+  border-color: var(--border-color);
+  border-left-color: var(--er-green);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.45);
+}
+
+html[data-theme="dark"] .hitl-text {
+  color: var(--text-secondary);
+}
+
+html[data-theme="dark"] .landing-footer-compact {
+  background: var(--bg-primary);
+  border-top-color: var(--border-color);
+}
+
+html[data-theme="dark"] .footer-brand {
+  color: var(--text-primary);
+}
+
+html[data-theme="dark"] .footer-inner-compact {
+  color: var(--text-muted);
+}

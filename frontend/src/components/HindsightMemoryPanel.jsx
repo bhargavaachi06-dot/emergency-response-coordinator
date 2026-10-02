@@ -19,7 +19,7 @@ export function HindsightMemoryPanel({ memoryContext, ai }) {
       <div
         className="clay-card mb-4"
         style={{
-          background: '#FFFFFF',
+          background: 'var(--er-surface, #FFFFFF)',
           border: '1.5px solid var(--er-border-subtle, #EDF2F7)',
           borderRadius: '24px',
           boxShadow: 'var(--clay-shadow-card)',
@@ -155,7 +155,7 @@ export function HindsightMemoryPanel({ memoryContext, ai }) {
     <div
       className="clay-card mb-4"
       style={{
-        background: '#FFFFFF',
+        background: 'var(--er-surface, #FFFFFF)',
         border: '1.5px solid rgba(147, 51, 234, 0.25)',
         borderRadius: '24px',
         boxShadow: 'var(--clay-shadow-card)',
@@ -167,7 +167,7 @@ export function HindsightMemoryPanel({ memoryContext, ai }) {
         <div className="d-flex align-items-center gap-2">
           <span style={{ fontSize: 22 }}>🧠</span>
           <div>
-            <h2 className="mb-0" style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A' }}>
+            <h2 className="mb-0" style={{ fontSize: '16px', fontWeight: 800, color: 'var(--er-navy, #0F172A)' }}>
               Hindsight Memory
             </h2>
             <div style={{ fontSize: '12px', color: '#64748B', marginTop: 1 }}>
@@ -356,7 +356,7 @@ export function HindsightMemoryPanel({ memoryContext, ai }) {
                 <div
                   key={idx}
                   style={{
-                    background: '#FFFFFF',
+                    background: 'var(--er-surface-elevated, #FFFFFF)',
                     border: '1.5px solid var(--er-border, #E2E8F0)',
                     borderRadius: '14px',
                     padding: '12px 16px',

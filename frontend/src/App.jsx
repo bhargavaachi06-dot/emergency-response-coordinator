@@ -1,7 +1,9 @@
 import { BrowserRouter, useNavigate } from 'react-router-dom';
 import { AppProvider, useApp } from './context/AppContext';
+import { SettingsProvider } from './context/SettingsContext';
 import AppRoutes from './routes/AppRoutes';
 import { LanguageModal } from './components/LanguageModal';
+import { SettingsModal } from './components/SettingsModal';
 import { SplashScreen } from './components/SplashScreen';
 
 /**
@@ -58,6 +60,9 @@ function AppContent() {
         />
       )}
 
+      {/* Global Preferences & Customization Modal */}
+      <SettingsModal />
+
       {/* 4. Main Application Routing with protected page guards */}
       <AppRoutes />
     </>
@@ -67,9 +72,11 @@ function AppContent() {
 function App() {
   return (
     <BrowserRouter>
-      <AppProvider>
-        <AppContent />
-      </AppProvider>
+      <SettingsProvider>
+        <AppProvider>
+          <AppContent />
+        </AppProvider>
+      </SettingsProvider>
     </BrowserRouter>
   );
 }

@@ -101,8 +101,13 @@ export default function EmergencyDetails() {
   }
 
   const emergencyCode = emergency.emergency_code || emergency.id;
-  const emergencyLat = Number(emergency.latitude ?? emergency.location?.lat ?? 28.6139);
-  const emergencyLng = Number(emergency.longitude ?? emergency.location?.lng ?? 77.2090);
+  // Only use real stored coordinates — no Delhi fallback
+  const rawLat = emergency.latitude ?? emergency.location?.lat;
+  const rawLng = emergency.longitude ?? emergency.location?.lng;
+  const emergencyLat = rawLat !== undefined && rawLat !== null ? Number(rawLat) : null;
+  const emergencyLng = rawLng !== undefined && rawLng !== null ? Number(rawLng) : null;
+  const hasValidCoords = emergencyLat !== null && emergencyLng !== null &&
+                         !isNaN(emergencyLat) && !isNaN(emergencyLng);
 
   let ai = emergency.ai_analysis || emergency.ai || emergency.analysis || null;
   if (typeof ai === 'string') {
@@ -158,7 +163,7 @@ export default function EmergencyDetails() {
     }
   };
 
-  const mapMarkers = [
+  const mapMarkers = hasValidCoords ? [
     { lat: emergencyLat, lng: emergencyLng, type: 'emergency', label: `#${emergencyCode}` },
     ...(emergency.responders || []).map((r, i) => ({
       lat: emergencyLat + (i + 1) * 0.003,
@@ -168,7 +173,7 @@ export default function EmergencyDetails() {
       status: r.status,
       eta: r.eta,
     })),
-  ];
+  ] : [];
 
   return (
     <AppLayout
@@ -241,7 +246,11 @@ export default function EmergencyDetails() {
               {emergency.location_text || emergency.location?.address || `${emergencyLat.toFixed(5)}, ${emergencyLng.toFixed(5)}`}
             </div>
             <div className="rounded-3 overflow-hidden border border-secondary border-opacity-25" style={{ height: '340px' }}>
-              <MapView markers={mapMarkers} center={[emergencyLat, emergencyLng]} height={340} />
+              <MapView
+                markers={mapMarkers}
+                center={hasValidCoords ? [emergencyLat, emergencyLng] : null}
+                height={340}
+              />
             </div>
           </div>
         </section>
@@ -538,13 +547,13 @@ export default function EmergencyDetails() {
                 <div className="text-secondary small fw-bold text-uppercase mb-2">Deployed Units:</div>
                 <div className="d-flex flex-column gap-2">
                   {emergency.responders.map((r, ri) => (
-                    <div key={ri} className="d-flex align-items-center justify-content-between p-3 rounded-3" style={{ background: '#FFFFFF', border: '1.5px solid #E2E8F0', boxShadow: 'var(--clay-shadow-sm)' }}>
+                    <div key={ri} className="d-flex align-items-center justify-content-between p-3 rounded-3" style={{ background: 'var(--er-surface, #FFFFFF)', border: '1.5px solid var(--er-border, #E2E8F0)', boxShadow: 'var(--clay-shadow-sm)' }}>
                       <div className="d-flex align-items-center gap-3">
                         <span className="fs-4">
                           {(r.type || '').toLowerCase().includes('ambulance') ? '🚑' : '👮'}
                         </span>
                         <div>
-                          <div className="fw-bold text-dark">{r.name || r.type}</div>
+                          <div className="fw-bold" style={{ color: 'var(--er-navy)' }}>{r.name || r.type}</div>
                           {r.eta && <div className="text-secondary" style={{ fontSize: '12px' }}>ETA: {r.eta}</div>}
                         </div>
                       </div>
@@ -562,7 +571,7 @@ export default function EmergencyDetails() {
               <button
                 type="button"
                 className="clay-button"
-                style={{ background: '#FFFFFF', border: '1.5px solid #E2E8F0', borderRadius: '14px', padding: '10px 18px', fontWeight: 700 }}
+                style={{ background: 'var(--er-surface-elevated, #FFFFFF)', border: '1.5px solid var(--er-border, #E2E8F0)', borderRadius: '14px', padding: '10px 18px', fontWeight: 700 }}
                 onClick={() => handleDispatch('Ambulance')}
                 disabled={dispatching['Ambulance']}
               >
@@ -571,7 +580,7 @@ export default function EmergencyDetails() {
               <button
                 type="button"
                 className="clay-button"
-                style={{ background: '#FFFFFF', border: '1.5px solid #E2E8F0', borderRadius: '14px', padding: '10px 18px', fontWeight: 700 }}
+                style={{ background: 'var(--er-surface-elevated, #FFFFFF)', border: '1.5px solid var(--er-border, #E2E8F0)', borderRadius: '14px', padding: '10px 18px', fontWeight: 700 }}
                 onClick={() => handleDispatch('Police')}
                 disabled={dispatching['Police']}
               >
@@ -580,7 +589,7 @@ export default function EmergencyDetails() {
               <button
                 type="button"
                 className="clay-button"
-                style={{ background: '#FFFFFF', border: '1.5px solid #E2E8F0', borderRadius: '14px', padding: '10px 18px', fontWeight: 700 }}
+                style={{ background: 'var(--er-surface-elevated, #FFFFFF)', border: '1.5px solid var(--er-border, #E2E8F0)', borderRadius: '14px', padding: '10px 18px', fontWeight: 700 }}
                 onClick={handleNotifyHelpers}
                 disabled={notifying}
               >
