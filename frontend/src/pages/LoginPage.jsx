@@ -33,13 +33,13 @@ export default function LoginPage() {
       raw.includes("connection refused") ||
       raw.includes("network request failed")
     ) {
-      return "Unable to connect to the emergency response server. Please try again.";
+      return "Unable to connect to the authentication server. Please check your internet connection and try again.";
+    }
+    if (raw.includes("timeout") || raw.includes("timed out") || raw.includes("aborterror")) {
+      return "Authentication request timed out. Please try again.";
     }
     if (raw.includes("unexpected token") || raw.includes("not valid json") || raw.includes("doctype")) {
-      return "Unable to connect to the emergency response server. Please try again.";
-    }
-    if (raw.includes("not available yet") || raw.includes("404") || raw.includes("cannot post")) {
-      return "The authentication service is not available yet. Please try again shortly.";
+      return "The authentication service returned an invalid response. Please try again shortly.";
     }
     if (raw.includes("expired") || raw.includes("expire")) {
       return t("otpExpired");
@@ -50,10 +50,10 @@ export default function LoginPage() {
       raw.includes("wrong otp") ||
       raw.includes("mismatch")
     ) {
-      return t("incorrectOtp");
+      return err?.message || t("incorrectOtp");
     }
-    if (raw.includes("too soon") || raw.includes("wait before") || raw.includes("cooldown")) {
-      return t("resendTooSoon");
+    if (raw.includes("too soon") || raw.includes("wait before") || raw.includes("cooldown") || (raw.includes("wait") && raw.includes("s before"))) {
+      return err?.message || t("resendTooSoon");
     }
     if (
       raw.includes("google sign-in is not configured") ||

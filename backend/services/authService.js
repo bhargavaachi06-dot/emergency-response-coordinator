@@ -28,6 +28,7 @@ function getEmailTransporter() {
     });
   } else {
     // Development fallback using json/stream transport to prevent crashes when SMTP credentials are not yet set
+    console.warn("[AUTH] SMTP environment variables (SMTP_HOST, SMTP_USER, SMTP_PASS) not configured. Using stream buffer transport.");
     emailTransporter = nodemailer.createTransport({
       streamTransport: true,
       newline: "unix",
@@ -219,22 +220,39 @@ async function sendMobileOTP(countryCode, mobileNumber) {
   // Store secure OTP in DB with cooldown & attempt limits
   const { otp } = await createAndStoreOTP(identifier, "MOBILE");
 
-  // In production, integrate SMS Gateway (Twilio / Fast2SMS / MSG91 / Firebase Admin)
+  // In production, integrate SMS Gateway (Twilio REST API without heavy external dependencies)
   if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_PHONE) {
     try {
-      const twilio = require("twilio")(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-      await twilio.messages.create({
-        body: `Emergency Response Coordinator code: ${otp}. Valid for 10 minutes.`,
-        from: process.env.TWILIO_PHONE,
-        to: `${cleanCode}${cleanNumber}`,
+      const sid = process.env.TWILIO_ACCOUNT_SID;
+      const token = process.env.TWILIO_AUTH_TOKEN;
+      const from = process.env.TWILIO_PHONE;
+      const to = `${cleanCode}${cleanNumber}`;
+      const params = new URLSearchParams({
+        To: to,
+        From: from,
+        Body: `Emergency Response Coordinator code: ${otp}. Valid for 10 minutes.`,
       });
-      console.log(`[AUTH] SMS OTP dispatched via Twilio to ${cleanCode}XXXXXX${cleanNumber.slice(-4)}`);
+      const authHeader = "Basic " + Buffer.from(`${sid}:${token}`).toString("base64");
+      const twilioRes = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`, {
+        method: "POST",
+        headers: {
+          Authorization: authHeader,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: params.toString(),
+      });
+      if (twilioRes.ok) {
+        console.log(`[AUTH] SMS OTP dispatched via Twilio to ${cleanCode}XXXXXX${cleanNumber.slice(-4)}`);
+      } else {
+        const errJson = await twilioRes.json().catch(() => ({}));
+        console.error(`[AUTH] Twilio SMS API error (${twilioRes.status}):`, errJson.message || "Failed to dispatch SMS");
+      }
     } catch (err) {
       console.error("[AUTH] Twilio SMS dispatch error:", err.message);
     }
   } else {
-    // Secure real provider status log (never log raw OTP)
-    console.log(`[AUTH] Mobile OTP generated and securely queued for ${cleanCode}XXXXXX${cleanNumber.slice(-4)}`);
+    // Secure provider status log (never log raw OTP)
+    console.log(`[AUTH] Mobile OTP generated and securely stored in database for ${cleanCode}XXXXXX${cleanNumber.slice(-4)}`);
   }
 
   return {
@@ -275,8 +293,16 @@ function verifyJWT(token) {
 
 // Authentication Express Middleware
 function authenticateToken(req, res, next) {
-  const authHeader = req.headers["authorization"];
-  const token = authHeader && authHeader.split(" ")[1];
+  const rawAuthHeader = req.headers["authorization"] || req.headers["Authorization"];
+  let token = null;
+
+  if (rawAuthHeader && typeof rawAuthHeader === "string") {
+    if (rawAuthHeader.startsWith("Bearer ") || rawAuthHeader.startsWith("bearer ")) {
+      token = rawAuthHeader.slice(7).trim();
+    } else {
+      token = rawAuthHeader.trim();
+    }
+  }
 
   if (!token) {
     return res.status(401).json({ success: false, message: "Authentication required" });

@@ -71,7 +71,20 @@ app.get("/", (req, res) => {
 app.get("/api/health", (req, res) => {
   res.json({
     status: "OK",
-    service: "Emergency Response Coordinator"
+    service: "Emergency Response Coordinator",
+    auth: {
+      status: "ready",
+      endpoints: [
+        "/api/auth/mobile/send-otp",
+        "/api/auth/mobile/verify-otp",
+        "/api/auth/email/send-otp",
+        "/api/auth/email/verify-otp",
+        "/api/auth/google",
+        "/api/auth/google/link-mobile",
+        "/api/auth/register",
+        "/api/auth/me",
+      ],
+    },
   });
 });
 

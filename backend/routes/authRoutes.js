@@ -10,6 +10,24 @@ const {
 
 const router = express.Router();
 
+// Safe diagnostic logging for authentication requests (never logs credentials, tokens, or OTP values)
+router.use((req, res, next) => {
+  const start = Date.now();
+  const endpoint = `/api/auth${req.path}`;
+  console.log(`[AUTH REQUEST] ${req.method} ${endpoint}`);
+
+  res.on("finish", () => {
+    const duration = Date.now() - start;
+    if (res.statusCode >= 400) {
+      console.log(`[AUTH ERROR] ${req.method} ${endpoint} status=${res.statusCode} (${duration}ms)`);
+    } else {
+      console.log(`[AUTH RESPONSE] ${req.method} ${endpoint} status=${res.statusCode} (${duration}ms)`);
+    }
+  });
+
+  next();
+});
+
 // ============================================================
 // 1. MOBILE OTP - SEND
 // ============================================================

@@ -20,10 +20,11 @@ export function getApiRootUrl() {
     "";
 
   if (envUrl && typeof envUrl === "string" && envUrl.trim()) {
-    // Strip trailing slashes and trailing /api so we have a clean root
+    // Strip trailing slashes and any accidental /api or /auth path suffix so we have a clean root
     let clean = envUrl.trim().replace(/\/+$/, "");
-    if (clean.endsWith("/api")) {
-      clean = clean.slice(0, -4);
+    while (clean.endsWith("/auth") || clean.endsWith("/api")) {
+      if (clean.endsWith("/auth")) clean = clean.slice(0, -5).replace(/\/+$/, "");
+      if (clean.endsWith("/api")) clean = clean.slice(0, -4).replace(/\/+$/, "");
     }
     return clean;
   }

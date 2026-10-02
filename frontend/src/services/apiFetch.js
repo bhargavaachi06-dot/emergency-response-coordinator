@@ -40,15 +40,23 @@ export async function safeApiFetch(url, options = {}) {
             data: json,
           };
         } else {
+          let fallbackMessage = "Authentication request failed. Please check your details and try again.";
+          if (status === 401 || status === 403) {
+            fallbackMessage = "Authentication failed. Please verify your credentials and try again.";
+          } else if (status === 404) {
+            fallbackMessage = "Authentication endpoint was not found on the server.";
+          } else if (status === 422) {
+            fallbackMessage = "Please check your details and try again.";
+          } else if (status === 429) {
+            fallbackMessage = "Too many requests. Please wait a moment before trying again.";
+          } else if (status >= 500) {
+            fallbackMessage = "Authentication server is temporarily unavailable. Please try again shortly.";
+          }
+
           return {
             success: false,
             status,
-            message:
-              json.message ||
-              json.error ||
-              (status >= 500
-                ? "The authentication server is temporarily unavailable. Please try again."
-                : "Authentication request failed. Please try again."),
+            message: json.message || json.error || fallbackMessage,
             data: json,
           };
         }
@@ -56,13 +64,13 @@ export async function safeApiFetch(url, options = {}) {
         return {
           success: false,
           status,
-          message: "The authentication service returned an invalid response. Please try again.",
+          message: "The authentication service returned an invalid response format. Please try again.",
           data: null,
         };
       }
     }
 
-    // 2. Handle Non-JSON Responses (HTML 404, 502, 503, plain text, etc.)
+    // 2. Handle Non-JSON Responses (HTML 404, 500, 502, 503, plain text, etc.)
     const textBody = await res.text();
 
     if (status === 404) {
@@ -70,8 +78,17 @@ export async function safeApiFetch(url, options = {}) {
         success: false,
         status: 404,
         isHtml: true,
-        message: "The authentication service is not available yet. Please try again shortly.",
+        message: "Authentication endpoint was not found on the server (404). Please ensure the latest backend is deployed.",
         rawSnippet: typeof import.meta !== "undefined" && import.meta.env && import.meta.env.DEV ? textBody.slice(0, 160) : undefined,
+      };
+    }
+
+    if (status === 429) {
+      return {
+        success: false,
+        status: 429,
+        isHtml: true,
+        message: "Too many requests. Please wait a moment before trying again.",
       };
     }
 
@@ -80,7 +97,7 @@ export async function safeApiFetch(url, options = {}) {
         success: false,
         status,
         isHtml: true,
-        message: "The authentication server is temporarily unavailable. Please try again.",
+        message: "Authentication server is temporarily unavailable. Please try again shortly.",
       };
     }
 
@@ -113,7 +130,15 @@ export async function safeApiFetch(url, options = {}) {
       return {
         success: false,
         status: 0,
-        message: "Unable to connect to the emergency response server. Please check your internet connection and try again.",
+        message: "Unable to connect to the authentication server. Please check your internet connection and try again.",
+      };
+    }
+
+    if (rawMsg.includes("timeout") || rawMsg.includes("timed out") || rawMsg.includes("aborterror")) {
+      return {
+        success: false,
+        status: 0,
+        message: "Authentication request timed out. Please try again.",
       };
     }
 
@@ -121,14 +146,14 @@ export async function safeApiFetch(url, options = {}) {
       return {
         success: false,
         status: 0,
-        message: "Authentication service configuration needs attention.",
+        message: "Authentication service cross-origin configuration needs attention.",
       };
     }
 
     return {
       success: false,
       status: 0,
-      message: error?.message || "Unable to connect to the emergency response server. Please check your internet connection and try again.",
+      message: error?.message || "Unable to connect to the authentication server. Please check your internet connection and try again.",
     };
   }
 }
