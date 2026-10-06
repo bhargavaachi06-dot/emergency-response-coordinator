@@ -89,13 +89,13 @@ export default function HelperDashboard() {
         <div className="d-flex gap-2 flex-wrap">
           {['First Aid', 'CPR Certified', 'Basic Trauma Care'].map((skill) => (
             <span key={skill} style={{
-              background: '#FFFBEB',
-              border: '1px solid #FDE68A',
+              background: 'var(--er-amber-light, #FFFBEB)',
+              border: '1px solid var(--er-amber-border, #FDE68A)',
               borderRadius: '9999px',
               padding: '6px 16px',
               fontSize: '13px',
               fontWeight: 700,
-              color: '#92400E',
+              color: 'var(--er-amber, #92400E)',
               boxShadow: 'var(--clay-shadow-sm)',
             }}>
               {skill}
@@ -117,13 +117,13 @@ export default function HelperDashboard() {
             <h2 style={{ fontSize: 22, fontWeight: 800, color: 'var(--er-navy, #0F172A)', marginBottom: 4 }}>
               {NEARBY_EMERGENCY.type}
             </h2>
-            <div style={{ fontSize: 13.5, color: '#64748B', marginBottom: 16 }}>
+            <div style={{ fontSize: 13.5, color: 'var(--text-muted, #64748B)', marginBottom: 16 }}>
               Approximately {NEARBY_EMERGENCY.location?.distance} away
             </div>
 
             <div style={{
-              background: '#F8FAFC',
-              border: '1px solid #E2E8F0',
+              background: 'var(--surface-input, #F8FAFC)',
+              border: '1px solid var(--border-color, #E2E8F0)',
               borderRadius: '14px',
               padding: '14px 18px',
               marginBottom: 16,
@@ -133,14 +133,14 @@ export default function HelperDashboard() {
               <div style={{ fontSize: 12, fontWeight: 700, color: '#DC2626', textTransform: 'uppercase', marginBottom: 4 }}>
                 Situation Summary
               </div>
-              <div style={{ fontSize: 14, color: '#1E293B', lineHeight: 1.5 }}>
+              <div style={{ fontSize: 14, color: 'var(--text-primary, #1E293B)', lineHeight: 1.5 }}>
                 {NEARBY_EMERGENCY.description}
               </div>
             </div>
 
             <div style={{
-              background: '#FFFBEB',
-              border: '1px solid #FDE68A',
+              background: 'var(--er-amber-light, #FFFBEB)',
+              border: '1px solid var(--er-amber-border, #FDE68A)',
               borderRadius: '12px',
               padding: '12px 16px',
               marginBottom: 20,
@@ -151,7 +151,7 @@ export default function HelperDashboard() {
               boxShadow: 'var(--clay-shadow-sm)',
             }}>
               <i className="bi bi-info-circle-fill text-warning fs-5 flex-shrink-0"></i>
-              <div style={{ fontSize: 13, color: '#92400E' }}>
+              <div style={{ fontSize: 13, color: 'var(--text-secondary, #92400E)' }}>
                 Professional emergency responders have been notified and are en route.
                 <strong> Can you provide safe assistance?</strong>
               </div>
@@ -195,8 +195,8 @@ export default function HelperDashboard() {
 
       {/* Safety note */}
       <div style={{
-        background: '#FFFBEB',
-        border: '1px solid #FDE68A',
+        background: 'var(--er-amber-light, #FFFBEB)',
+        border: '1px solid var(--er-amber-border, #FDE68A)',
         borderRadius: '16px',
         padding: '16px 20px',
         display: 'flex',
@@ -206,10 +206,10 @@ export default function HelperDashboard() {
       }}>
         <i className="bi bi-shield-fill-check text-warning fs-5 flex-shrink-0 mt-1"></i>
         <div>
-          <div style={{ fontWeight: 800, fontSize: 14, color: '#92400E', marginBottom: 2 }}>
+          <div style={{ fontWeight: 800, fontSize: 14, color: 'var(--er-amber, #92400E)', marginBottom: 2 }}>
             Safety First
           </div>
-          <div style={{ fontSize: 13, color: '#B45309', lineHeight: 1.55 }}>
+          <div style={{ fontSize: 13, color: 'var(--text-secondary, #B45309)', lineHeight: 1.55 }}>
             Only provide safe assistance within your skills and capabilities.
             Professional emergency responders remain the primary response team.
             Do not put yourself in danger.

@@ -37,8 +37,8 @@ export function EmergencyCard({ emergency, selected, onClick }) {
         </div>
         <div style={{
           width: 36, height: 36, borderRadius: 8,
-          background: '#f1f5f9', display: 'flex', alignItems: 'center',
-          justifyContent: 'center', fontSize: 17, color: '#475569',
+          background: 'var(--surface-input, #f1f5f9)', display: 'flex', alignItems: 'center',
+          justifyContent: 'center', fontSize: 17, color: 'var(--text-secondary, #475569)',
         }}>
           <i className={`bi ${icon}`}></i>
         </div>
@@ -50,11 +50,11 @@ export function EmergencyCard({ emergency, selected, onClick }) {
       </div>
 
       <div className="d-flex align-items-center justify-content-between">
-        <div style={{ fontSize: '12px', color: '#64748b', display: 'flex', alignItems: 'center', gap: 4 }}>
+        <div style={{ fontSize: '12px', color: 'var(--text-muted, #64748b)', display: 'flex', alignItems: 'center', gap: 4 }}>
           <i className="bi bi-geo-alt"></i>
           {emergency.location?.area || emergency.location?.address || emergency.location_text || 'Unknown location'}
         </div>
-        <div style={{ fontSize: '11.5px', color: '#94a3b8' }}>
+        <div style={{ fontSize: '11.5px', color: 'var(--text-muted, #94a3b8)' }}>
           {timeAgo(emergency.reportedAt || emergency.created_at || emergency.createdAt)}
         </div>
       </div>
@@ -62,13 +62,13 @@ export function EmergencyCard({ emergency, selected, onClick }) {
       {emergency.ai && (
         <div style={{
           marginTop: 10, paddingTop: 10,
-          borderTop: '1px solid #f1f5f9',
+          borderTop: '1px solid var(--border-color, #f1f5f9)',
           display: 'flex', alignItems: 'center', gap: 6,
-          fontSize: '12px', color: '#64748b',
+          fontSize: '12px', color: 'var(--text-muted, #64748b)',
         }}>
           <i className="bi bi-robot" style={{ color: '#6366f1' }}></i>
           AI: {emergency.ai.recommendedResponders?.join(' + ')}
-          <span style={{ marginLeft: 'auto', color: '#94a3b8' }}>
+          <span style={{ marginLeft: 'auto', color: 'var(--text-muted, #94a3b8)' }}>
             {emergency.ai.confidence}% confidence
           </span>
         </div>
@@ -82,7 +82,7 @@ export function EmergencyRow({ emergency }) {
   return (
     <tr>
       <td>
-        <span style={{ fontWeight: 700, color: '#1e293b', fontSize: '13px' }}>
+        <span style={{ fontWeight: 700, color: 'var(--text-primary, #1e293b)', fontSize: '13px' }}>
           #{emergency.emergency_code || emergency.id}
         </span>
       </td>

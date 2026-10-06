@@ -30,16 +30,16 @@ export function HindsightMemoryPanel({ memoryContext, ai }) {
           <div className="d-flex align-items-center gap-2">
             <span style={{ fontSize: 20 }}>🧠</span>
             <div>
-              <h2 className="mb-0" style={{ fontSize: '15px', fontWeight: 800, color: '#0F172A' }}>
+              <h2 className="mb-0" style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary, #0F172A)' }}>
                 Hindsight Memory
               </h2>
             </div>
           </div>
           <span
             style={{
-              background: '#F1F5F9',
-              color: '#64748B',
-              border: '1px solid #CBD5E1',
+              background: 'var(--surface-input, #F1F5F9)',
+              color: 'var(--text-muted, #64748B)',
+              border: '1px solid var(--border-color, #CBD5E1)',
               fontSize: '11px',
               fontWeight: 700,
               padding: '4px 10px',
@@ -180,9 +180,9 @@ export function HindsightMemoryPanel({ memoryContext, ai }) {
           {available ? (
             <span
               style={{
-                background: '#F0FDF4',
-                color: '#16A34A',
-                border: '1px solid #BBF7D0',
+                background: 'var(--er-green-light, #F0FDF4)',
+                color: 'var(--er-green, #16A34A)',
+                border: '1px solid var(--er-green-border, #BBF7D0)',
                 fontSize: '11px',
                 fontWeight: 700,
                 padding: '4px 10px',
@@ -195,9 +195,9 @@ export function HindsightMemoryPanel({ memoryContext, ai }) {
           ) : (
             <span
               style={{
-                background: '#F1F5F9',
-                color: '#64748B',
-                border: '1px solid #CBD5E1',
+                background: 'var(--surface-input, #F1F5F9)',
+                color: 'var(--text-muted, #64748B)',
+                border: '1px solid var(--border-color, #CBD5E1)',
                 fontSize: '11px',
                 fontWeight: 700,
                 padding: '4px 10px',
@@ -231,8 +231,8 @@ export function HindsightMemoryPanel({ memoryContext, ai }) {
           <div
             className="mb-3"
             style={{
-              background: '#F8FAFC',
-              border: '1px solid #E2E8F0',
+              background: 'var(--surface-input, #F8FAFC)',
+              border: '1px solid var(--border-color, #E2E8F0)',
               borderRadius: '16px',
               padding: '14px 18px',
               boxShadow: 'var(--clay-shadow-inset)',
@@ -256,7 +256,7 @@ export function HindsightMemoryPanel({ memoryContext, ai }) {
                 Context items: {effectiveItemsUsed}
               </span>
             </div>
-            <div style={{ fontSize: '12.5px', color: '#475569', lineHeight: 1.5 }}>
+            <div style={{ fontSize: '12.5px', color: 'var(--text-secondary, #475569)', lineHeight: 1.5 }}>
               Previous emergency-response experience is active as reference context for this incident.
             </div>
           </div>
@@ -294,14 +294,14 @@ export function HindsightMemoryPanel({ memoryContext, ai }) {
         {/* Collapsible Context Text Preview */}
         {showContextText && contextText && (
           <div className="mb-3">
-            <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: 6 }}>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted, #64748B)', textTransform: 'uppercase', marginBottom: 6 }}>
               Recalled Context Payload
             </div>
             <div
               style={{
-                background: '#F8FAFC',
-                color: '#0F172A',
-                border: '1px solid #E2E8F0',
+                background: 'var(--surface-input, #F8FAFC)',
+                color: 'var(--text-primary, #0F172A)',
+                border: '1px solid var(--border-color, #E2E8F0)',
                 borderRadius: '12px',
                 padding: '12px 14px',
                 fontSize: '12px',
@@ -321,18 +321,18 @@ export function HindsightMemoryPanel({ memoryContext, ai }) {
         {/* Raw Memory View */}
         {showRaw && (
           <div className="mb-3">
-            <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginBottom: 6 }}>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted, #64748B)', textTransform: 'uppercase', marginBottom: 6 }}>
               Raw Hindsight Memory Items ({memories.length})
             </div>
             <div
               style={{
-                background: '#F8FAFC',
-                border: '1px solid #E2E8F0',
+                background: 'var(--surface-input, #F8FAFC)',
+                border: '1px solid var(--border-color, #E2E8F0)',
                 borderRadius: '12px',
                 padding: '12px 14px',
                 fontSize: '12px',
                 fontFamily: 'monospace',
-                color: '#334155',
+                color: 'var(--text-secondary, #334155)',
                 maxHeight: 200,
                 overflowY: 'auto',
                 boxShadow: 'var(--clay-shadow-inset)',
@@ -430,10 +430,10 @@ export function HindsightMemoryPanel({ memoryContext, ai }) {
           <div
             className="text-center py-4 px-3 mb-3"
             style={{
-              background: '#F8FAFC',
-              border: '1.5px dashed #CBD5E1',
+              background: 'var(--surface-input, #F8FAFC)',
+              border: '1.5px dashed var(--border-color, #CBD5E1)',
               borderRadius: '16px',
-              color: '#64748B',
+              color: 'var(--text-muted, #64748B)',
               fontSize: '13.5px',
             }}
           >
@@ -446,14 +446,14 @@ export function HindsightMemoryPanel({ memoryContext, ai }) {
         <div
           style={{
             padding: '10px 14px',
-            background: '#FFFBEB',
-            border: '1px solid #FDE68A',
+            background: 'var(--er-amber-light, #FFFBEB)',
+            border: '1px solid var(--er-amber-border, #FDE68A)',
             borderRadius: '12px',
             display: 'flex',
             alignItems: 'center',
             gap: 10,
             fontSize: '12px',
-            color: '#92400E',
+            color: 'var(--text-secondary, #92400E)',
             fontWeight: 500,
             boxShadow: 'var(--clay-shadow-sm)',
           }}

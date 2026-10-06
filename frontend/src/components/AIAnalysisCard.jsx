@@ -152,23 +152,23 @@ export function AIAnalysisCard({ ai, compact = false }) {
       <div className="row g-3 mb-3 align-items-center">
         {/* Category */}
         <div className="col-sm-5 col-12">
-          <div style={{ fontSize: '11px', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600, marginBottom: 2 }}>
+          <div style={{ fontSize: '11px', color: 'var(--text-muted, #64748B)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600, marginBottom: 2 }}>
             CATEGORY
           </div>
-          <div style={{ fontSize: compact ? 15 : 18, fontWeight: 800, color: '#0F172A' }}>
+          <div style={{ fontSize: compact ? 15 : 18, fontWeight: 800, color: 'var(--text-primary, #0F172A)' }}>
             {category}
           </div>
         </div>
 
         {/* Severity */}
         <div className="col-sm-4 col-6">
-          <div style={{ fontSize: '11px', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600, marginBottom: 2 }}>
+          <div style={{ fontSize: '11px', color: 'var(--text-muted, #64748B)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600, marginBottom: 2 }}>
             SEVERITY
           </div>
           <div style={{
             fontSize: compact ? 15 : 18,
             fontWeight: 800,
-            color: severityColors[severity] || '#0F172A',
+            color: severityColors[severity] || 'var(--text-primary, #0F172A)',
           }}>
             {severity}
           </div>
@@ -176,7 +176,7 @@ export function AIAnalysisCard({ ai, compact = false }) {
 
         {/* Priority */}
         <div className="col-sm-3 col-6 text-sm-end">
-          <div style={{ fontSize: '11px', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600, marginBottom: 2 }}>
+          <div style={{ fontSize: '11px', color: 'var(--text-muted, #64748B)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600, marginBottom: 2 }}>
             PRIORITY
           </div>
           <span style={{
@@ -198,7 +198,7 @@ export function AIAnalysisCard({ ai, compact = false }) {
       {/* Confidence Bar */}
       <div style={{ marginBottom: compact ? 14 : 18 }}>
         <div className="d-flex justify-content-between align-items-center mb-1">
-          <span style={{ fontSize: '12px', color: '#64748B', fontWeight: 600 }}>
+          <span style={{ fontSize: '12px', color: 'var(--text-muted, #64748B)', fontWeight: 600 }}>
             {isFallback ? 'Rule-Based Confidence Estimate' : 'Model Confidence'}
           </span>
           <span style={{
@@ -211,10 +211,10 @@ export function AIAnalysisCard({ ai, compact = false }) {
         </div>
         <div style={{
           height: 8,
-          background: '#F1F5F9',
+          background: 'var(--surface-input, #F1F5F9)',
           borderRadius: 4,
           overflow: 'hidden',
-          border: '1px solid #E2E8F0',
+          border: '1px solid var(--border-color, #E2E8F0)',
           boxShadow: 'var(--clay-shadow-inset)',
         }}>
           <div
@@ -234,19 +234,19 @@ export function AIAnalysisCard({ ai, compact = false }) {
       {/* Key Signals */}
       {keySignals.length > 0 && (
         <div style={{ marginBottom: compact ? 12 : 16 }}>
-          <div style={{ fontSize: '11px', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 700, marginBottom: 6 }}>
+          <div style={{ fontSize: '11px', color: 'var(--text-muted, #64748B)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 700, marginBottom: 6 }}>
             KEY SIGNALS DETECTED
           </div>
           <div className="d-flex gap-2 flex-wrap">
             {keySignals.map((signal, idx) => (
               <span key={idx} style={{
-                background: '#F8FAFC',
-                border: '1px solid #E2E8F0',
+                background: 'var(--surface-input, #F8FAFC)',
+                border: '1px solid var(--border-color, #E2E8F0)',
                 borderRadius: '8px',
                 padding: '4px 10px',
                 fontSize: '12.5px',
                 fontWeight: 600,
-                color: '#334155',
+                color: 'var(--text-secondary, #334155)',
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: 6,
@@ -264,22 +264,22 @@ export function AIAnalysisCard({ ai, compact = false }) {
       {data.reasoning && (
         <div style={{
           marginBottom: compact ? 12 : 16,
-          background: '#F8FAFC',
+          background: 'var(--surface-input, #F8FAFC)',
           borderLeft: isFallback ? '4px solid #F59E0B' : '4px solid #0284C7',
-          borderTop: '1px solid #E2E8F0',
-          borderRight: '1px solid #E2E8F0',
-          borderBottom: '1px solid #E2E8F0',
+          borderTop: '1px solid var(--border-color, #E2E8F0)',
+          borderRight: '1px solid var(--border-color, #E2E8F0)',
+          borderBottom: '1px solid var(--border-color, #E2E8F0)',
           borderRadius: '0 12px 12px 0',
           padding: '12px 16px',
           boxShadow: 'var(--clay-shadow-inset)',
         }}>
-          <div style={{ fontSize: '11px', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.4px', fontWeight: 700, marginBottom: 4 }}>
+          <div style={{ fontSize: '11px', color: 'var(--text-muted, #64748B)', textTransform: 'uppercase', letterSpacing: '0.4px', fontWeight: 700, marginBottom: 4 }}>
             ASSESSMENT REASONING
           </div>
           <p style={{
             fontSize: '13px',
             lineHeight: 1.55,
-            color: '#1E293B',
+            color: 'var(--text-primary, #1E293B)',
             margin: 0,
             fontStyle: 'normal',
           }}>
@@ -291,7 +291,7 @@ export function AIAnalysisCard({ ai, compact = false }) {
       {/* Recommended Responders */}
       {recommendedResponders.length > 0 && (
         <div style={{ marginBottom: compact ? 10 : 16 }}>
-          <div style={{ fontSize: '11px', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 700, marginBottom: 6 }}>
+          <div style={{ fontSize: '11px', color: 'var(--text-muted, #64748B)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 700, marginBottom: 6 }}>
             RECOMMENDED RESPONDERS
           </div>
           <div className="d-flex gap-2 flex-wrap">
@@ -300,11 +300,11 @@ export function AIAnalysisCard({ ai, compact = false }) {
               return (
                 <div key={r} style={{
                   background: 'var(--er-surface-elevated, #FFFFFF)',
-                  border: '1.5px solid var(--er-border, #E2E8F0)',
+                  border: '1.5px solid var(--border-color, #E2E8F0)',
                   borderRadius: '12px',
                   padding: '6px 14px',
                   fontSize: '13px',
-                  color: 'var(--er-navy, #0F172A)',
+                  color: 'var(--text-primary, #0F172A)',
                   fontWeight: 600,
                   display: 'flex',
                   alignItems: 'center',
@@ -331,7 +331,7 @@ export function AIAnalysisCard({ ai, compact = false }) {
         alignItems: 'center',
         gap: 10,
         fontSize: '12px',
-        color: 'var(--er-amber, #92400E)',
+        color: 'var(--text-secondary, #92400E)',
         fontWeight: 500,
         boxShadow: 'var(--clay-shadow-sm)',
       }}>

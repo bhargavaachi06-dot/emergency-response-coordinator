@@ -15,7 +15,10 @@ import {
 import {
   getCurrentPosition,
   reverseGeocode,
+  formatDistance,
+  verifyEvidenceLocation,
 } from '../services/locationService';
+import { LiveCameraModal } from '../components/LiveCameraModal';
 import './ReportEmergency.css';
 
 const INITIAL_FORM = {
@@ -110,9 +113,11 @@ export default function ReportEmergency() {
   const [speechError, setSpeechError] = useState('');
   const recognitionRef = useRef(null);
 
-  // Media input references
-  const photoCameraInputRef = useRef(null);
-  const videoCameraInputRef = useRef(null);
+  // Live emergency camera modal state (enforces device camera capture only)
+  const [liveCameraModal, setLiveCameraModal] = useState({
+    isOpen: false,
+    mode: 'photo', // 'photo' | 'video'
+  });
 
   // Safety override: user declares they cannot safely capture evidence
   const [safetyOverride, setSafetyOverride] = useState(false);
@@ -392,60 +397,69 @@ export default function ReportEmergency() {
 
   const reqInfo = getEvidenceRequirement(form.type);
 
-  // File handler (max 3 files, photos <= 10MB, videos <= 50MB)
-  const handleFilesSelected = (filesList) => {
-    setMediaError('');
-    if (!filesList || filesList.length === 0) return;
+  // Dynamically compute evidence location verification against active incident coordinates
+  const verifiedMediaList = mediaList.map((item) => {
+    if (item.latitude && item.longitude && form.lat && form.lng) {
+      const incLat = parseFloat(form.lat);
+      const incLng = parseFloat(form.lng);
+      const v = verifyEvidenceLocation({
+        incidentLat: incLat,
+        incidentLng: incLng,
+        evidenceLat: item.latitude,
+        evidenceLng: item.longitude,
+        accuracy: item.accuracy,
+      });
+      return {
+        ...item,
+        incidentLatitude: incLat,
+        incidentLongitude: incLng,
+        distanceFromIncident: v.distance,
+        locationVerified: v.verified,
+        verificationStatus: v.status,
+        verificationDetails: {
+          ...(item.verificationDetails || {}),
+          distanceMeters: v.distance,
+          status: v.status,
+          message: v.message,
+        },
+      };
+    }
+    return item;
+  });
 
-    const incoming = Array.from(filesList);
-    if (mediaList.length + incoming.length > 3) {
-      setMediaError(`Maximum 3 files allowed. You already have ${mediaList.length}.`);
-      return;
+  // Handler for live camera capture (strictly live device camera, no file upload)
+  const handleEvidenceCaptured = (evidenceData) => {
+    setMediaError('');
+    setCameraError('');
+    if (errors.media) {
+      setErrors((prev) => ({ ...prev, media: '' }));
     }
 
-    incoming.forEach((file) => {
-      const isImage = file.type.startsWith('image/');
-      const isVideo = file.type.startsWith('video/');
-
-      if (!isImage && !isVideo) {
-        setMediaError(t.unsupportedFile || 'Unsupported format. Use images or videos.');
-        return;
-      }
-
-      if (isImage && file.size > 10 * 1024 * 1024) {
-        setMediaError(t.fileTooLarge || 'Photo exceeds 10 MB limit.');
-        return;
-      }
-
-      if (isVideo && file.size > 50 * 1024 * 1024) {
-        setMediaError(t.fileTooLarge || 'Video exceeds 50 MB limit.');
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const dataUrl = ev.target?.result;
-        const newMedia = {
-          id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          type: isVideo ? 'video' : 'image',
-          name: file.name || (isVideo ? 'video_evidence.mp4' : 'photo_evidence.jpg'),
-          size: file.size,
-          mimeType: file.type || (isVideo ? 'video/mp4' : 'image/jpeg'),
-          dataUrl: dataUrl,
-          previewUrl: dataUrl,
-        };
-
-        setMediaList((prev) => {
-          if (prev.length >= 3) return prev;
-          return [...prev, newMedia];
-        });
-      };
-
-      reader.onerror = () => {
-        setMediaError(t.errGeneral || 'Failed to read media.');
-      };
-
-      reader.readAsDataURL(file);
+    setMediaList((prev) => {
+      if (prev.length >= 3) return prev;
+      return [
+        ...prev,
+        {
+          id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+          type: evidenceData.type,
+          name: evidenceData.name,
+          size: evidenceData.size,
+          mimeType: evidenceData.mimeType,
+          dataUrl: evidenceData.dataUrl,
+          previewUrl: evidenceData.dataUrl,
+          // Location & live capture verification metadata
+          latitude: evidenceData.latitude,
+          longitude: evidenceData.longitude,
+          accuracy: evidenceData.accuracy,
+          capturedAt: evidenceData.capturedAt,
+          distanceFromIncident: evidenceData.distanceFromIncident,
+          locationVerified: evidenceData.locationVerified,
+          verificationStatus: evidenceData.verificationStatus,
+          verificationDetails: evidenceData.verificationDetails,
+          incidentLatitude: evidenceData.incidentLatitude,
+          incidentLongitude: evidenceData.incidentLongitude,
+        },
+      ];
     });
   };
 
@@ -457,11 +471,10 @@ export default function ReportEmergency() {
   const handleRetakeMedia = (mediaId, isVideo = false) => {
     handleRemoveMedia(mediaId);
     setCameraError('');
-    if (isVideo) {
-      videoCameraInputRef.current?.click();
-    } else {
-      photoCameraInputRef.current?.click();
-    }
+    setLiveCameraModal({
+      isOpen: true,
+      mode: isVideo ? 'video' : 'photo',
+    });
   };
 
   // Safety override handler
@@ -472,11 +485,6 @@ export default function ReportEmergency() {
     if (errors.media) {
       setErrors((prev) => ({ ...prev, media: '' }));
     }
-  };
-
-  // Handle camera permission / access errors on take photo / record video
-  const handleCameraError = () => {
-    setCameraError(t.cameraErrorMsg || 'Camera access unavailable. Check device permissions or select the safety override below.');
   };
 
   // Form validation
@@ -496,6 +504,8 @@ export default function ReportEmergency() {
     // Evidence is required — unless safety override is active
     if (mediaList.length === 0 && !safetyOverride) {
       errs.media = t.errEvidenceRequired || 'Photo or video evidence is required. If unsafe to record, select "I cannot safely capture evidence".';
+    } else if (!safetyOverride && verifiedMediaList.some((m) => !m.locationVerified)) {
+      errs.media = 'All attached emergency evidence must be verified at the reported incident location before submitting.';
     }
 
     return errs;
@@ -542,12 +552,24 @@ export default function ReportEmergency() {
         locationText = `Lat: ${form.lat}, Lng: ${form.lng}`;
       }
 
-      const mediaPayload = mediaList.map((m) => ({
+      const mediaPayload = verifiedMediaList.map((m) => ({
         media_type: m.type,
         file_name: m.name,
         mime_type: m.mimeType,
         file_size: m.size,
         data_url: m.dataUrl,
+        // Live evidence & location verification metadata
+        evidenceType: m.type,
+        latitude: m.latitude,
+        longitude: m.longitude,
+        accuracy: m.accuracy,
+        capturedAt: m.capturedAt,
+        distanceFromIncident: m.distanceFromIncident,
+        locationVerified: m.locationVerified,
+        verificationStatus: m.verificationStatus,
+        verificationDetails: m.verificationDetails,
+        incidentLatitude: m.incidentLatitude || latitude,
+        incidentLongitude: m.incidentLongitude || longitude,
       }));
 
       // Append safety override note to description so coordinator is informed
@@ -1111,6 +1133,16 @@ export default function ReportEmergency() {
                   </div>
                 )}
 
+                {/* Information Callout for Live Evidence Requirements */}
+                {!safetyOverride && (
+                  <div className="clean-status-banner banner-neutral mb-3" style={{ fontSize: '0.82rem' }}>
+                    <i className="bi bi-camera-fill text-primary me-2 fs-6"></i>
+                    <span>
+                      <strong>Live Device Camera Only:</strong> Evidence must be captured live from your device camera. Your location is automatically recorded to verify proximity to the reported emergency.
+                    </span>
+                  </div>
+                )}
+
                 {/* Media Action Buttons — only TAKE PHOTO and RECORD VIDEO */}
                 {!safetyOverride && (
                   mediaList.length < 3 ? (
@@ -1120,12 +1152,12 @@ export default function ReportEmergency() {
                         className="btn-media-action btn-media-photo"
                         onClick={() => {
                           setCameraError('');
-                          photoCameraInputRef.current?.click();
+                          setLiveCameraModal({ isOpen: true, mode: 'photo' });
                         }}
                         aria-label={t.takePhoto || 'Take Photo'}
                       >
                         <i className="bi bi-camera-fill" aria-hidden="true"></i>
-                        <span>📷 {t.takePhoto || 'TAKE PHOTO'}</span>
+                        <span>{t.takePhoto || 'TAKE PHOTO'}</span>
                       </button>
 
                       <button
@@ -1133,12 +1165,12 @@ export default function ReportEmergency() {
                         className="btn-media-action btn-media-video"
                         onClick={() => {
                           setCameraError('');
-                          videoCameraInputRef.current?.click();
+                          setLiveCameraModal({ isOpen: true, mode: 'video' });
                         }}
                         aria-label={t.recordVideo || 'Record Video'}
                       >
                         <i className="bi bi-camera-video-fill" aria-hidden="true"></i>
-                        <span>🎥 {t.recordVideo || 'RECORD VIDEO'}</span>
+                        <span>{t.recordVideo || 'RECORD VIDEO'}</span>
                       </button>
                     </div>
                   ) : (
@@ -1149,36 +1181,10 @@ export default function ReportEmergency() {
                   )
                 )}
 
-                {/* Hidden camera inputs — no file picker */}
-                <input
-                  ref={photoCameraInputRef}
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  style={{ display: 'none' }}
-                  onChange={(e) => {
-                    handleFilesSelected(e.target.files);
-                    e.target.value = '';
-                  }}
-                  onError={handleCameraError}
-                />
-                <input
-                  ref={videoCameraInputRef}
-                  type="file"
-                  accept="video/*"
-                  capture="environment"
-                  style={{ display: 'none' }}
-                  onChange={(e) => {
-                    handleFilesSelected(e.target.files);
-                    e.target.value = '';
-                  }}
-                  onError={handleCameraError}
-                />
-
                 {/* Preview Cards */}
-                {mediaList.length > 0 && (
+                {verifiedMediaList.length > 0 && (
                   <div className="evidence-grid-row">
-                    {mediaList.map((item, idx) => (
+                    {verifiedMediaList.map((item, idx) => (
                       <div key={item.id || idx} className="evidence-thumb-card">
                         <div className="evidence-thumb-preview">
                           {item.type === 'video' ? (
@@ -1206,6 +1212,53 @@ export default function ReportEmergency() {
                         <div className="evidence-thumb-meta">
                           <div className="thumb-name text-truncate">{item.name}</div>
                           <div className="thumb-size">{formatFileSize(item.size)}</div>
+
+                          {/* Location Verification Badge */}
+                          <div className="mt-2">
+                            {item.locationVerified ? (
+                              <span
+                                className="badge bg-success-subtle text-success border border-success-subtle d-inline-flex align-items-center gap-1"
+                                style={{ fontSize: '11px', padding: '4px 8px', borderRadius: '9999px' }}
+                              >
+                                <i className="bi bi-check-circle-fill"></i>
+                                <span>VERIFIED ({item.distanceFromIncident !== null ? `${Math.round(item.distanceFromIncident)}m` : '0m'})</span>
+                              </span>
+                            ) : item.verificationStatus === 'LOCATION_MISMATCH' ? (
+                              <span
+                                className="badge bg-danger-subtle text-danger border border-danger-subtle d-inline-flex align-items-center gap-1"
+                                style={{ fontSize: '11px', padding: '4px 8px', borderRadius: '9999px' }}
+                              >
+                                <i className="bi bi-exclamation-triangle-fill"></i>
+                                <span>MISMATCH ({item.distanceFromIncident !== null ? formatDistance(item.distanceFromIncident) : 'Outside'})</span>
+                              </span>
+                            ) : item.verificationStatus === 'LOW_ACCURACY' ? (
+                              <span
+                                className="badge bg-warning-subtle text-warning border border-warning-subtle d-inline-flex align-items-center gap-1"
+                                style={{ fontSize: '11px', padding: '4px 8px', borderRadius: '9999px' }}
+                              >
+                                <i className="bi bi-exclamation-circle-fill"></i>
+                                <span>LOW GPS ACCURACY</span>
+                              </span>
+                            ) : (
+                              <span
+                                className="badge bg-info-subtle text-info border border-info-subtle d-inline-flex align-items-center gap-1"
+                                style={{ fontSize: '11px', padding: '4px 8px', borderRadius: '9999px' }}
+                              >
+                                <i className="bi bi-geo-alt"></i>
+                                <span>GPS CAPTURED</span>
+                              </span>
+                            )}
+
+                            {item.latitude && item.longitude && (
+                              <div
+                                className="small text-secondary mt-1 font-monospace"
+                                style={{ fontSize: '10.5px', lineHeight: 1.2 }}
+                              >
+                                📍 {Number(item.latitude).toFixed(4)}, {Number(item.longitude).toFixed(4)}
+                                {item.accuracy ? ` (±${item.accuracy}m)` : ''}
+                              </div>
+                            )}
+                          </div>
 
                           <div className="thumb-actions mt-2">
                             <button
@@ -1309,9 +1362,31 @@ export default function ReportEmergency() {
 
                   <div className="review-item">
                     <span className="review-label">{t.evidenceReview || 'Evidence'}:</span>
-                    <span className="review-value">
-                      {mediaList.length > 0 ? `${mediaList.length} files attached` : 'None attached'}
-                    </span>
+                    <div className="review-value">
+                      {verifiedMediaList.length > 0 ? (
+                        <div className="d-flex flex-column gap-1">
+                          <span className="fw-bold">
+                            {verifiedMediaList.length} live {verifiedMediaList.length === 1 ? 'evidence item' : 'evidence items'} attached
+                          </span>
+                          {verifiedMediaList.map((m, idx) => (
+                            <div key={m.id || idx} className="d-flex align-items-center gap-2 small text-secondary">
+                              <span className="d-inline-flex align-items-center gap-1">
+                                <i className={m.type === 'video' ? 'bi bi-camera-video-fill text-danger' : 'bi bi-camera-fill text-primary'}></i>
+                                <span>{m.type === 'video' ? 'Video' : 'Photo'}</span>
+                              </span>
+                              <span>·</span>
+                              <span className={`d-inline-flex align-items-center gap-1 fw-semibold ${m.locationVerified ? 'text-success' : 'text-danger'}`}>
+                                <i className={`bi ${m.locationVerified ? 'bi-check-circle-fill' : 'bi-exclamation-octagon-fill'}`}></i>
+                                <span>{m.locationVerified ? 'Verified at incident' : 'Location Mismatch'}</span>
+                                {m.distanceFromIncident !== null ? ` (${Math.round(m.distanceFromIncident)}m away)` : ''}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <span>{safetyOverride ? 'Evidence not safely available (declared)' : 'None attached'}</span>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -1344,6 +1419,23 @@ export default function ReportEmergency() {
             </section>
           </div>
         </div>
+
+        {/* LIVE EMERGENCY CAMERA & LOCATION VERIFICATION MODAL */}
+        <LiveCameraModal
+          isOpen={liveCameraModal.isOpen}
+          mode={liveCameraModal.mode}
+          incidentLocation={{
+            lat: form.lat,
+            lng: form.lng,
+            formattedAddress: form.formattedAddress || form.locationAddress,
+          }}
+          onCapture={handleEvidenceCaptured}
+          onClose={() => setLiveCameraModal({ isOpen: false, mode: 'photo' })}
+          onReviewIncidentLocation={() => {
+            const step2 = document.getElementById('step-location-title');
+            if (step2) step2.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }}
+        />
       </div>
     </AppLayout>
   );

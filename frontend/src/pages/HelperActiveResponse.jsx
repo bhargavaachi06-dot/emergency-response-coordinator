@@ -89,12 +89,12 @@ export default function HelperActiveResponse() {
                 <span className="info-value">Approximately {EMERGENCY.location?.distance}</span>
               </div>
               <div className="info-row">
-                <span className="info-label" style={{ fontWeight: 700, color: '#64748B' }}>General Area</span>
+                <span className="info-label" style={{ fontWeight: 700, color: 'var(--text-muted, #64748B)' }}>General Area</span>
                 <span className="info-value">{EMERGENCY.location?.area}</span>
               </div>
               <div className="info-row">
-                <span className="info-label" style={{ fontWeight: 700, color: '#64748B' }}>Description</span>
-                <span className="info-value" style={{ color: '#334155' }}>{EMERGENCY.description}</span>
+                <span className="info-label" style={{ fontWeight: 700, color: 'var(--text-muted, #64748B)' }}>Description</span>
+                <span className="info-value" style={{ color: 'var(--text-secondary, #334155)' }}>{EMERGENCY.description}</span>
               </div>
             </div>
           </div>
@@ -112,8 +112,8 @@ export default function HelperActiveResponse() {
                   <div className="d-flex align-items-center gap-3">
                     <span style={{ fontSize: 22 }}>{icons[r.type] || '🔵'}</span>
                     <div>
-                      <div style={{ fontWeight: 700, fontSize: 14, color: '#0F172A' }}>{r.type}</div>
-                      {r.eta && <div style={{ fontSize: 12, color: '#64748B' }}>ETA: {r.eta}</div>}
+                      <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-primary, #0F172A)' }}>{r.type}</div>
+                      {r.eta && <div className="text-secondary" style={{ fontSize: 12 }}>ETA: {r.eta}</div>}
                     </div>
                   </div>
                   <StatusBadge status={r.status} />
@@ -121,8 +121,8 @@ export default function HelperActiveResponse() {
               );
             })}
             <div style={{
-              fontSize: 12.5, color: '#64748B', marginTop: 12,
-              padding: '12px 14px', background: '#F8FAFC', borderRadius: '12px', border: '1px solid #E2E8F0',
+              fontSize: 12.5, color: 'var(--text-muted, #64748B)', marginTop: 12,
+              padding: '12px 14px', background: 'var(--surface-input, #F8FAFC)', borderRadius: '12px', border: '1px solid var(--border-color, #E2E8F0)',
             }}>
               Professional responders are the primary response team. Your assistance is supplementary.
             </div>
@@ -130,7 +130,7 @@ export default function HelperActiveResponse() {
 
           {/* Timeline */}
           <div className="clay-card mb-4">
-            <h2 style={{ fontSize: '15px', fontWeight: 800, color: '#0F172A', marginBottom: '16px' }}>
+            <h2 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary, #0F172A)', marginBottom: '16px' }}>
               <i className="bi bi-list-check text-muted me-2"></i>
               Your Response Timeline
             </h2>

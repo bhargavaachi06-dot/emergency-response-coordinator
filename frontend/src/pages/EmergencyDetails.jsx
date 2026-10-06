@@ -199,7 +199,7 @@ export default function EmergencyDetails() {
 
         {/* Action Notice */}
         {actionMsg && (
-          <div className="alert-emergency d-flex align-items-center gap-2 p-3 rounded-3 mb-3" style={{ background: '#F0FDF4', border: '1.5px solid #BBF7D0', color: '#166534' }}>
+          <div className="alert-emergency d-flex align-items-center gap-2 p-3 rounded-3 mb-3" style={{ background: 'var(--er-green-light, #F0FDF4)', border: '1.5px solid var(--er-green-border, #BBF7D0)', color: 'var(--er-green, #166534)' }}>
             <i className="bi bi-check-circle-fill text-success fs-5"></i>
             <span>{actionMsg}</span>
           </div>
@@ -309,7 +309,7 @@ export default function EmergencyDetails() {
               <div>
                 {/* Active Media Viewer */}
                 {activeMedia && (
-                  <div className="p-3 rounded-3 mb-3" style={{ background: '#F8FAFC', border: '1.5px solid #E2E8F0', boxShadow: 'var(--clay-shadow-sm)' }}>
+                  <div className="p-3 rounded-3 mb-3" style={{ background: 'var(--surface-input, #F8FAFC)', border: '1.5px solid var(--border-color, #E2E8F0)', boxShadow: 'var(--clay-shadow-sm)' }}>
                     <div className="d-flex align-items-center justify-content-between px-2 py-1 mb-2 text-secondary small">
                       <span className="fw-bold text-truncate" style={{ maxWidth: '70%', fontSize: '13.5px', color: 'var(--text-primary)' }}>
                         {activeMedia.media_type === 'video' ? '🎥 ' : '📷 '}
@@ -346,6 +346,40 @@ export default function EmergencyDetails() {
                       <span>Size: {activeMedia.file_size ? `${(activeMedia.file_size / 1024).toFixed(1)} KB` : 'Standard'}</span>
                       <span>MIME: {activeMedia.mime_type || (activeMedia.media_type === 'video' ? 'video/mp4' : 'image/jpeg')}</span>
                     </div>
+
+                    {/* Live Camera Location Verification Metadata */}
+                    {(activeMedia.location_verified || activeMedia.locationVerified || activeMedia.latitude) && (
+                      <div className="d-flex align-items-center justify-content-between px-2 pt-2 border-top mt-2" style={{ borderColor: 'var(--border-color)', fontSize: '11.5px' }}>
+                        <span className="d-flex align-items-center gap-1">
+                          {(activeMedia.location_verified || activeMedia.locationVerified) ? (
+                            <span className="badge bg-success-subtle text-success border border-success-subtle d-inline-flex align-items-center gap-1">
+                              <i className="bi bi-shield-check"></i>
+                              <span>LOCATION VERIFIED</span>
+                            </span>
+                          ) : activeMedia.verification_status === 'LOCATION_MISMATCH' || activeMedia.verificationStatus === 'LOCATION_MISMATCH' ? (
+                            <span className="badge bg-danger-subtle text-danger border border-danger-subtle d-inline-flex align-items-center gap-1">
+                              <i className="bi bi-exclamation-triangle-fill"></i>
+                              <span>LOCATION MISMATCH</span>
+                            </span>
+                          ) : (
+                            <span className="badge bg-info-subtle text-info border border-info-subtle d-inline-flex align-items-center gap-1">
+                              <i className="bi bi-geo-alt-fill"></i>
+                              <span>LIVE CAMERA GPS</span>
+                            </span>
+                          )}
+                          {(activeMedia.distance_from_incident !== null && activeMedia.distance_from_incident !== undefined) && (
+                            <span className="text-secondary ms-1">
+                              ({Math.round(activeMedia.distance_from_incident)}m from incident)
+                            </span>
+                          )}
+                        </span>
+                        {activeMedia.latitude && activeMedia.longitude && (
+                          <span className="font-monospace text-secondary" style={{ fontSize: '11px' }}>
+                            📍 {Number(activeMedia.latitude).toFixed(4)}, {Number(activeMedia.longitude).toFixed(4)}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -363,8 +397,8 @@ export default function EmergencyDetails() {
                           height: '58px',
                           borderRadius: '10px',
                           overflow: 'hidden',
-                          border: activeMediaIndex === idx ? '2.5px solid #0284C7' : '1.5px solid #CBD5E1',
-                          background: '#F1F5F9',
+                          border: activeMediaIndex === idx ? '2.5px solid #0284C7' : '1.5px solid var(--border-color, #CBD5E1)',
+                          background: 'var(--surface-input, #F1F5F9)',
                           cursor: 'pointer',
                           flexShrink: 0,
                           position: 'relative',
@@ -429,7 +463,7 @@ export default function EmergencyDetails() {
                 </div>
 
                 {ai.reasoning && (
-                  <div className="p-3 rounded-3 mb-3" style={{ background: '#F8FAFC', border: '1.5px solid #E2E8F0', fontSize: '14px', color: '#1E293B', boxShadow: 'var(--clay-shadow-inset)' }}>
+                  <div className="p-3 rounded-3 mb-3" style={{ background: 'var(--surface-input, #F8FAFC)', border: '1.5px solid var(--border-color, #E2E8F0)', fontSize: '14px', color: 'var(--text-primary, #1E293B)', boxShadow: 'var(--clay-shadow-inset)' }}>
                     <div className="text-primary fw-bold small text-uppercase mb-1">Operational Assessment:</div>
                     {ai.reasoning}
                   </div>
@@ -437,7 +471,7 @@ export default function EmergencyDetails() {
 
                 {/* Evidence Assessment Evaluation */}
                 {evidenceAssessment && (
-                  <div className="p-3 rounded-3 mb-3" style={{ background: '#F8FAFC', border: '1.5px solid #E2E8F0', fontSize: '13.5px', boxShadow: 'var(--clay-shadow-inset)' }}>
+                  <div className="p-3 rounded-3 mb-3" style={{ background: 'var(--surface-input, #F8FAFC)', border: '1.5px solid var(--border-color, #E2E8F0)', fontSize: '13.5px', color: 'var(--text-primary, #1E293B)', boxShadow: 'var(--clay-shadow-inset)' }}>
                     <div className="text-warning fw-bold small text-uppercase mb-2">Visual Evidence Assessment:</div>
                     <div className="d-flex gap-3 mb-2 flex-wrap">
                       <span><strong>Consistency:</strong> {evidenceAssessment.consistency || 'Assessed'}</span>
@@ -454,7 +488,7 @@ export default function EmergencyDetails() {
                 )}
 
                 {/* Memory Context */}
-                <div className="p-3 rounded-3" style={{ background: '#F8FAFC', border: '1.5px solid #E2E8F0', fontSize: '13.5px', boxShadow: 'var(--clay-shadow-inset)' }}>
+                <div className="p-3 rounded-3" style={{ background: 'var(--surface-input, #F8FAFC)', border: '1.5px solid var(--border-color, #E2E8F0)', fontSize: '13.5px', color: 'var(--text-secondary, #334155)', boxShadow: 'var(--clay-shadow-inset)' }}>
                   <div className="text-primary fw-bold small text-uppercase mb-1">
                     <i className="bi bi-database-fill-check me-1"></i>
                     Hindsight Memory Context:
@@ -589,7 +623,7 @@ export default function EmergencyDetails() {
               <button
                 type="button"
                 className="clay-button"
-                style={{ background: 'var(--er-surface-elevated, #FFFFFF)', border: '1.5px solid var(--er-border, #E2E8F0)', borderRadius: '14px', padding: '10px 18px', fontWeight: 700 }}
+                style={{ background: 'var(--er-surface-elevated, #FFFFFF)', border: '1.5px solid var(--er-border, #E2E8F0)', color: 'var(--text-primary)', borderRadius: '14px', padding: '10px 18px', fontWeight: 700 }}
                 onClick={() => handleDispatch('Ambulance')}
                 disabled={dispatching['Ambulance']}
               >
@@ -598,7 +632,7 @@ export default function EmergencyDetails() {
               <button
                 type="button"
                 className="clay-button"
-                style={{ background: 'var(--er-surface-elevated, #FFFFFF)', border: '1.5px solid var(--er-border, #E2E8F0)', borderRadius: '14px', padding: '10px 18px', fontWeight: 700 }}
+                style={{ background: 'var(--er-surface-elevated, #FFFFFF)', border: '1.5px solid var(--er-border, #E2E8F0)', color: 'var(--text-primary)', borderRadius: '14px', padding: '10px 18px', fontWeight: 700 }}
                 onClick={() => handleDispatch('Police')}
                 disabled={dispatching['Police']}
               >
@@ -607,7 +641,7 @@ export default function EmergencyDetails() {
               <button
                 type="button"
                 className="clay-button"
-                style={{ background: 'var(--er-surface-elevated, #FFFFFF)', border: '1.5px solid var(--er-border, #E2E8F0)', borderRadius: '14px', padding: '10px 18px', fontWeight: 700 }}
+                style={{ background: 'var(--er-surface-elevated, #FFFFFF)', border: '1.5px solid var(--er-border, #E2E8F0)', color: 'var(--text-primary)', borderRadius: '14px', padding: '10px 18px', fontWeight: 700 }}
                 onClick={handleNotifyHelpers}
                 disabled={notifying}
               >

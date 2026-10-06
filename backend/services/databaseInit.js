@@ -137,7 +137,15 @@ const MIGRATION_QUERIES = [
   `ALTER TABLE users ADD COLUMN IF NOT EXISTS auth_provider VARCHAR(50) DEFAULT 'local';`,
   `ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id VARCHAR(100);`,
   `ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;`,
-  `ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL;`
+  `ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL;`,
+  `ALTER TABLE emergency_media ADD COLUMN IF NOT EXISTS latitude DECIMAL(10, 7);`,
+  `ALTER TABLE emergency_media ADD COLUMN IF NOT EXISTS longitude DECIMAL(10, 7);`,
+  `ALTER TABLE emergency_media ADD COLUMN IF NOT EXISTS accuracy DECIMAL(10, 2);`,
+  `ALTER TABLE emergency_media ADD COLUMN IF NOT EXISTS captured_at TIMESTAMP;`,
+  `ALTER TABLE emergency_media ADD COLUMN IF NOT EXISTS distance_from_incident DECIMAL(10, 2);`,
+  `ALTER TABLE emergency_media ADD COLUMN IF NOT EXISTS location_verified BOOLEAN DEFAULT FALSE;`,
+  `ALTER TABLE emergency_media ADD COLUMN IF NOT EXISTS verification_status VARCHAR(50) DEFAULT 'UNVERIFIED';`,
+  `ALTER TABLE emergency_media ADD COLUMN IF NOT EXISTS verification_details JSONB;`
 ];
 
 const DEFAULT_RESPONDERS = [

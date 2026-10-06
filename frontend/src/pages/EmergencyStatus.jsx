@@ -120,13 +120,13 @@ export default function EmergencyStatus() {
                       ? '#16A34A'
                       : isActive
                       ? '#0284C7'
-                      : '#FFFFFF',
-                    color: isCompleted || isActive ? '#FFFFFF' : '#94A3B8',
+                      : 'var(--surface-input, #FFFFFF)',
+                    color: isCompleted || isActive ? '#FFFFFF' : 'var(--text-muted, #94A3B8)',
                     border: isCompleted
                       ? '2px solid #16A34A'
                       : isActive
                       ? '2px solid #0284C7'
-                      : '2px solid #CBD5E1',
+                      : '2px solid var(--border-color, #CBD5E1)',
                     boxShadow: isCompleted
                       ? 'var(--clay-shadow-green)'
                       : isActive

@@ -1082,3 +1082,142 @@ html[data-theme="dark"] .loc-value {
   color: var(--text-primary, #f8fafc) !important;
 }
 
+/* ─── Dark Mode: Emergency Report Summary Card (Step 5) ─── */
+html[data-theme="dark"] .review-summary-box {
+  background: rgba(15, 23, 42, 0.8) !important;
+  border: 1px solid #334155 !important;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.4) !important;
+}
+
+html[data-theme="dark"] .review-item {
+  border-bottom: 1px solid rgba(51, 65, 85, 0.7) !important;
+}
+
+html[data-theme="dark"] .review-item:last-child {
+  border-bottom: none !important;
+}
+
+html[data-theme="dark"] .review-label {
+  color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .review-value {
+  color: #f1f5f9 !important;
+}
+
+/* ─── Dark Mode: Photo & Video Evidence Interactive Buttons ─── */
+html[data-theme="dark"] .btn-media-action {
+  background: #1e293b !important;
+  border: 1.5px solid #334155 !important;
+  color: #f1f5f9 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35) !important;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.16s ease, box-shadow 0.16s ease !important;
+}
+
+html[data-theme="dark"] .btn-media-action i {
+  color: #f1f5f9 !important;
+  transition: color 0.2s ease !important;
+}
+
+html[data-theme="dark"] .btn-media-action:hover {
+  background: #334155 !important;
+  border-color: #475569 !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .btn-media-photo:hover {
+  border-color: #38bdf8 !important;
+  color: #38bdf8 !important;
+}
+
+html[data-theme="dark"] .btn-media-photo:hover i {
+  color: #38bdf8 !important;
+}
+
+html[data-theme="dark"] .btn-media-video:hover {
+  border-color: #f87171 !important;
+  color: #f87171 !important;
+}
+
+html[data-theme="dark"] .btn-media-video:hover i {
+  color: #f87171 !important;
+}
+
+html[data-theme="dark"] .evidence-thumb-card {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35) !important;
+}
+
+html[data-theme="dark"] .evidence-thumb-meta {
+  background: #0f172a !important;
+  border-top-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+
+html[data-theme="dark"] .evidence-thumb-name {
+  color: #f8fafc !important;
+}
+
+/* ─── Dark Mode: Warning & Safety Banners ─── */
+html[data-theme="dark"] .clean-safety-alert {
+  background: rgba(69, 26, 3, 0.4) !important;
+  border: 1px solid rgba(180, 83, 9, 0.6) !important;
+  color: #fef3c7 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35) !important;
+}
+
+html[data-theme="dark"] .clean-safety-alert i {
+  color: #fbbf24 !important;
+}
+
+html[data-theme="dark"] .clean-safety-alert span {
+  color: #fef3c7 !important;
+}
+
+html[data-theme="dark"] .banner-warning {
+  background: rgba(69, 26, 3, 0.4) !important;
+  border-color: rgba(180, 83, 9, 0.6) !important;
+  color: #fef3c7 !important;
+}
+
+html[data-theme="dark"] .banner-danger {
+  background: rgba(153, 27, 27, 0.25) !important;
+  border-color: rgba(239, 68, 68, 0.4) !important;
+  color: #fca5a5 !important;
+}
+
+html[data-theme="dark"] .banner-neutral {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+
+html[data-theme="dark"] .evidence-override-confirmed {
+  background: rgba(22, 163, 74, 0.16) !important;
+  border-color: rgba(34, 197, 94, 0.35) !important;
+  color: #86efac !important;
+}
+
+html[data-theme="dark"] .btn-undo-override {
+  background: #1e293b !important;
+  border-color: rgba(34, 197, 94, 0.4) !important;
+  color: #86efac !important;
+}
+
+html[data-theme="dark"] .btn-undo-override:hover {
+  background: #334155 !important;
+}
+
+html[data-theme="dark"] .tag-required {
+  background: rgba(220, 38, 38, 0.2) !important;
+  border-color: rgba(239, 68, 68, 0.4) !important;
+  color: #fca5a5 !important;
+}
+
+html[data-theme="dark"] .tag-override {
+  background: rgba(22, 163, 74, 0.2) !important;
+  border-color: rgba(34, 197, 94, 0.4) !important;
+  color: #86efac !important;
+}
+

@@ -1201,6 +1201,11 @@ body[data-theme="dark"] {
   --er-orange-light:    rgba(234, 88, 12, 0.16);
   --er-orange-border:   rgba(249, 115, 22, 0.35);
 
+  --er-amber:           #F59E0B;
+  --er-green:           #22C55E;
+  --er-red:             #EF4444;
+  --er-blue:            #38BDF8;
+
   --er-amber-light:     rgba(217, 119, 6, 0.16);
   --er-amber-border:    rgba(245, 158, 11, 0.35);
 
@@ -1252,6 +1257,7 @@ html[data-theme="dark"] .stat-card,
 html[data-theme="dark"] .emergency-card,
 html[data-theme="dark"] .clean-card,
 html[data-theme="dark"] .clean-section-card,
+html[data-theme="dark"] .responder-card,
 html[data-theme="dark"] .card {
   background: var(--surface) !important;
   border-color: var(--border-color) !important;
@@ -1259,9 +1265,15 @@ html[data-theme="dark"] .card {
   box-shadow: var(--clay-shadow-card);
 }
 
-html[data-theme="dark"] .clean-section-header {
+html[data-theme="dark"] .clean-section-header,
+html[data-theme="dark"] .section-card-header {
   background: var(--surface) !important;
   border-bottom-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+html[data-theme="dark"] .clean-section-title,
+html[data-theme="dark"] .section-card-title {
   color: var(--text-primary) !important;
 }
 
@@ -1279,6 +1291,36 @@ html[data-theme="dark"] .bg-light {
   background-color: var(--surface-input) !important;
 }
 
+html[data-theme="dark"] .bg-primary-subtle {
+  background-color: rgba(37, 99, 235, 0.2) !important;
+  color: #93C5FD !important;
+  border-color: rgba(56, 189, 248, 0.3) !important;
+}
+
+html[data-theme="dark"] .bg-success-subtle {
+  background-color: rgba(22, 163, 74, 0.2) !important;
+  color: #86EFAC !important;
+  border-color: rgba(34, 197, 94, 0.3) !important;
+}
+
+html[data-theme="dark"] .bg-warning-subtle {
+  background-color: rgba(217, 119, 6, 0.2) !important;
+  color: #FDE68A !important;
+  border-color: rgba(245, 158, 11, 0.3) !important;
+}
+
+html[data-theme="dark"] .bg-danger-subtle {
+  background-color: rgba(220, 38, 38, 0.2) !important;
+  color: #FCA5A5 !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+}
+
+html[data-theme="dark"] .bg-info-subtle {
+  background-color: rgba(2, 132, 199, 0.2) !important;
+  color: #7DD3FC !important;
+  border-color: rgba(56, 189, 248, 0.3) !important;
+}
+
 html[data-theme="dark"] .text-dark {
   color: var(--text-primary) !important;
 }
@@ -1293,6 +1335,120 @@ html[data-theme="dark"] .border-light {
 
 html[data-theme="dark"] .border-dark {
   border-color: var(--border-color) !important;
+}
+
+/* Priority & Severity Badges in Dark Mode */
+html[data-theme="dark"] .badge-critical,
+html[data-theme="dark"] .badge-severity-critical {
+  background: rgba(220, 38, 38, 0.22) !important;
+  color: #FCA5A5 !important;
+  border-color: rgba(239, 68, 68, 0.45) !important;
+}
+
+html[data-theme="dark"] .badge-high,
+html[data-theme="dark"] .badge-severity-serious {
+  background: rgba(234, 88, 12, 0.22) !important;
+  color: #FDBA74 !important;
+  border-color: rgba(249, 115, 22, 0.45) !important;
+}
+
+html[data-theme="dark"] .badge-medium,
+html[data-theme="dark"] .badge-severity-moderate {
+  background: rgba(217, 119, 6, 0.22) !important;
+  color: #FDE68A !important;
+  border-color: rgba(245, 158, 11, 0.45) !important;
+}
+
+html[data-theme="dark"] .badge-low,
+html[data-theme="dark"] .badge-severity-low {
+  background: rgba(22, 163, 74, 0.22) !important;
+  color: #86EFAC !important;
+  border-color: rgba(34, 197, 94, 0.45) !important;
+}
+
+/* Status Pills in Dark Mode */
+html[data-theme="dark"] .status-reported {
+  background: rgba(148, 163, 184, 0.18) !important;
+  color: #CBD5E1 !important;
+  border-color: rgba(148, 163, 184, 0.35) !important;
+}
+
+html[data-theme="dark"] .status-analyzing,
+html[data-theme="dark"] .badge-analyzing {
+  background: rgba(126, 34, 206, 0.22) !important;
+  color: #D8B4FE !important;
+  border-color: rgba(168, 85, 247, 0.4) !important;
+}
+
+html[data-theme="dark"] .status-verified {
+  background: rgba(37, 99, 235, 0.22) !important;
+  color: #93C5FD !important;
+  border-color: rgba(56, 189, 248, 0.4) !important;
+}
+
+html[data-theme="dark"] .status-dispatched,
+html[data-theme="dark"] .badge-dispatched {
+  background: rgba(2, 132, 199, 0.22) !important;
+  color: #7DD3FC !important;
+  border-color: rgba(56, 189, 248, 0.4) !important;
+}
+
+html[data-theme="dark"] .status-en-route,
+html[data-theme="dark"] .badge-en-route {
+  background: rgba(217, 119, 6, 0.22) !important;
+  color: #FDE68A !important;
+  border-color: rgba(245, 158, 11, 0.4) !important;
+}
+
+html[data-theme="dark"] .status-arrived,
+html[data-theme="dark"] .badge-arrived {
+  background: rgba(22, 163, 74, 0.22) !important;
+  color: #86EFAC !important;
+  border-color: rgba(34, 197, 94, 0.4) !important;
+}
+
+html[data-theme="dark"] .status-resolved,
+html[data-theme="dark"] .badge-resolved {
+  background: rgba(100, 116, 139, 0.2) !important;
+  color: #94A3B8 !important;
+  border-color: rgba(100, 116, 139, 0.35) !important;
+}
+
+html[data-theme="dark"] .status-accepted {
+  background: rgba(30, 64, 175, 0.25) !important;
+  color: #93C5FD !important;
+  border-color: rgba(59, 130, 246, 0.4) !important;
+}
+
+html[data-theme="dark"] .status-completed {
+  background: rgba(22, 163, 74, 0.22) !important;
+  color: #86EFAC !important;
+  border-color: rgba(34, 197, 94, 0.4) !important;
+}
+
+html[data-theme="dark"] .status-declined {
+  background: rgba(220, 38, 38, 0.22) !important;
+  color: #FCA5A5 !important;
+  border-color: rgba(239, 68, 68, 0.4) !important;
+}
+
+html[data-theme="dark"] .status-withdrawn {
+  background: rgba(107, 114, 128, 0.2) !important;
+  color: #9CA3AF !important;
+  border-color: rgba(107, 114, 128, 0.35) !important;
+}
+
+html[data-theme="dark"] .status-pending,
+html[data-theme="dark"] .badge-pending {
+  background: rgba(100, 116, 139, 0.2) !important;
+  color: #94A3B8 !important;
+  border-color: rgba(100, 116, 139, 0.35) !important;
+}
+
+html[data-theme="dark"] .status-assisting {
+  background: rgba(234, 88, 12, 0.22) !important;
+  color: #FDBA74 !important;
+  border-color: rgba(249, 115, 22, 0.4) !important;
 }
 
 /* Elevated Cards with Subtle Blue Glow Animation */
@@ -1576,6 +1732,55 @@ html[data-theme="dark"] [style*="color: #334155"] {
 html[data-theme="dark"] [style*="color: #64748B"],
 html[data-theme="dark"] [style*="color: #94A3B8"] {
   color: var(--text-muted) !important;
+}
+
+html[data-theme="dark"] [style*="background: #F8FAFC"],
+html[data-theme="dark"] [style*="background: '#F8FAFC'"],
+html[data-theme="dark"] [style*="background:#F8FAFC"],
+html[data-theme="dark"] [style*="background: #f8fafc"],
+html[data-theme="dark"] [style*="background: #F1F5F9"],
+html[data-theme="dark"] [style*="background: '#F1F5F9'"],
+html[data-theme="dark"] [style*="background:#F1F5F9"],
+html[data-theme="dark"] [style*="background: #f1f5f9"] {
+  background: var(--surface-input) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+html[data-theme="dark"] [style*="background: #FFFBEB"],
+html[data-theme="dark"] [style*="background: '#FFFBEB'"],
+html[data-theme="dark"] [style*="background:#FFFBEB"],
+html[data-theme="dark"] [style*="background: #fffbeb"] {
+  background: rgba(69, 26, 3, 0.4) !important;
+  border-color: rgba(180, 83, 9, 0.6) !important;
+  color: #fef3c7 !important;
+}
+
+html[data-theme="dark"] [style*="background: #F0FDF4"],
+html[data-theme="dark"] [style*="background: '#F0FDF4'"],
+html[data-theme="dark"] [style*="background:#F0FDF4"],
+html[data-theme="dark"] [style*="background: #f0fdf4"] {
+  background: rgba(22, 163, 74, 0.16) !important;
+  border-color: rgba(34, 197, 94, 0.35) !important;
+  color: #86efac !important;
+}
+
+html[data-theme="dark"] [style*="background: #FEF2F2"],
+html[data-theme="dark"] [style*="background: '#FEF2F2'"],
+html[data-theme="dark"] [style*="background:#FEF2F2"],
+html[data-theme="dark"] [style*="background: #fef2f2"] {
+  background: rgba(220, 38, 38, 0.16) !important;
+  border-color: rgba(239, 68, 68, 0.35) !important;
+  color: #fca5a5 !important;
+}
+
+html[data-theme="dark"] [style*="background: #F0F9FF"],
+html[data-theme="dark"] [style*="background: '#F0F9FF'"],
+html[data-theme="dark"] [style*="background:#F0F9FF"],
+html[data-theme="dark"] [style*="background: #f0f9ff"] {
+  background: rgba(37, 99, 235, 0.16) !important;
+  border-color: rgba(56, 189, 248, 0.35) !important;
+  color: #93c5fd !important;
 }
 
 

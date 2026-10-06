@@ -87,6 +87,161 @@ const ALLOWED_MIME_TYPES = [
   "video/quicktime",
 ];
 
+// Evidence location verification constants
+const MAX_EVIDENCE_DISTANCE_METERS = 500;
+const MAX_ACCEPTABLE_ACCURACY = 100;
+
+/**
+ * Calculate great-circle distance between two GPS points using the Haversine formula (meters)
+ */
+function calculateDistanceMeters(lat1, lon1, lat2, lon2) {
+  if (
+    lat1 === null || lat1 === undefined || isNaN(Number(lat1)) ||
+    lon1 === null || lon1 === undefined || isNaN(Number(lon1)) ||
+    lat2 === null || lat2 === undefined || isNaN(Number(lat2)) ||
+    lon2 === null || lon2 === undefined || isNaN(Number(lon2))
+  ) {
+    return null;
+  }
+
+  const R = 6371e3; // Earth radius in meters
+  const phi1 = (Number(lat1) * Math.PI) / 180;
+  const phi2 = (Number(lat2) * Math.PI) / 180;
+  const deltaPhi = ((Number(lat2) - Number(lat1)) * Math.PI) / 180;
+  const deltaLambda = ((Number(lon2) - Number(lon1)) * Math.PI) / 180;
+
+  const a =
+    Math.sin(deltaPhi / 2) ** 2 +
+    Math.cos(phi1) * Math.cos(phi2) * Math.sin(deltaLambda / 2) ** 2;
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return R * c;
+}
+
+/**
+ * Validation helpers for GPS coordinates and accuracy.
+ * Strictly prevents booleans, empty strings, null, undefined, NaN, and out-of-range values.
+ */
+function isValidLatitude(val) {
+  if (val === null || val === undefined) return false;
+  if (typeof val === "boolean") return false;
+  if (typeof val === "string" && val.trim() === "") return false;
+  const num = Number(val);
+  return !isNaN(num) && isFinite(num) && num >= -90 && num <= 90;
+}
+
+function isValidLongitude(val) {
+  if (val === null || val === undefined) return false;
+  if (typeof val === "boolean") return false;
+  if (typeof val === "string" && val.trim() === "") return false;
+  const num = Number(val);
+  return !isNaN(num) && isFinite(num) && num >= -180 && num <= 180;
+}
+
+function isValidAccuracy(val) {
+  if (val === null || val === undefined) return false;
+  if (typeof val === "boolean") return false;
+  if (typeof val === "string" && val.trim() === "") return false;
+  const num = Number(val);
+  return !isNaN(num) && isFinite(num) && num >= 0;
+}
+
+/**
+ * Strict server-side verification for emergency evidence.
+ * Rejects unverified, mismatched, missing-coordinate, or poor-accuracy evidence with HTTP 400.
+ * Never trusts client-provided verification flags.
+ */
+function validateEmergencyEvidenceLocation({ incLat, incLng, evLat, evLng, accuracy }) {
+  if (!isValidLatitude(incLat)) {
+    return {
+      valid: false,
+      status: 400,
+      message: "Evidence rejected: Reported incident latitude is required.",
+      reason: "MISSING_INCIDENT_LATITUDE",
+    };
+  }
+
+  if (!isValidLongitude(incLng)) {
+    return {
+      valid: false,
+      status: 400,
+      message: "Evidence rejected: Reported incident longitude is required.",
+      reason: "MISSING_INCIDENT_LONGITUDE",
+    };
+  }
+
+  if (!isValidLatitude(evLat)) {
+    return {
+      valid: false,
+      status: 400,
+      message: "Evidence rejected: Evidence GPS latitude is required.",
+      reason: "MISSING_EVIDENCE_LATITUDE",
+    };
+  }
+
+  if (!isValidLongitude(evLng)) {
+    return {
+      valid: false,
+      status: 400,
+      message: "Evidence rejected: Evidence GPS longitude is required.",
+      reason: "MISSING_EVIDENCE_LONGITUDE",
+    };
+  }
+
+  if (!isValidAccuracy(accuracy)) {
+    return {
+      valid: false,
+      status: 400,
+      message: "Evidence rejected: GPS accuracy is required.",
+      reason: "MISSING_ACCURACY",
+    };
+  }
+
+  const numAccuracy = Number(accuracy);
+  if (numAccuracy > MAX_ACCEPTABLE_ACCURACY) {
+    return {
+      valid: false,
+      status: 400,
+      message: `Evidence rejected: GPS accuracy is too low (${Math.round(numAccuracy)}m, maximum allowed: ${MAX_ACCEPTABLE_ACCURACY}m). Please retry from an open area.`,
+      reason: "LOW_ACCURACY",
+      accuracy: numAccuracy,
+      maxAcceptableAccuracy: MAX_ACCEPTABLE_ACCURACY,
+    };
+  }
+
+  const distance = calculateDistanceMeters(Number(incLat), Number(incLng), Number(evLat), Number(evLng));
+  if (distance === null || isNaN(distance)) {
+    return {
+      valid: false,
+      status: 400,
+      message: "Evidence rejected: Could not calculate geospatial distance between incident and evidence.",
+      reason: "DISTANCE_CALCULATION_FAILED",
+    };
+  }
+
+  const roundedDistance = Math.round(distance * 100) / 100;
+  if (roundedDistance > MAX_EVIDENCE_DISTANCE_METERS) {
+    return {
+      valid: false,
+      status: 400,
+      message: `Evidence rejected: Captured ${roundedDistance}m away from reported incident (maximum allowed: ${MAX_EVIDENCE_DISTANCE_METERS}m).`,
+      reason: "LOCATION_MISMATCH",
+      distance: roundedDistance,
+      distanceMeters: roundedDistance,
+      maxAllowedMeters: MAX_EVIDENCE_DISTANCE_METERS,
+    };
+  }
+
+  return {
+    valid: true,
+    distance: roundedDistance,
+    accuracy: numAccuracy,
+    verificationStatus: "LOCATION_VERIFIED",
+    isLocationVerified: true,
+  };
+}
+
 // ==========================================
 // AUTHENTICATION ROUTES
 // ==========================================
@@ -228,6 +383,116 @@ app.post("/api/emergencies", async (req, res) => {
     const parsedLat = (latitude !== undefined && latitude !== null && !isNaN(Number(latitude))) ? Number(latitude) : null;
     const parsedLng = (longitude !== undefined && longitude !== null && !isNaN(Number(longitude))) ? Number(longitude) : null;
 
+    // Handle optional media attachments (max 3 files, 10MB photo, 50MB video)
+    // SECURITY: Pre-validate all evidence items before creating emergency or inserting media.
+    const mediaToValidate = Array.isArray(req.body.media) ? req.body.media : [];
+    if (mediaToValidate.length > 3) {
+      return res.status(400).json({
+        message: "Evidence rejected: Maximum of 3 media files allowed per emergency.",
+        reason: "TOO_MANY_MEDIA_FILES",
+      });
+    }
+
+    const validatedMediaItems = [];
+    for (const m of mediaToValidate) {
+      if (!m || (!m.data_url && !m.dataUrl)) {
+        return res.status(400).json({
+          message: "Evidence rejected: Media data URL is required.",
+          reason: "MISSING_DATA_URL",
+        });
+      }
+
+      const mediaType = m.media_type || m.mediaType || (m.mime_type?.startsWith("video") ? "video" : "image");
+      const rawFileName = m.file_name || m.fileName || (mediaType === "video" ? "evidence.mp4" : "evidence.jpg");
+      const fileName = String(rawFileName).replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 100);
+      const mimeType = (m.mime_type || m.mimeType || (mediaType === "video" ? "video/mp4" : "image/jpeg")).toLowerCase().trim();
+      const fileSize = Number(m.file_size || m.fileSize || 0);
+      const dataUrl = m.data_url || m.dataUrl;
+
+      // MIME type and size validation
+      if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
+        return res.status(400).json({
+          message: `Unsupported file type (${mimeType}). Allowed: JPG, PNG, WEBP, MP4, WEBM.`,
+          reason: "UNSUPPORTED_MIME_TYPE",
+        });
+      }
+      if (mediaType === "image" && fileSize > 10 * 1024 * 1024) {
+        return res.status(400).json({
+          message: "Image exceeds 10MB limit.",
+          reason: "FILE_TOO_LARGE",
+        });
+      }
+      if (mediaType === "video" && fileSize > 50 * 1024 * 1024) {
+        return res.status(400).json({
+          message: "Video exceeds 50MB limit.",
+          reason: "FILE_TOO_LARGE",
+        });
+      }
+
+      // Step 3: Obtain incident coordinates from the trusted incident data
+      const incLat = parsedLat;
+      const incLng = parsedLng;
+
+      // STRICT LOCATION VERIFICATION:
+      // Never trust client-provided locationVerified, verificationStatus, or distanceFromIncident.
+      const locationCheck = validateEmergencyEvidenceLocation({
+        incLat,
+        incLng,
+        evLat: m.latitude,
+        evLng: m.longitude,
+        accuracy: m.accuracy,
+      });
+
+      if (!locationCheck.valid) {
+        return res.status(locationCheck.status || 400).json({
+          message: locationCheck.message,
+          reason: locationCheck.reason,
+          distanceMeters: locationCheck.distance ?? null,
+          maxAllowedMeters: MAX_EVIDENCE_DISTANCE_METERS,
+          accuracyMeters: locationCheck.accuracy ?? null,
+          maxAcceptableAccuracy: MAX_ACCEPTABLE_ACCURACY,
+        });
+      }
+
+      let capturedAt = null;
+      if (m.capturedAt || m.captured_at) {
+        const d = new Date(m.capturedAt || m.captured_at);
+        if (!isNaN(d.getTime())) capturedAt = d;
+      }
+      if (!capturedAt) capturedAt = new Date();
+
+      const verificationDetails = {
+        evidenceType: m.evidenceType || (mediaType === "video" ? "video" : "photo"),
+        capturedAt: capturedAt.toISOString(),
+        evidenceLatitude: Number(m.latitude),
+        evidenceLongitude: Number(m.longitude),
+        incidentLatitude: Number(incLat),
+        incidentLongitude: Number(incLng),
+        distanceMeters: locationCheck.distance,
+        maxAllowedMeters: MAX_EVIDENCE_DISTANCE_METERS,
+        accuracyMeters: locationCheck.accuracy,
+        maxAcceptableAccuracy: MAX_ACCEPTABLE_ACCURACY,
+        serverVerified: true,
+        status: "LOCATION_VERIFIED",
+      };
+
+      validatedMediaItems.push({
+        mediaType,
+        fileName,
+        mimeType,
+        fileSize,
+        dataUrl,
+        evLat: Number(m.latitude),
+        evLng: Number(m.longitude),
+        accuracy: locationCheck.accuracy,
+        capturedAt,
+        distanceFromIncident: locationCheck.distance,
+        isLocationVerified: true,
+        verificationStatus: "LOCATION_VERIFIED",
+        verificationDetails,
+      });
+    }
+
     const result = await pool.query(
       `INSERT INTO emergencies
       (
@@ -258,34 +523,35 @@ app.post("/api/emergencies", async (req, res) => {
 
     const emergency = result.rows[0];
 
-    // Handle optional media attachments (max 3 files, 10MB photo, 50MB video)
+    // Insert only strictly validated media into database
     let attachedMedia = [];
-    if (Array.isArray(req.body.media) && req.body.media.length > 0) {
-      for (const m of req.body.media.slice(0, 3)) {
-        if (m && (m.data_url || m.dataUrl)) {
-          const mediaType = m.media_type || m.mediaType || (m.mime_type?.startsWith("video") ? "video" : "image");
-          const rawFileName = m.file_name || m.fileName || (mediaType === "video" ? "evidence.mp4" : "evidence.jpg");
-          const fileName = String(rawFileName).replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 100);
-          const mimeType = (m.mime_type || m.mimeType || (mediaType === "video" ? "video/mp4" : "image/jpeg")).toLowerCase().trim();
-          const fileSize = Number(m.file_size || m.fileSize || 0);
-          const dataUrl = m.data_url || m.dataUrl;
-
-          // MIME type and size validation
-          if (!ALLOWED_MIME_TYPES.includes(mimeType)) continue;
-          if (mediaType === "image" && fileSize > 10 * 1024 * 1024) continue;
-          if (mediaType === "video" && fileSize > 50 * 1024 * 1024) continue;
-
-          const mediaRes = await pool.query(
-            `INSERT INTO emergency_media
-             (emergency_id, media_type, file_name, mime_type, file_size, data_url)
-             VALUES ($1, $2, $3, $4, $5, $6)
-             RETURNING id, emergency_id, media_type, file_name, mime_type, file_size, created_at`,
-            [emergency.id, mediaType, fileName, mimeType, fileSize, dataUrl]
-          );
-          if (mediaRes.rows[0]) {
-            attachedMedia.push(mediaRes.rows[0]);
-          }
-        }
+    for (const item of validatedMediaItems) {
+      const mediaRes = await pool.query(
+        `INSERT INTO emergency_media
+         (emergency_id, media_type, file_name, mime_type, file_size, data_url,
+          latitude, longitude, accuracy, captured_at, distance_from_incident,
+          location_verified, verification_status, verification_details)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+         RETURNING *`,
+        [
+          emergency.id,
+          item.mediaType,
+          item.fileName,
+          item.mimeType,
+          item.fileSize,
+          item.dataUrl,
+          item.evLat,
+          item.evLng,
+          item.accuracy,
+          item.capturedAt,
+          item.distanceFromIncident,
+          item.isLocationVerified,
+          item.verificationStatus,
+          JSON.stringify(item.verificationDetails)
+        ]
+      );
+      if (mediaRes.rows[0]) {
+        attachedMedia.push(mediaRes.rows[0]);
       }
     }
 
@@ -329,7 +595,7 @@ app.post("/api/emergencies", async (req, res) => {
 app.post("/api/emergencies/:id/media", async (req, res) => {
   try {
     const emergencyResult = await pool.query(
-      `SELECT id, emergency_code FROM emergencies WHERE emergency_code = $1 OR id::text = $1`,
+      `SELECT id, emergency_code, latitude, longitude FROM emergencies WHERE emergency_code = $1 OR id::text = $1`,
       [req.params.id]
     );
 
@@ -340,8 +606,10 @@ app.post("/api/emergencies/:id/media", async (req, res) => {
     const emergency = emergencyResult.rows[0];
     const incoming = Array.isArray(req.body.media)
       ? req.body.media
-      : req.body.data_url || req.body.dataUrl
+      : req.body?.data_url || req.body?.dataUrl
       ? [req.body]
+      : Array.isArray(req.body)
+      ? req.body
       : [];
 
     if (incoming.length === 0) {
@@ -360,10 +628,23 @@ app.post("/api/emergencies/:id/media", async (req, res) => {
       return res.status(400).json({ message: "Maximum of 3 media files already reached for this emergency." });
     }
 
-    const inserted = [];
-    for (const m of incoming.slice(0, availableSlots)) {
-      const dataUrl = m.data_url || m.dataUrl;
-      if (!dataUrl) continue;
+    if (incoming.length > availableSlots) {
+      return res.status(400).json({
+        message: `Evidence rejected: Cannot attach ${incoming.length} files. Only ${availableSlots} slot(s) remaining for this emergency.`,
+        reason: "TOO_MANY_MEDIA_FILES",
+      });
+    }
+
+    // SECURITY: Pre-validate ALL incoming media items before any DB insertion.
+    const validatedItems = [];
+    for (const m of incoming) {
+      const dataUrl = m?.data_url || m?.dataUrl;
+      if (!dataUrl) {
+        return res.status(400).json({
+          message: "Evidence rejected: Media data URL is required.",
+          reason: "MISSING_DATA_URL",
+        });
+      }
 
       const mediaType = m.media_type || m.mediaType || (m.mime_type?.startsWith("video") ? "video" : "image");
       const rawFileName = m.file_name || m.fileName || (mediaType === "video" ? "evidence.mp4" : "evidence.jpg");
@@ -373,21 +654,108 @@ app.post("/api/emergencies/:id/media", async (req, res) => {
 
       // Validate constraints: Whitelist MIME types, Images <= 10MB, Videos <= 50MB
       if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
-        return res.status(400).json({ message: `Unsupported file type (${mimeType}). Allowed: JPG, PNG, WEBP, MP4, WEBM.` });
+        return res.status(400).json({
+          message: `Unsupported file type (${mimeType}). Allowed: JPG, PNG, WEBP, MP4, WEBM.`,
+          reason: "UNSUPPORTED_MIME_TYPE",
+        });
       }
       if (mediaType === "image" && fileSize > 10 * 1024 * 1024) {
-        return res.status(400).json({ message: "Image exceeds 10MB limit." });
+        return res.status(400).json({ message: "Image exceeds 10MB limit.", reason: "FILE_TOO_LARGE" });
       }
       if (mediaType === "video" && fileSize > 50 * 1024 * 1024) {
-        return res.status(400).json({ message: "Video exceeds 50MB limit." });
+        return res.status(400).json({ message: "Video exceeds 50MB limit.", reason: "FILE_TOO_LARGE" });
       }
 
+      // Step 3: Obtain incident coordinates strictly from the trusted database record
+      const incLat = emergency.latitude !== undefined && emergency.latitude !== null ? Number(emergency.latitude) : null;
+      const incLng = emergency.longitude !== undefined && emergency.longitude !== null ? Number(emergency.longitude) : null;
+
+      // STRICT LOCATION VERIFICATION:
+      // Never trust client-provided locationVerified, verificationStatus, or distanceFromIncident.
+      const locationCheck = validateEmergencyEvidenceLocation({
+        incLat,
+        incLng,
+        evLat: m.latitude,
+        evLng: m.longitude,
+        accuracy: m.accuracy,
+      });
+
+      if (!locationCheck.valid) {
+        return res.status(locationCheck.status || 400).json({
+          message: locationCheck.message,
+          reason: locationCheck.reason,
+          distanceMeters: locationCheck.distance ?? null,
+          maxAllowedMeters: MAX_EVIDENCE_DISTANCE_METERS,
+          accuracyMeters: locationCheck.accuracy ?? null,
+          maxAcceptableAccuracy: MAX_ACCEPTABLE_ACCURACY,
+        });
+      }
+
+      let capturedAt = null;
+      if (m.capturedAt || m.captured_at) {
+        const d = new Date(m.capturedAt || m.captured_at);
+        if (!isNaN(d.getTime())) capturedAt = d;
+      }
+      if (!capturedAt) capturedAt = new Date();
+
+      const verificationDetails = {
+        evidenceType: m.evidenceType || (mediaType === "video" ? "video" : "photo"),
+        capturedAt: capturedAt.toISOString(),
+        evidenceLatitude: Number(m.latitude),
+        evidenceLongitude: Number(m.longitude),
+        incidentLatitude: Number(incLat),
+        incidentLongitude: Number(incLng),
+        distanceMeters: locationCheck.distance,
+        maxAllowedMeters: MAX_EVIDENCE_DISTANCE_METERS,
+        accuracyMeters: locationCheck.accuracy,
+        maxAcceptableAccuracy: MAX_ACCEPTABLE_ACCURACY,
+        serverVerified: true,
+        status: "LOCATION_VERIFIED",
+      };
+
+      validatedItems.push({
+        mediaType,
+        fileName,
+        mimeType,
+        fileSize,
+        dataUrl,
+        evLat: Number(m.latitude),
+        evLng: Number(m.longitude),
+        accuracy: locationCheck.accuracy,
+        capturedAt,
+        distanceFromIncident: locationCheck.distance,
+        isLocationVerified: true,
+        verificationStatus: "LOCATION_VERIFIED",
+        verificationDetails,
+      });
+    }
+
+    // Insert only after ALL items are verified
+    const inserted = [];
+    for (const item of validatedItems) {
       const insRes = await pool.query(
         `INSERT INTO emergency_media
-         (emergency_id, media_type, file_name, mime_type, file_size, data_url)
-         VALUES ($1, $2, $3, $4, $5, $6)
-         RETURNING id, emergency_id, media_type, file_name, mime_type, file_size, created_at`,
-        [emergency.id, mediaType, fileName, mimeType, fileSize, dataUrl]
+         (emergency_id, media_type, file_name, mime_type, file_size, data_url,
+          latitude, longitude, accuracy, captured_at, distance_from_incident,
+          location_verified, verification_status, verification_details)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+         RETURNING *`,
+        [
+          emergency.id,
+          item.mediaType,
+          item.fileName,
+          item.mimeType,
+          item.fileSize,
+          item.dataUrl,
+          item.evLat,
+          item.evLng,
+          item.accuracy,
+          item.capturedAt,
+          item.distanceFromIncident,
+          item.isLocationVerified,
+          item.verificationStatus,
+          JSON.stringify(item.verificationDetails),
+        ]
       );
       if (insRes.rows[0]) inserted.push(insRes.rows[0]);
     }
@@ -420,7 +788,7 @@ app.get("/api/emergencies/:id/media", async (req, res) => {
     }
 
     const mediaResult = await pool.query(
-      `SELECT id, emergency_id, media_type, file_name, mime_type, file_size, data_url, created_at
+      `SELECT *
        FROM emergency_media
        WHERE emergency_id = $1
        ORDER BY created_at ASC`,
@@ -564,7 +932,7 @@ app.get("/api/emergencies/:id", async (req, res) => {
     // Get attached evidence media
     // ------------------------------------------
     const mediaResult = await pool.query(
-      `SELECT id, emergency_id, media_type, file_name, mime_type, file_size, data_url, created_at
+      `SELECT *
        FROM emergency_media
        WHERE emergency_id = $1
        ORDER BY created_at ASC`,

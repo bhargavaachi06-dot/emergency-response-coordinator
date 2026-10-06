@@ -229,3 +229,131 @@ export async function detectAndGeocodeLocation(onProgress) {
     ...addressData,
   };
 }
+
+/**
+ * Calculate great-circle distance between two GPS coordinates using the Haversine formula.
+ *
+ * @param {number} lat1 - Latitude of first point
+ * @param {number} lon1 - Longitude of first point
+ * @param {number} lat2 - Latitude of second point
+ * @param {number} lon2 - Longitude of second point
+ * @returns {number|null} Distance in meters
+ */
+export function calculateDistance(lat1, lon1, lat2, lon2) {
+  if (
+    lat1 === null || lat1 === undefined || isNaN(Number(lat1)) ||
+    lon1 === null || lon1 === undefined || isNaN(Number(lon1)) ||
+    lat2 === null || lat2 === undefined || isNaN(Number(lat2)) ||
+    lon2 === null || lon2 === undefined || isNaN(Number(lon2))
+  ) {
+    return null;
+  }
+
+  const R = 6371e3; // Earth radius in meters
+  const phi1 = (Number(lat1) * Math.PI) / 180;
+  const phi2 = (Number(lat2) * Math.PI) / 180;
+  const deltaPhi = ((Number(lat2) - Number(lat1)) * Math.PI) / 180;
+  const deltaLambda = ((Number(lon2) - Number(lon1)) * Math.PI) / 180;
+
+  const a =
+    Math.sin(deltaPhi / 2) ** 2 +
+    Math.cos(phi1) * Math.cos(phi2) * Math.sin(deltaLambda / 2) ** 2;
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return R * c;
+}
+
+export const MAX_EVIDENCE_DISTANCE_METERS = 500;
+export const MAX_ACCEPTABLE_ACCURACY = 100;
+
+/**
+ * Format distance in meters or kilometers for user-facing UI
+ */
+export function formatDistance(meters) {
+  if (meters === null || meters === undefined || isNaN(meters)) return 'Unknown distance';
+  if (meters < 1000) {
+    return `${Math.round(meters)} meters`;
+  }
+  return `${(meters / 1000).toFixed(2)} km`;
+}
+
+/**
+ * Verify whether live evidence location matches the reported incident location.
+ */
+export function verifyEvidenceLocation({
+  incidentLat,
+  incidentLng,
+  evidenceLat,
+  evidenceLng,
+  accuracy,
+  maxDistance = MAX_EVIDENCE_DISTANCE_METERS,
+  maxAccuracy = MAX_ACCEPTABLE_ACCURACY,
+}) {
+  const hasIncident = incidentLat !== null && incidentLat !== undefined && !isNaN(Number(incidentLat)) &&
+                      incidentLng !== null && incidentLng !== undefined && !isNaN(Number(incidentLng));
+  const hasEvidence = evidenceLat !== null && evidenceLat !== undefined && !isNaN(Number(evidenceLat)) &&
+                      evidenceLng !== null && evidenceLng !== undefined && !isNaN(Number(evidenceLng));
+
+  if (!hasEvidence) {
+    return {
+      verified: false,
+      status: 'NO_EVIDENCE_LOCATION',
+      distance: null,
+      message: 'Evidence GPS location could not be captured.',
+    };
+  }
+
+  if (!hasIncident) {
+    return {
+      verified: false,
+      status: 'NO_INCIDENT_LOCATION',
+      distance: null,
+      message: 'Reported incident location is required for verification.',
+    };
+  }
+
+  const hasAccuracy = accuracy !== null && accuracy !== undefined && !isNaN(Number(accuracy));
+
+  if (!hasAccuracy) {
+    return {
+      verified: false,
+      status: 'MISSING_ACCURACY',
+      distance: null,
+      message: 'Evidence rejected: GPS accuracy is required.',
+    };
+  }
+
+  const numAccuracy = Number(accuracy);
+  if (numAccuracy > maxAccuracy) {
+    return {
+      verified: false,
+      status: 'LOW_ACCURACY',
+      distance: null,
+      accuracy: Math.round(numAccuracy),
+      message: `Your current location accuracy is low (${Math.round(numAccuracy)}m, maximum allowed: ${maxAccuracy}m). Please move to an open area and try again.`,
+    };
+  }
+
+  const distance = calculateDistance(incidentLat, incidentLng, evidenceLat, evidenceLng);
+  const roundedDistance = distance !== null ? Math.round(distance) : null;
+  const isWithinRadius = distance !== null && distance <= maxDistance;
+
+  if (isWithinRadius) {
+    return {
+      verified: true,
+      status: 'LOCATION_VERIFIED',
+      distance: roundedDistance,
+      accuracy: Math.round(numAccuracy),
+      message: 'Evidence captured at the reported incident location.',
+    };
+  }
+
+  return {
+    verified: false,
+    status: 'LOCATION_MISMATCH',
+    distance: roundedDistance,
+    accuracy: Math.round(numAccuracy),
+    message: 'The captured evidence appears to be outside the reported incident area.',
+  };
+}

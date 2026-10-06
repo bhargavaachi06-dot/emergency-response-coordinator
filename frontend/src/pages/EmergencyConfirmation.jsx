@@ -299,9 +299,9 @@ export default function EmergencyConfirmation() {
                       alignItems: "center",
                       justifyContent: "center",
                       flexShrink: 0,
-                      background: step.done ? "#16A34A" : step.active ? "#0284C7" : "#F1F5F9",
-                      color: step.done || step.active ? "#FFFFFF" : "#64748B",
-                      border: step.done ? "1px solid #16A34A" : step.active ? "1px solid #0284C7" : "1px solid #CBD5E1",
+                      background: step.done ? "#16A34A" : step.active ? "#0284C7" : "var(--surface-input, #F1F5F9)",
+                      color: step.done || step.active ? "#FFFFFF" : "var(--text-muted, #64748B)",
+                      border: step.done ? "1px solid #16A34A" : step.active ? "1px solid #0284C7" : "1px solid var(--border-color, #CBD5E1)",
                       boxShadow: "var(--clay-shadow-sm)",
                     }}
                   >
@@ -309,7 +309,7 @@ export default function EmergencyConfirmation() {
                   </div>
 
                   <div>
-                    <div style={{ fontSize: '13.5px', fontWeight: step.active || step.done ? 700 : 500, color: step.done ? '#166534' : step.active ? '#0284C7' : '#64748B' }}>
+                    <div style={{ fontSize: '13.5px', fontWeight: step.active || step.done ? 700 : 500, color: step.done ? 'var(--er-green, #166534)' : step.active ? '#0284C7' : 'var(--text-muted, #64748B)' }}>
                       {step.label}
                     </div>
                   </div>
