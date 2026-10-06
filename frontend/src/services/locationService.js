@@ -1,69 +1,47 @@
 // =====================================================
 // Location Service — Emergency Response Coordinator
-// GPS detection + Google Maps reverse geocoding
+// OpenStreetMap + Nominatim Reverse Geocoding & Browser GPS
+// Reliable, API-Key-Free Primary Map Service
 // =====================================================
 
+// In-memory LRU-like cache for reverse geocoded coordinates
+const _geocodeCache = new Map();
+const MAX_CACHE_SIZE = 100;
+
+// Throttling lock for Nominatim (limit to max 1 request per second as per OSM usage policy)
+let _lastRequestTime = 0;
+const MIN_REQUEST_INTERVAL_MS = 1000;
+
 /**
- * Attempt to load Google Maps JavaScript API dynamically.
- * Returns a Promise that resolves when the API is ready.
- * Safe to call multiple times — the script is only added once.
+ * Normalizes coordinate keys for caching (rounded to ~11 meters precision)
  */
-let _mapsLoadPromise = null;
-
-export function loadGoogleMapsApi() {
-  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-
-  if (!apiKey) {
-    return Promise.reject(new Error('VITE_GOOGLE_MAPS_API_KEY is not configured.'));
-  }
-
-  // Already loading or loaded
-  if (_mapsLoadPromise) return _mapsLoadPromise;
-
-  // Already available on window
-  if (window.google?.maps) {
-    _mapsLoadPromise = Promise.resolve(window.google.maps);
-    return _mapsLoadPromise;
-  }
-
-  _mapsLoadPromise = new Promise((resolve, reject) => {
-    const callbackName = '__gmaps_cb_' + Date.now();
-    window[callbackName] = () => {
-      resolve(window.google.maps);
-      delete window[callbackName];
-    };
-
-    const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&callback=${callbackName}&libraries=geocoding`;
-    script.async = true;
-    script.defer = true;
-    script.onerror = () => {
-      _mapsLoadPromise = null; // allow retry
-      delete window[callbackName];
-      reject(new Error('Google Maps script failed to load. Check your API key and network connection.'));
-    };
-    document.head.appendChild(script);
-  });
-
-  return _mapsLoadPromise;
+function getCacheKey(lat, lng) {
+  return `${Number(lat).toFixed(4)},${Number(lng).toFixed(4)}`;
 }
 
 /**
- * Check if the API key is configured in env
+ * Standard categorized error codes for location & geolocation
  */
-export function isGoogleMapsConfigured() {
-  const key = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-  return Boolean(key && key.trim() && key !== 'YOUR_GOOGLE_MAPS_API_KEY');
-}
+export const LOCATION_ERROR_CODES = {
+  GEOLOCATION_UNAVAILABLE: 'GEOLOCATION_UNAVAILABLE',
+  GEOLOCATION_DENIED: 'GEOLOCATION_DENIED',
+  GEOCODING_FAILED: 'GEOCODING_FAILED',
+  TIMEOUT: 'TIMEOUT',
+};
 
 /**
  * Get current device/browser GPS location.
- * Returns a normalized location object.
+ * Uses high accuracy where supported.
+ *
+ * @returns {Promise<{latitude: number, longitude: number, accuracy: number|null}>}
  */
 export function getCurrentPosition() {
   return new Promise((resolve, reject) => {
-    if (!navigator.geolocation) {
-      reject({ code: 'UNSUPPORTED', message: 'Geolocation is not supported by this browser.' });
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      reject({
+        code: LOCATION_ERROR_CODES.GEOLOCATION_UNAVAILABLE,
+        message: 'Your current location could not be detected. Please enter the location manually.',
+      });
       return;
     }
 
@@ -76,24 +54,15 @@ export function getCurrentPosition() {
         });
       },
       (err) => {
-        let code = 'UNKNOWN';
-        let message;
+        let code = LOCATION_ERROR_CODES.GEOLOCATION_UNAVAILABLE;
+        let message = 'Your current location could not be detected. Please enter the location manually.';
 
-        switch (err.code) {
-          case err.PERMISSION_DENIED:
-            code = 'DENIED';
-            message = 'Location permission was not granted. Please allow location access and try again.';
-            break;
-          case err.POSITION_UNAVAILABLE:
-            code = 'UNAVAILABLE';
-            message = 'Your location is currently unavailable. Please try again or enter your address manually.';
-            break;
-          case err.TIMEOUT:
-            code = 'TIMEOUT';
-            message = 'Location detection timed out. Please try again.';
-            break;
-          default:
-            message = 'An unknown location error occurred.';
+        if (err.code === err.PERMISSION_DENIED) {
+          code = LOCATION_ERROR_CODES.GEOLOCATION_DENIED;
+          message = 'Location permission was denied. You can enter the location manually.';
+        } else if (err.code === err.TIMEOUT) {
+          code = LOCATION_ERROR_CODES.TIMEOUT;
+          message = 'Location detection timed out. Please enter your address manually or try again.';
         }
 
         reject({ code, message, original: err });
@@ -108,88 +77,141 @@ export function getCurrentPosition() {
 }
 
 /**
- * Parse Google geocoder address_components into our structured location model.
+ * Parse OpenStreetMap Nominatim address details into application standard model.
  */
-function parseAddressComponents(components = [], formattedAddress = '') {
-  const get = (types) => {
-    for (const type of types) {
-      const comp = components.find((c) => c.types.includes(type));
-      if (comp) return comp.long_name;
-    }
-    return null;
-  };
-
-  const streetNumber = get(['street_number']);
-  const route = get(['route']);
-  const street = [streetNumber, route].filter(Boolean).join(' ') || null;
+function parseNominatimAddress(address = {}, displayName = '', lat, lng) {
+  const streetNumber = address.house_number || '';
+  const road = address.road || address.pedestrian || address.street || address.path || '';
+  const street = [streetNumber, road].filter(Boolean).join(' ') || null;
 
   const area =
-    get(['sublocality_level_1', 'sublocality_level_2', 'sublocality', 'neighborhood']) || null;
+    address.suburb ||
+    address.neighbourhood ||
+    address.residential ||
+    address.subdistrict ||
+    address.quarter ||
+    null;
 
   const city =
-    get(['locality', 'administrative_area_level_2', 'postal_town']) || null;
+    address.city ||
+    address.town ||
+    address.village ||
+    address.municipality ||
+    null;
 
   const district =
-    get(['administrative_area_level_2', 'administrative_area_level_3']) || null;
+    address.city_district ||
+    address.county ||
+    address.state_district ||
+    null;
 
-  const state =
-    get(['administrative_area_level_1']) || null;
+  const state = address.state || null;
+  const postalCode = address.postcode || null;
+  const country = address.country || null;
 
-  const postalCode = get(['postal_code']) || null;
+  // Build clean concise formatted address if display_name is overly verbose
+  const formattedAddress =
+    displayName ||
+    [street, area, city || district, state, country].filter(Boolean).join(', ') ||
+    `${Number(lat).toFixed(6)}, ${Number(lng).toFixed(6)}`;
 
-  const country = get(['country']) || null;
-
-  return { street, area, city, district, state, postalCode, country, formattedAddress };
+  return {
+    street,
+    area,
+    city,
+    district,
+    state,
+    postalCode,
+    country,
+    formattedAddress,
+  };
 }
 
 /**
- * Reverse geocode a {latitude, longitude} using Google Geocoding API.
- * Requires Google Maps API to be loaded first.
- * Returns a full location model object.
+ * Reverse geocode a {latitude, longitude} pair using OpenStreetMap Nominatim API.
+ * Includes caching and rate limiting to respect OSM usage policy.
+ *
+ * @param {number} latitude
+ * @param {number} longitude
+ * @returns {Promise<object>} Parsed address object
  */
 export async function reverseGeocode(latitude, longitude) {
-  if (!window.google?.maps?.Geocoder) {
-    throw new Error('Google Maps Geocoder is not available.');
+  if (typeof latitude !== 'number' || isNaN(latitude) || typeof longitude !== 'number' || isNaN(longitude)) {
+    throw new Error('Invalid coordinates provided for reverse geocoding.');
   }
 
-  const geocoder = new window.google.maps.Geocoder();
+  const cacheKey = getCacheKey(latitude, longitude);
+  if (_geocodeCache.has(cacheKey)) {
+    return _geocodeCache.get(cacheKey);
+  }
 
-  return new Promise((resolve, reject) => {
-    geocoder.geocode(
-      { location: { lat: latitude, lng: longitude } },
-      (results, status) => {
-        if (status === 'OK' && results && results.length > 0) {
-          const best = results[0];
-          const parsed = parseAddressComponents(
-            best.address_components || [],
-            best.formatted_address || ''
-          );
-          resolve(parsed);
-        } else if (status === 'ZERO_RESULTS') {
-          resolve({
-            street: null,
-            area: null,
-            city: null,
-            district: null,
-            state: null,
-            postalCode: null,
-            country: null,
-            formattedAddress: `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`,
-          });
-        } else {
-          reject(new Error(`Geocoding failed: ${status}`));
-        }
-      }
+  // Throttle request rate
+  const now = Date.now();
+  const timeSinceLast = now - _lastRequestTime;
+  if (timeSinceLast < MIN_REQUEST_INTERVAL_MS) {
+    await new Promise((res) => setTimeout(res, MIN_REQUEST_INTERVAL_MS - timeSinceLast));
+  }
+  _lastRequestTime = Date.now();
+
+  const geocodingBaseUrl =
+    (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GEOCODING_API_URL) ||
+    'https://nominatim.openstreetmap.org/reverse';
+
+  const separator = geocodingBaseUrl.includes('?') ? '&' : '?';
+  const url = `${geocodingBaseUrl}${separator}format=json&lat=${encodeURIComponent(
+    latitude
+  )}&lon=${encodeURIComponent(longitude)}&zoom=18&addressdetails=1`;
+
+  try {
+    const response = await fetch(url, {
+      headers: {
+        Accept: 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Nominatim reverse geocode responded with HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+    const parsed = parseNominatimAddress(
+      data.address || {},
+      data.display_name || '',
+      latitude,
+      longitude
     );
-  });
+
+    // Save in cache
+    if (_geocodeCache.size >= MAX_CACHE_SIZE) {
+      const oldestKey = _geocodeCache.keys().next().value;
+      _geocodeCache.delete(oldestKey);
+    }
+    _geocodeCache.set(cacheKey, parsed);
+
+    return parsed;
+  } catch (err) {
+    console.warn('[locationService] Reverse geocode fallback to coordinates:', err.message);
+    // Graceful fallback: return valid coordinate structure without crashing
+    const fallback = {
+      street: null,
+      area: null,
+      city: null,
+      district: null,
+      state: null,
+      postalCode: null,
+      country: null,
+      formattedAddress: `${Number(latitude).toFixed(6)}, ${Number(longitude).toFixed(6)}`,
+    };
+    return fallback;
+  }
 }
 
 /**
- * Full flow: detect GPS then reverse geocode.
+ * Full detection flow: GPS detection followed by reverse geocoding.
  * Returns complete location data model.
  *
- * @param {Function} [onProgress] - optional callback for status updates: 'detecting' | 'geocoding'
- * @returns {Promise<LocationData>}
+ * @param {Function} [onProgress] - optional callback ('detecting' | 'geocoding')
+ * @returns {Promise<object>} Complete location model
  */
 export async function detectAndGeocodeLocation(onProgress) {
   if (onProgress) onProgress('detecting');
@@ -197,26 +219,8 @@ export async function detectAndGeocodeLocation(onProgress) {
   const pos = await getCurrentPosition();
   const { latitude, longitude, accuracy } = pos;
 
-  let addressData = {
-    street: null,
-    area: null,
-    city: null,
-    district: null,
-    state: null,
-    postalCode: null,
-    country: null,
-    formattedAddress: null,
-  };
-
-  // Only geocode if Google Maps is available
-  if (window.google?.maps?.Geocoder) {
-    try {
-      if (onProgress) onProgress('geocoding');
-      addressData = await reverseGeocode(latitude, longitude);
-    } catch {
-      // Geocoding failed — still return GPS coords
-    }
-  }
+  if (onProgress) onProgress('geocoding');
+  const addressData = await reverseGeocode(latitude, longitude);
 
   return {
     latitude,

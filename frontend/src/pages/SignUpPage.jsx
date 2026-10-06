@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useApp } from "../context/AppContext";
 import { authService } from "../services/authService";
+import { initializeGoogleSignIn, isGoogleAuthConfigured } from "../services/googleAuth";
 import { getAuthText } from "../data/authTranslations";
 import OtpInput from "../components/OtpInput";
 import { TopNavbar } from "../components/Navigation";
@@ -57,6 +58,12 @@ export default function SignUpPage() {
     }
     if (
       raw.includes("google sign-in is not configured") ||
+      raw.includes("google_not_configured") ||
+      raw.includes("not configured")
+    ) {
+      return "Google sign-in is not configured. Please try another sign-in method.";
+    }
+    if (
       raw.includes("google sign-in is temporarily unavailable") ||
       raw.includes("api-key-not-valid") ||
       raw.includes("invalid-api-key")
@@ -100,6 +107,10 @@ export default function SignUpPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
+
+  // Google Identity Services (GIS) integration
+  const googleBtnRef = useRef(null);
+  const isGoogleConfigured = isGoogleAuthConfigured();
 
   // Countdowns
   useEffect(() => {
@@ -345,13 +356,73 @@ export default function SignUpPage() {
   };
 
   // -----------------------------------------------------------
-  // GOOGLE SIGN-UP / AUTHENTICATION
+  // GOOGLE SIGN-UP / AUTHENTICATION (GIS & FALLBACK)
   // -----------------------------------------------------------
+  const handleGoogleCredentialResponse = useCallback(
+    async (response) => {
+      if (!response?.credential) {
+        setError("Google sign-in was closed before completing.");
+        return;
+      }
+
+      setError(null);
+      setSuccessMsg(null);
+      setLoading(true);
+      setGoogleLoading(true);
+
+      try {
+        const res = await authService.loginWithGoogle(response.credential);
+        if (!res.success) {
+          setError(res.message || res.error || t("googleAuthFailed"));
+          return;
+        }
+
+        // If user requires mobile phone linking
+        if (res.needsMobile) {
+          setGoogleUserPending(res.user);
+          setStep(4); // Google mobile linking step
+          setSuccessMsg(t("googleLinkMobilePrompt"));
+          return;
+        }
+
+        // Existing or complete user
+        handleAuthSuccess(res.token, res.user);
+      } catch (err) {
+        setError(getCleanError(err, "googleAuthFailed"));
+      } finally {
+        setLoading(false);
+        setGoogleLoading(false);
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [citizenLanguage]
+  );
+
+  // Mount Google Identity Services button if configured
+  useEffect(() => {
+    if (step === 1 && isGoogleConfigured && googleBtnRef.current) {
+      initializeGoogleSignIn({
+        onCredential: handleGoogleCredentialResponse,
+        onError: () => {
+          // Graceful callback
+        },
+        buttonContainer: googleBtnRef.current,
+        width: 380,
+      });
+    }
+  }, [step, isGoogleConfigured, handleGoogleCredentialResponse]);
+
   const handleGoogleSignUp = async () => {
-    if (loading) return;
+    if (loading || googleLoading) return;
 
     setError(null);
     setSuccessMsg(null);
+
+    if (!isGoogleConfigured) {
+      setError("Google sign-in is not configured. Please try another sign-in method.");
+      return;
+    }
+
     setLoading(true);
     setGoogleLoading(true);
 
@@ -678,43 +749,49 @@ export default function SignUpPage() {
 
                 {/* Google Sign-Up Button */}
                 <div className="auth-social-section">
-                  <button
-                    id="btn-google-signup"
-                    type="button"
-                    className="btn-google-clay"
-                    onClick={handleGoogleSignUp}
-                    disabled={loading}
-                    aria-label={t("continueWithGoogle")}
-                  >
-                    {googleLoading ? (
-                      <>
-                        <span className="btn-spinner google-spinner" role="status" aria-hidden="true"></span>
-                        <span>{t("connectingToGoogle")}</span>
-                      </>
-                    ) : (
-                      <>
-                        <svg className="google-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-                          <path
-                            fill="#4285F4"
-                            d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.65v3.03h3.88c2.27-2.09 3.665-5.17 3.665-9.12z"
-                          />
-                          <path
-                            fill="#34A853"
-                            d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.03c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.13C3.26 21.39 7.34 24 12 24z"
-                          />
-                          <path
-                            fill="#FBBC05"
-                            d="M5.28 14.29c-.25-.72-.38-1.49-.38-2.29s.13-1.57.38-2.29V6.58H1.25C.45 8.18 0 9.98 0 12s.45 3.82 1.25 5.42l4.03-3.13z"
-                          />
-                          <path
-                            fill="#EA4335"
-                            d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.26 2.61 1.25 6.58l4.03 3.13c.95-2.83 3.6-4.96 6.72-4.96z"
-                          />
-                        </svg>
-                        <span>{t("continueWithGoogle")}</span>
-                      </>
-                    )}
-                  </button>
+                  {googleLoading ? (
+                    <div className="btn-google-clay loading-state" role="status" aria-live="polite">
+                      <span className="btn-spinner google-spinner" aria-hidden="true"></span>
+                      <span>{t("connectingToGoogle")}</span>
+                    </div>
+                  ) : isGoogleConfigured ? (
+                    <div className="google-gis-wrapper">
+                      <div
+                        id="google-signup-btn-container"
+                        ref={googleBtnRef}
+                        className="google-gis-btn-container"
+                      />
+                    </div>
+                  ) : (
+                    <button
+                      id="btn-google-signup"
+                      type="button"
+                      className="btn-google-clay"
+                      onClick={handleGoogleSignUp}
+                      disabled={loading || googleLoading}
+                      aria-label={t("continueWithGoogle")}
+                    >
+                      <svg className="google-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                        <path
+                          fill="#4285F4"
+                          d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.65v3.03h3.88c2.27-2.09 3.665-5.17 3.665-9.12z"
+                        />
+                        <path
+                          fill="#34A853"
+                          d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.03c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.13C3.26 21.39 7.34 24 12 24z"
+                        />
+                        <path
+                          fill="#FBBC05"
+                          d="M5.28 14.29c-.25-.72-.38-1.49-.38-2.29s.13-1.57.38-2.29V6.58H1.25C.45 8.18 0 9.98 0 12s.45 3.82 1.25 5.42l4.03-3.13z"
+                        />
+                        <path
+                          fill="#EA4335"
+                          d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.26 2.61 1.25 6.58l4.03 3.13c.95-2.83 3.6-4.96 6.72-4.96z"
+                        />
+                      </svg>
+                      <span>{t("continueWithGoogle")}</span>
+                    </button>
+                  )}
                 </div>
 
                 {/* Footer Switcher */}

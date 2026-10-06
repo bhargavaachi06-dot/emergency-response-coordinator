@@ -32,7 +32,7 @@ function IncidentAssignment({ emergency, responderType }) {
           <span style={{ fontSize: '12px', fontWeight: 800, color: '#0284C7', fontFamily: 'monospace' }}>
             #{emergency.emergency_code || emergency.id}
           </span>
-          <div style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A', marginTop: 2 }}>
+          <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', marginTop: 2 }}>
             {emergency.type}
           </div>
         </div>
@@ -44,20 +44,20 @@ function IncidentAssignment({ emergency, responderType }) {
 
       <div className="d-flex flex-column gap-3 mb-4">
         <div className="info-row">
-          <span className="info-label" style={{ fontWeight: 700, color: '#64748B' }}>Location</span>
-          <span className="info-value" style={{ fontWeight: 600, color: '#0F172A' }}>
+          <span className="info-label" style={{ fontWeight: 700, color: 'var(--text-muted)' }}>Location</span>
+          <span className="info-value" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
             {emergency.location?.address || emergency.location_text || 'Coordinates available'}
           </span>
         </div>
         <div className="info-row">
-          <span className="info-label" style={{ fontWeight: 700, color: '#64748B' }}>Instructions</span>
-          <span className="info-value" style={{ color: '#334155' }}>
+          <span className="info-label" style={{ fontWeight: 700, color: 'var(--text-muted)' }}>Instructions</span>
+          <span className="info-value" style={{ color: 'var(--text-secondary)' }}>
             {emergency.description || 'Proceed to incident location with emergency warning equipment.'}
           </span>
         </div>
         <div className="info-row">
-          <span className="info-label" style={{ fontWeight: 700, color: '#64748B' }}>Assignment</span>
-          <span className="info-value" style={{ fontWeight: 700, color: '#0F172A' }}>
+          <span className="info-label" style={{ fontWeight: 700, color: 'var(--text-muted)' }}>Assignment</span>
+          <span className="info-value" style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
             <span style={{ fontSize: 18 }}>{responderIcons[responderType] || '🔵'}</span>
             {' '}{responderType}
           </span>
@@ -178,10 +178,10 @@ export default function ResponderDashboard() {
             🚑
           </div>
           <div>
-            <div style={{ fontWeight: 800, fontSize: 18, color: '#0F172A', marginBottom: 2 }}>
+            <div style={{ fontWeight: 800, fontSize: 18, color: 'var(--text-primary)', marginBottom: 2 }}>
               {responder.name}
             </div>
-            <div style={{ fontSize: 13.5, color: '#64748B' }}>
+            <div style={{ fontSize: 13.5, color: 'var(--text-muted)' }}>
               {responder.crew}
             </div>
           </div>
@@ -205,7 +205,7 @@ export default function ResponderDashboard() {
 
       {/* Incident Assignments */}
       <div>
-        <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A', marginBottom: 16 }}>
+        <h2 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 16 }}>
           <i className="bi bi-card-checklist me-2 text-primary"></i>
           Active Assignments ({assigned.length})
         </h2>

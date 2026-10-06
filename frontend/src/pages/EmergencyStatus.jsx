@@ -75,7 +75,7 @@ export default function EmergencyStatus() {
             <div style={{ fontSize: '11.5px', fontWeight: 800, color: '#0284C7', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>
               Incident Reference #{emergencyCode}
             </div>
-            <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#0F172A', marginBottom: 10 }}>
+            <h1 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 10 }}>
               {emergency.type}
             </h1>
             <div className="d-flex gap-2 flex-wrap">
@@ -94,7 +94,7 @@ export default function EmergencyStatus() {
 
       {/* Visual Status Timeline Using Clay Stages */}
       <div className="clay-card mb-4" style={{ padding: '24px 28px' }}>
-        <h2 style={{ fontSize: '16px', fontWeight: 800, color: '#0F172A', marginBottom: '20px' }}>
+        <h2 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '20px' }}>
           <i className="bi bi-signpost-split me-2 text-primary"></i>
           Incident Lifecycle Progression
         </h2>
@@ -189,7 +189,7 @@ export default function EmergencyStatus() {
         <div className="col-lg-5">
           {/* Responder status */}
           <div className="clay-card mb-4">
-            <h2 style={{ fontSize: '15px', fontWeight: 800, color: '#0F172A', marginBottom: '16px' }}>
+            <h2 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '16px' }}>
               <i className="bi bi-broadcast text-danger me-2"></i>
               Responders
             </h2>
@@ -204,9 +204,9 @@ export default function EmergencyStatus() {
                       {icons[r.type] || '🔵'}
                     </div>
                     <div>
-                      <div style={{ fontWeight: 700, fontSize: 14, color: '#0F172A' }}>{r.type}</div>
+                      <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-primary)' }}>{r.type}</div>
                       {r.eta && (
-                        <div style={{ fontSize: 12, color: '#64748B' }}>ETA: {r.eta}</div>
+                        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>ETA: {r.eta}</div>
                       )}
                     </div>
                   </div>
@@ -248,7 +248,7 @@ export default function EmergencyStatus() {
         {/* Right column — Map */}
         <div className="col-lg-7">
           <div className="clay-card">
-            <h2 style={{ fontSize: '15px', fontWeight: 800, color: '#0F172A', marginBottom: '16px' }}>
+            <h2 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '16px' }}>
               <i className="bi bi-map text-primary me-2"></i>
               Live Location
             </h2>
@@ -265,19 +265,19 @@ export default function EmergencyStatus() {
           <div className="clay-card mt-4">
             <div className="row g-3">
               <div className="col-6">
-                <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>Location</div>
-                <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A' }}>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Location</div>
+                <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>
                   {emergency.location?.address || emergency.location_text ||
                     (hasValidCoords ? `${emergencyLat.toFixed(4)}, ${emergencyLng.toFixed(4)}` : 'Location not available')}
                 </div>
               </div>
               <div className="col-6">
-                <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>Area</div>
-                <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A' }}>{emergency.location?.area || '—'}</div>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Area</div>
+                <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>{emergency.location?.area || '—'}</div>
               </div>
               <div className="col-6">
-                <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>Reported At</div>
-                <div style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A' }}>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Reported At</div>
+                <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>
                   {emergency.reportedAt ? new Date(emergency.reportedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recently'}
                 </div>
               </div>

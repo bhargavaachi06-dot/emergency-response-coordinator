@@ -3,21 +3,35 @@
    White Claymorphism Theme: Clean White Background & Soft Elevated Surfaces
    ===================================================== */
 
-:root {
+:root,
+html[data-theme="light"] {
   /* Centralized Theme Tokens (Light Mode Defaults) */
   --bg-primary:         #FFFFFF;
   --bg-secondary:       #F8FAFC;
+  --page-bg:            #FFFFFF;
   --surface:            #FFFFFF;
   --surface-elevated:   #FFFFFF;
+  --card-bg:            #FFFFFF;
+  --elevated-bg:        #FFFFFF;
   --surface-input:      #FFFFFF;
+  --input-bg:           #FFFFFF;
   --text-primary:       #0F172A;
   --text-secondary:     #334155;
   --text-muted:         #64748B;
+  --placeholder-text:   #94A3B8;
   --border-color:       #E2E8F0;
   --border-subtle:      #EDF2F7;
   --accent-blue:        #0284C7;
   --accent-blue-bright: #38BDF8;
   --shadow-color:       rgba(15, 23, 42, 0.05);
+
+  --modal-bg:           #FFFFFF;
+  --modal-text:         #0F172A;
+  --modal-overlay:      rgba(15, 23, 42, 0.45);
+  --dropdown-bg:        #FFFFFF;
+  --dropdown-text:      #0F172A;
+  --map-bg:             #F1F5F9;
+  --map-border:         #CBD5E1;
 
   /* Core White Backgrounds & Surfaces */
   --er-bg:              var(--bg-primary);
@@ -1130,9 +1144,13 @@ body[data-theme="dark"] {
   /* Centralized Midnight Blue Palette Tokens */
   --bg-primary:         #07111F;
   --bg-secondary:       #0B1728;
+  --page-bg:            #07111F;
   --surface:            #10243A;
   --surface-elevated:   #132B45;
+  --card-bg:            #10243A;
+  --elevated-bg:        #132B45;
   --surface-input:      #0A1B2E;
+  --input-bg:           #0A1B2E;
   --border-color:       #1E4668;
   --border-subtle:      #163653;
   --accent-blue:        #2563EB;
@@ -1140,7 +1158,16 @@ body[data-theme="dark"] {
   --text-primary:       #F8FAFC;
   --text-secondary:     #CBD5E1;
   --text-muted:         #94A3B8;
+  --placeholder-text:   #64748B;
   --shadow-color:       rgba(0, 0, 0, 0.45);
+
+  --modal-bg:           #10243A;
+  --modal-text:         #F8FAFC;
+  --modal-overlay:      rgba(3, 7, 18, 0.75);
+  --dropdown-bg:        #10243A;
+  --dropdown-text:      #F8FAFC;
+  --map-bg:             #07111F;
+  --map-border:         #1E4668;
 
   /* Core Surfaces Mapped to Midnight Blue */
   --er-bg:              var(--bg-primary);
@@ -1224,11 +1251,48 @@ html[data-theme="dark"] .section-card,
 html[data-theme="dark"] .stat-card,
 html[data-theme="dark"] .emergency-card,
 html[data-theme="dark"] .clean-card,
+html[data-theme="dark"] .clean-section-card,
 html[data-theme="dark"] .card {
   background: var(--surface) !important;
   border-color: var(--border-color) !important;
   color: var(--text-primary) !important;
   box-shadow: var(--clay-shadow-card);
+}
+
+html[data-theme="dark"] .clean-section-header {
+  background: var(--surface) !important;
+  border-bottom-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+html[data-theme="dark"] .auth-page-root {
+  background-color: var(--bg-primary) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Theme-Aware Bootstrap Utility Class Overrides */
+html[data-theme="dark"] .bg-white {
+  background-color: var(--surface) !important;
+}
+
+html[data-theme="dark"] .bg-light {
+  background-color: var(--surface-input) !important;
+}
+
+html[data-theme="dark"] .text-dark {
+  color: var(--text-primary) !important;
+}
+
+html[data-theme="light"] .text-white:not(.btn):not(.badge):not(.cc-responder-emoji):not(.btn-emergency):not(.btn-hero-primary):not(.btn-google-clay):not(.top-nav-brand-icon) {
+  color: var(--text-primary) !important;
+}
+
+html[data-theme="dark"] .border-light {
+  border-color: var(--border-subtle) !important;
+}
+
+html[data-theme="dark"] .border-dark {
+  border-color: var(--border-color) !important;
 }
 
 /* Elevated Cards with Subtle Blue Glow Animation */
@@ -1445,8 +1509,9 @@ html[data-theme="dark"] .leaflet-container {
   border-color: var(--border-color) !important;
 }
 
+/* OpenStreetMap tiles retain their natural clean clarity in both themes */
 html[data-theme="dark"] .leaflet-tile {
-  filter: brightness(0.68) invert(1) contrast(2.6) hue-rotate(200deg) saturate(0.35) brightness(0.72) !important;
+  filter: none !important;
 }
 
 html[data-theme="dark"] .leaflet-popup-content-wrapper {
@@ -1494,6 +1559,25 @@ html[data-theme="dark"] [style*="backgroundColor: '#FFFFFF'"] {
   color: var(--text-primary) !important;
   border-color: var(--border-color) !important;
 }
+
+html[data-theme="dark"] [style*="color: #0F172A"],
+html[data-theme="dark"] [style*="color: '#0F172A'"],
+html[data-theme="dark"] [style*="color:#0F172A"],
+html[data-theme="dark"] [style*="color: rgb(15, 23, 42)"],
+html[data-theme="dark"] [style*="color: #0f172a"] {
+  color: var(--text-primary) !important;
+}
+
+html[data-theme="dark"] [style*="color: #475569"],
+html[data-theme="dark"] [style*="color: #334155"] {
+  color: var(--text-secondary) !important;
+}
+
+html[data-theme="dark"] [style*="color: #64748B"],
+html[data-theme="dark"] [style*="color: #94A3B8"] {
+  color: var(--text-muted) !important;
+}
+
 
 
 /* =====================================================

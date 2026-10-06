@@ -64,7 +64,7 @@ export default function HelperActiveResponse() {
           <div style={{ fontSize: 11.5, color: '#D97706', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 2 }}>
             Incident Reference #{EMERGENCY.id}
           </div>
-          <h1 style={{ fontWeight: 800, fontSize: 20, color: '#0F172A', marginBottom: 6 }}>
+          <h1 style={{ fontWeight: 800, fontSize: 20, color: 'var(--text-primary)', marginBottom: 6 }}>
             You Are Actively Assisting
           </h1>
           <StatusBadge status="assisting" />
@@ -75,14 +75,14 @@ export default function HelperActiveResponse() {
         <div className="col-lg-6">
           {/* Emergency info */}
           <div className="clay-card mb-4">
-            <h2 style={{ fontSize: '15px', fontWeight: 800, color: '#0F172A', marginBottom: '16px' }}>
+            <h2 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '16px' }}>
               <i className="bi bi-info-circle-fill text-primary me-2"></i>
               Incident Details
             </h2>
             <div className="d-flex flex-column gap-3">
               <div className="info-row">
-                <span className="info-label" style={{ fontWeight: 700, color: '#64748B' }}>Type</span>
-                <span className="info-value" style={{ fontWeight: 700, color: '#0F172A' }}>{EMERGENCY.type}</span>
+                <span className="info-label" style={{ fontWeight: 700, color: 'var(--text-muted)' }}>Type</span>
+                <span className="info-value" style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{EMERGENCY.type}</span>
               </div>
               <div className="info-row">
                 <span className="info-label" style={{ fontWeight: 700, color: '#64748B' }}>Distance</span>
@@ -101,7 +101,7 @@ export default function HelperActiveResponse() {
 
           {/* Professional responder status */}
           <div className="clay-card mb-4">
-            <h2 style={{ fontSize: '15px', fontWeight: 800, color: '#0F172A', marginBottom: '16px' }}>
+            <h2 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '16px' }}>
               <i className="bi bi-broadcast text-danger me-2"></i>
               Professional Responders
             </h2>

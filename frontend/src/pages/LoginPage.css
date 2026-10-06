@@ -504,6 +504,24 @@
   border-top-color: #4285F4;
 }
 
+.google-gis-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 50px;
+}
+
+.google-gis-btn-container {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.btn-google-clay.loading-state {
+  cursor: wait;
+}
+
 /* -----------------------------------------------------
    10. OTP Verification State
    ----------------------------------------------------- */
@@ -690,6 +708,7 @@
 /* =====================================================
    Login Page — Midnight Blue Dark Theme Overrides
    ===================================================== */
+html[data-theme="dark"] .auth-page-root,
 html[data-theme="dark"] .login-page-wrapper {
   background-color: var(--bg-primary);
   color: var(--text-primary);

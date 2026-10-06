@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { AppLayout } from '../layouts/AppLayout';
 import { BackButton } from '../components/BackButton';
-import GoogleLocationMap from '../components/GoogleLocationMap';
+import LeafletMap from '../components/LeafletMap';
 import { EMERGENCY_TYPES } from '../data/demoData';
 import {
   LANGUAGES,
@@ -13,10 +13,8 @@ import {
   speakText,
 } from '../data/translations';
 import {
-  loadGoogleMapsApi,
   getCurrentPosition,
   reverseGeocode,
-  isGoogleMapsConfigured,
 } from '../services/locationService';
 import './ReportEmergency.css';
 
@@ -104,7 +102,6 @@ export default function ReportEmergency() {
   const [mediaError, setMediaError] = useState('');
   const [loading, setLoading] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
-  const [mapsReady, setMapsReady] = useState(false);
   const [errors, setErrors] = useState({});
 
   // Voice recognition states
@@ -129,15 +126,6 @@ export default function ReportEmergency() {
 
   // Accessibility ID
   const langSelectId = useId();
-
-  // Pre-load Google Maps API on mount so the map is ready faster
-  useEffect(() => {
-    if (isGoogleMapsConfigured()) {
-      loadGoogleMapsApi()
-        .then(() => setMapsReady(true))
-        .catch(() => setMapsReady(false));
-    }
-  }, []);
 
   // Save language selection to localStorage & AppContext
   const handleSelectLanguage = (newCode) => {
@@ -208,18 +196,16 @@ export default function ReportEmergency() {
         locationError: '',
       }));
 
-      // Attempt reverse geocoding if Google Maps available
+      // Reverse geocode with OpenStreetMap Nominatim
       let addressData = {
         street: null, area: null, city: null, district: null,
         state: null, postalCode: null, country: null, formattedAddress: null,
       };
 
-      if (window.google?.maps?.Geocoder || mapsReady) {
-        try {
-          addressData = await reverseGeocode(latitude, longitude);
-        } catch {
-          // Geocoding failed — GPS still valid
-        }
+      try {
+        addressData = await reverseGeocode(latitude, longitude);
+      } catch {
+        // Geocoding fallback: raw GPS coordinates remain valid
       }
 
       setForm((prev) => ({
@@ -233,21 +219,59 @@ export default function ReportEmergency() {
         // If geocoded, also populate locationAddress with formatted address
         locationAddress: addressData.formattedAddress ||
           prev.locationAddress ||
-          '',
+          `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`,
       }));
     } catch (err) {
       const { code, message } = err || {};
       setForm((prev) => ({
         ...prev,
-        locationStatus: code === 'DENIED' ? 'denied' :
+        locationStatus: code === 'DENIED' || code === 'GEOLOCATION_DENIED' ? 'denied' :
                         code === 'TIMEOUT' ? 'timeout' :
-                        code === 'UNSUPPORTED' ? 'unsupported' : 'error',
+                        code === 'UNSUPPORTED' || code === 'GEOLOCATION_UNAVAILABLE' ? 'unsupported' : 'error',
         locationError: message || 'Could not detect location.',
       }));
     } finally {
       setLocationLoading(false);
     }
-  }, [mapsReady]);
+  }, []);
+
+  // Map Click Location Selection Handler
+  const handleMapLocationSelect = useCallback(async ({ lat, lng }) => {
+    if (typeof lat !== 'number' || isNaN(lat) || typeof lng !== 'number' || isNaN(lng)) return;
+
+    setLocationLoading(true);
+    setForm((prev) => ({
+      ...prev,
+      lat: lat.toFixed(6),
+      lng: lng.toFixed(6),
+      locationStatus: 'geocoding',
+      locationError: '',
+    }));
+
+    let addressData = {
+      street: null, area: null, city: null, district: null,
+      state: null, postalCode: null, country: null, formattedAddress: null,
+    };
+
+    try {
+      addressData = await reverseGeocode(lat, lng);
+    } catch {
+      // Coordinates remain preserved
+    }
+
+    setForm((prev) => ({
+      ...prev,
+      lat: lat.toFixed(6),
+      lng: lng.toFixed(6),
+      locationStatus: 'detected',
+      locationError: '',
+      ...addressData,
+      locationAddress: addressData.formattedAddress ||
+        prev.locationAddress ||
+        `${lat.toFixed(6)}, ${lng.toFixed(6)}`,
+    }));
+    setLocationLoading(false);
+  }, []);
 
   // Speech Recognition Handler
   const handleStartListening = () => {
@@ -817,16 +841,18 @@ export default function ReportEmergency() {
 
               <div className="clean-section-body">
 
-                {/* Google Map */}
+                {/* OpenStreetMap + Leaflet Map */}
                 <div className="location-map-wrapper mb-3">
-                  <GoogleLocationMap
+                  <LeafletMap
                     latitude={form.lat ? parseFloat(form.lat) : null}
                     longitude={form.lng ? parseFloat(form.lng) : null}
-                    height={300}
+                    height={350}
                     zoom={15}
-                    showInfoBar={false}
+                    showInfoBar={true}
                     showNoLocationState={true}
-                    draggable={false}
+                    onMarkerDrop={handleMapLocationSelect}
+                    draggable={true}
+                    interactive={true}
                   />
                 </div>
 
@@ -1258,7 +1284,7 @@ export default function ReportEmergency() {
                 <div className="review-summary-box mb-3">
                   <div className="review-item">
                     <span className="review-label">{t.summaryType || 'Type'}:</span>
-                    <span className="review-value text-white fw-bold">
+                    <span className="review-value fw-bold">
                       {t.types[form.type]?.label || form.type || 'Not selected'}
                     </span>
                   </div>

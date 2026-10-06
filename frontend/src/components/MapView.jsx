@@ -1,17 +1,15 @@
-import GoogleLocationMap from './GoogleLocationMap';
+import LeafletMap from './LeafletMap';
 
 /**
- * MapView — backward-compatible wrapper around GoogleLocationMap.
+ * MapView — Primary abstraction for map rendering in Emergency Response Coordinator.
+ * Wraps LeafletMap (OpenStreetMap) so future map provider changes remain easy.
  *
- * Existing consumers pass:
- *   markers: [{lat, lng, type, label, status, eta}]
- *   center:  [lat, lng]   (array form)
- *   height:  number
- *
- * This adapter translates to GoogleLocationMap's props.
+ * Props:
+ *   markers: [{lat, lng, type, label, status, eta, ...}]
+ *   center:  [lat, lng] or null
+ *   height:  number | string (default 400)
  */
-export function MapView({ markers = [], center, height = 400 }) {
-  // Translate array center [lat, lng] → individual props
+export function MapView({ markers = [], center = null, height = 400, onMarkerDrop = null, draggable = false }) {
   const isValidCenter =
     Array.isArray(center) &&
     center.length === 2 &&
@@ -29,14 +27,19 @@ export function MapView({ markers = [], center, height = 400 }) {
   );
 
   return (
-    <GoogleLocationMap
+    <LeafletMap
       latitude={latitude}
       longitude={longitude}
+      center={isValidCenter ? [latitude, longitude] : null}
       markers={validMarkers}
       height={height}
       zoom={15}
       showInfoBar={false}
-      showNoLocationState={!isValidCenter}
+      showNoLocationState={!isValidCenter && validMarkers.length === 0}
+      onMarkerDrop={onMarkerDrop}
+      draggable={draggable}
     />
   );
 }
+
+export default MapView;

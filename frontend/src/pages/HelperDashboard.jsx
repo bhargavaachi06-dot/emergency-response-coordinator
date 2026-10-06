@@ -41,10 +41,10 @@ export default function HelperDashboard() {
             🤝
           </div>
           <div>
-            <div style={{ fontWeight: 800, fontSize: 18, color: '#0F172A', marginBottom: 2 }}>
+            <div style={{ fontWeight: 800, fontSize: 18, color: 'var(--text-primary)', marginBottom: 2 }}>
               {currentUser?.name || 'Community Helper'}
             </div>
-            <div style={{ fontSize: 13.5, color: '#64748B' }}>
+            <div style={{ fontSize: 13.5, color: 'var(--text-muted)' }}>
               Community Helper · First Aid Certified
             </div>
           </div>
@@ -82,7 +82,7 @@ export default function HelperDashboard() {
 
       {/* Skills in Clay Card */}
       <div className="clay-card mb-4">
-        <h2 style={{ fontSize: '15px', fontWeight: 800, color: '#0F172A', marginBottom: '14px' }}>
+        <h2 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '14px' }}>
           <i className="bi bi-star-fill text-warning me-2"></i>
           Verified Capabilities
         </h2>
@@ -184,10 +184,10 @@ export default function HelperDashboard() {
       {!helperAvailable && (
         <div className="clay-card mb-4 text-center py-5">
           <i className="bi bi-bell-slash text-muted" style={{ fontSize: '42px' }}></i>
-          <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A', marginTop: '14px', marginBottom: '6px' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', marginTop: '14px', marginBottom: '6px' }}>
             You are set to unavailable
           </h2>
-          <p style={{ color: '#64748B', fontSize: '14px', margin: 0 }}>
+          <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: 0 }}>
             Turn on availability above to receive nearby emergency alerts.
           </p>
         </div>

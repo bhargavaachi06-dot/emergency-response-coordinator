@@ -83,7 +83,7 @@ export default function CitizenDashboard() {
             style={{
               fontSize: 22,
               fontWeight: 800,
-              color: "#0F172A",
+              color: "var(--text-primary)",
               marginBottom: 4,
             }}
           >
@@ -93,7 +93,7 @@ export default function CitizenDashboard() {
           <div
             style={{
               fontSize: 14,
-              color: "#64748B",
+              color: "var(--text-muted)",
               lineHeight: 1.5,
             }}
           >
@@ -162,7 +162,7 @@ export default function CitizenDashboard() {
             justifyContent: 'space-between',
           }}
         >
-          <h2 style={{ fontSize: '15px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
+          <h2 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
             <i className="bi bi-clock-history text-primary me-2"></i>
             Recent Emergency Reports
           </h2>

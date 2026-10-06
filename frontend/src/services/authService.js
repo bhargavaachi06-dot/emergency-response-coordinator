@@ -1,4 +1,5 @@
-import { signInWithGoogleOAuth, firebaseSignOut } from "./firebase";
+import { signInWithGoogleOAuth, firebaseSignOut, isFirebaseConfigured } from "./firebase";
+import { isGoogleAuthConfigured, getGoogleClientId } from "./googleAuth";
 import { AUTH_ENDPOINTS, API_ROOT_URL } from "../config/apiConfig";
 import { safeApiFetch } from "./apiFetch";
 
@@ -97,39 +98,86 @@ export const authService = {
   },
 
   // --------------------------------------------------
-  // 3. GOOGLE OAUTH
   // --------------------------------------------------
-  async loginWithGoogle() {
-    try {
-      const oauthResult = await signInWithGoogleOAuth();
-      if (!oauthResult.success) {
-        return oauthResult;
-      }
+  // 3. GOOGLE OAUTH & GOOGLE IDENTITY SERVICES
+  // --------------------------------------------------
+  isGoogleConfigured() {
+    return isGoogleAuthConfigured() || isFirebaseConfigured();
+  },
 
-      const endpoint = AUTH_ENDPOINTS.google;
-      // Send authenticated Google profile to backend for verification and account linking
-      const result = await safeApiFetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: oauthResult.email,
-          name: oauthResult.name,
-          photoUrl: oauthResult.photoUrl,
-          googleId: oauthResult.googleId,
-          googleToken: oauthResult.idToken,
-        }),
-      });
+  getGoogleClientId() {
+    return getGoogleClientId();
+  },
 
-      if (result.success && result.token) {
-        this.setToken(result.token);
-      }
-      return result;
-    } catch (error) {
+  /**
+   * Authenticate using a verified Google ID Token (from Google Identity Services)
+   * @param {string} idToken - The Google ID Token JWT
+   */
+  async loginWithGoogleToken(idToken) {
+    if (!idToken || typeof idToken !== "string") {
       return {
         success: false,
-        message: error?.message || "Google authentication failed. Please try again.",
+        message: "Google authentication token was not provided.",
       };
     }
+
+    const endpoint = AUTH_ENDPOINTS.google;
+    const result = await safeApiFetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        idToken: idToken.trim(),
+        googleToken: idToken.trim(),
+      }),
+    });
+
+    if (result.success && result.token) {
+      this.setToken(result.token);
+    }
+    return result;
+  },
+
+  /**
+   * Generalized Google Login handler
+   * Accepts an optional idToken from GIS, or falls back to Firebase if configured
+   */
+  async loginWithGoogle(idToken = null) {
+    // 1. If ID token provided directly from GIS callback
+    if (idToken && typeof idToken === "string") {
+      return this.loginWithGoogleToken(idToken);
+    }
+
+    // 2. If Firebase is configured with full client credentials
+    if (isFirebaseConfigured()) {
+      try {
+        const oauthResult = await signInWithGoogleOAuth();
+        if (!oauthResult.success) {
+          return oauthResult;
+        }
+        return this.loginWithGoogleToken(oauthResult.idToken);
+      } catch (error) {
+        return {
+          success: false,
+          message: error?.message || "Google authentication failed. Please try again.",
+        };
+      }
+    }
+
+    // 3. If GIS is configured but function was called without token
+    if (isGoogleAuthConfigured()) {
+      return {
+        success: false,
+        code: "USE_GIS_BUTTON",
+        message: "Please sign in using the Google Sign-In button.",
+      };
+    }
+
+    // 4. Neither GIS nor Firebase is configured
+    return {
+      success: false,
+      code: "GOOGLE_NOT_CONFIGURED",
+      message: "Google sign-in is not configured. Please try another sign-in method.",
+    };
   },
 
   async linkGoogleMobile(email, countryCode, mobileNumber, otp) {

@@ -6,6 +6,7 @@ const {
   verifyStoredOTP,
   generateJWT,
   authenticateToken,
+  verifyGoogleIdToken,
 } = require("../services/authService");
 
 const router = express.Router();
@@ -236,17 +237,38 @@ router.post("/email/verify-otp", async (req, res) => {
 // ============================================================
 router.post("/google", async (req, res) => {
   try {
-    const { email, name, photoUrl, googleId } = req.body;
+    const { idToken, googleToken } = req.body;
+    const token = (idToken || googleToken || "").trim();
 
-    if (!email) {
+    if (!token) {
       return res.status(400).json({
         success: false,
-        message: "Google account email is required",
+        message: "Google ID token is required",
       });
     }
 
-    const cleanEmail = email.trim().toLowerCase();
-    const cleanName = (name || "Google User").trim();
+    // Cryptographically verify Google ID token against Google Identity servers and audience
+    let verified;
+    try {
+      verified = await verifyGoogleIdToken(token);
+    } catch (verr) {
+      if (verr.code === "GOOGLE_NOT_CONFIGURED") {
+        return res.status(503).json({
+          success: false,
+          code: "GOOGLE_NOT_CONFIGURED",
+          message: "Google authentication is not configured on the server. Please set GOOGLE_CLIENT_ID.",
+        });
+      }
+      return res.status(401).json({
+        success: false,
+        message: verr.message || "Invalid or expired Google authentication token",
+      });
+    }
+
+    // Extract verified identity from token claims (never trust client-submitted body)
+    const { email: verifiedEmail, name: verifiedName, picture: photoUrl, googleId } = verified;
+    const cleanEmail = verifiedEmail.trim().toLowerCase();
+    const cleanName = (verifiedName || "Google User").trim();
 
     // Check for existing account with this email or googleId
     const existing = await pool.query(
@@ -274,7 +296,7 @@ router.post("/google", async (req, res) => {
       );
       user = updated.rows[0];
     } else {
-      // New user from Google
+      // New user from verified Google identity
       const inserted = await pool.query(
         `INSERT INTO users 
          (name, email, profile_photo, google_id, auth_provider, email_verified, mobile_verified, role)
@@ -302,10 +324,10 @@ router.post("/google", async (req, res) => {
     }
 
     // Google user has verified mobile -> complete authentication immediately
-    const token = generateJWT(user);
+    const appToken = generateJWT(user);
     return res.json({
       success: true,
-      token,
+      token: appToken,
       user: {
         id: user.id,
         name: user.name,

@@ -10,9 +10,11 @@ import { API_BASE_URL } from "../config/apiConfig";
  */
 const apiRequest = async (endpoint, options = {}) => {
   try {
+    const token = typeof window !== 'undefined' ? localStorage.getItem("emergency_auth_token") : null;
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       headers: {
         "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...(options.headers || {}),
       },
       ...options,

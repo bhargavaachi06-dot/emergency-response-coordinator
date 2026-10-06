@@ -1,12 +1,79 @@
 const crypto = require("crypto");
 const nodemailer = require("nodemailer");
 const jwt = require("jsonwebtoken");
+const { OAuth2Client } = require("google-auth-library");
 const pool = require("../db");
 
 const JWT_SECRET = process.env.JWT_SECRET || "emergency_response_secure_jwt_token_key_2026";
 const OTP_EXPIRY_MINUTES = 10;
 const RESEND_COOLDOWN_SECONDS = 60;
 const MAX_VERIFICATION_ATTEMPTS = 5;
+
+// Lazy Google OAuth2 Client
+let googleAuthClient = null;
+
+function getGoogleAuthClient() {
+  if (!googleAuthClient) {
+    googleAuthClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+  }
+  return googleAuthClient;
+}
+
+/**
+ * Verify Google ID Token against Google servers and expected client ID (audience)
+ * @param {string} idToken - The Google ID Token JWT
+ * @returns {Promise<object>} Decoded token payload with verified email, name, picture, sub
+ */
+async function verifyGoogleIdToken(idToken) {
+  const expectedClientId = (process.env.GOOGLE_CLIENT_ID || "").trim();
+  if (!expectedClientId) {
+    const error = new Error("GOOGLE_CLIENT_ID is not configured on the server.");
+    error.code = "GOOGLE_NOT_CONFIGURED";
+    throw error;
+  }
+
+  if (!idToken || typeof idToken !== "string" || !idToken.trim()) {
+    const error = new Error("Google ID token is required.");
+    error.code = "INVALID_TOKEN";
+    throw error;
+  }
+
+  try {
+    const client = getGoogleAuthClient();
+    const ticket = await client.verifyIdToken({
+      idToken: idToken.trim(),
+      audience: expectedClientId,
+    });
+    const payload = ticket.getPayload();
+
+    if (!payload || !payload.sub) {
+      const error = new Error("Invalid Google token payload.");
+      error.code = "INVALID_PAYLOAD";
+      throw error;
+    }
+
+    if (!payload.email || !payload.email_verified) {
+      const error = new Error("Google account email is not verified.");
+      error.code = "UNVERIFIED_EMAIL";
+      throw error;
+    }
+
+    return {
+      googleId: payload.sub,
+      email: payload.email.toLowerCase().trim(),
+      name: payload.name || "Google User",
+      picture: payload.picture || null,
+      emailVerified: Boolean(payload.email_verified),
+    };
+  } catch (err) {
+    if (err.code === "GOOGLE_NOT_CONFIGURED" || err.code === "UNVERIFIED_EMAIL") {
+      throw err;
+    }
+    const error = new Error(`Invalid or expired Google token: ${err.message}`);
+    error.code = "TOKEN_VERIFICATION_FAILED";
+    throw error;
+  }
+}
 
 // ============================================================
 // EMAIL TRANSPORTER CONFIGURATION
@@ -317,6 +384,49 @@ function authenticateToken(req, res, next) {
   next();
 }
 
+// Optional Authentication Middleware (identifies user if token is present, continues as guest if not)
+function optionalAuthenticate(req, res, next) {
+  const rawAuthHeader = req.headers["authorization"] || req.headers["Authorization"];
+  let token = null;
+
+  if (rawAuthHeader && typeof rawAuthHeader === "string") {
+    if (rawAuthHeader.startsWith("Bearer ") || rawAuthHeader.startsWith("bearer ")) {
+      token = rawAuthHeader.slice(7).trim();
+    } else {
+      token = rawAuthHeader.trim();
+    }
+  }
+
+  if (token) {
+    const decoded = verifyJWT(token);
+    if (decoded) {
+      req.user = decoded;
+    }
+  }
+
+  next();
+}
+
+// Role-Based Authorization Middleware (enforces role check when user is authenticated)
+function requireRole(...allowedRoles) {
+  const normalized = allowedRoles.map((r) => String(r).toLowerCase());
+
+  return (req, res, next) => {
+    // If user is authenticated, strictly enforce role access
+    if (req.user) {
+      const userRole = String(req.user.role || "").toLowerCase();
+      if (!normalized.includes(userRole) && userRole !== "admin") {
+        return res.status(403).json({
+          success: false,
+          message: `Access denied. Your role (${userRole}) is not authorized for this operation. Required: ${allowedRoles.join(", ")}`,
+        });
+      }
+    }
+    // Continue
+    next();
+  };
+}
+
 module.exports = {
   createAndStoreOTP,
   verifyStoredOTP,
@@ -325,4 +435,7 @@ module.exports = {
   generateJWT,
   verifyJWT,
   authenticateToken,
+  optionalAuthenticate,
+  requireRole,
+  verifyGoogleIdToken,
 };

@@ -21,11 +21,17 @@ function buildMapMarkers(emergencies, selectedCode) {
     const isSelected = String(selectedCode) === String(code) || String(selectedCode) === String(e.id);
 
     markers.push({
+      id: e.id,
+      emergency_code: code,
       lat,
       lng,
-      type: 'emergency',
+      type: e.type || 'emergency',
+      category: e.type || 'Incident',
+      severity: e.severity || e.priority || 'MEDIUM',
+      status: e.status || 'REPORTED',
+      location: e.location_text || e.location?.address || `${lat.toFixed(4)}, ${lng.toFixed(4)}`,
+      createdAt: formatTime(e.created_at),
       label: `#${code}: ${e.type || 'Incident'}`,
-      status: e.status,
       isSelected,
     });
 
@@ -720,7 +726,7 @@ export default function CoordinatorDashboard() {
                     {filteredIncidents.length === 0 ? (
                       <div className="cc-empty-state">
                         <i className="bi bi-shield-check text-success fs-3 mb-2"></i>
-                        <div className="fw-semibold text-white">No active incidents matching criteria</div>
+                        <div className="fw-semibold" style={{ color: 'var(--text-primary)' }}>No active incidents matching criteria</div>
                         <div className="text-secondary small mt-1">Adjust search filter or select another priority level.</div>
                       </div>
                     ) : (
@@ -912,7 +918,7 @@ export default function CoordinatorDashboard() {
                         <div className="cc-ops-card-header d-flex justify-content-between align-items-center">
                           <div className="d-flex align-items-center gap-2">
                             <i className="bi bi-cpu-fill text-info fs-5" aria-hidden="true"></i>
-                            <h3 className="m-0 text-white fw-bold fs-6">AI Decision Support</h3>
+                            <h3 className="m-0 fw-bold fs-6" style={{ color: 'var(--text-primary)' }}>AI Decision Support</h3>
                           </div>
                           <span className="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25" style={{ fontSize: '11px' }}>
                             Advisory
@@ -987,7 +993,7 @@ export default function CoordinatorDashboard() {
                         <div className="cc-ops-card-header d-flex justify-content-between align-items-center">
                           <div className="d-flex align-items-center gap-2">
                             <i className="bi bi-clock-history text-info fs-5" aria-hidden="true"></i>
-                            <h3 className="m-0 text-white fw-bold fs-6">Hindsight Memory</h3>
+                            <h3 className="m-0 fw-bold fs-6" style={{ color: 'var(--text-primary)' }}>Hindsight Memory</h3>
                           </div>
                           {hasMemoryContext && (
                             <span className="badge bg-secondary text-light border border-secondary border-opacity-50" style={{ fontSize: '11px' }}>
@@ -1041,7 +1047,7 @@ export default function CoordinatorDashboard() {
                         <div className="cc-ops-card-header d-flex justify-content-between align-items-center">
                           <div className="d-flex align-items-center gap-2">
                             <i className="bi bi-person-check-fill text-success fs-5" aria-hidden="true"></i>
-                            <h3 className="m-0 text-white fw-bold fs-6">Human Coordinator Review</h3>
+                            <h3 className="m-0 fw-bold fs-6" style={{ color: 'var(--text-primary)' }}>Human Coordinator Review</h3>
                           </div>
                           <span className="badge bg-success bg-opacity-15 text-success border border-success border-opacity-30" style={{ fontSize: '11px', fontWeight: 700 }}>
                             Coordinator In Command
@@ -1103,7 +1109,7 @@ export default function CoordinatorDashboard() {
                                     <div className="d-flex align-items-center gap-3">
                                       <span className="cc-responder-emoji" aria-hidden="true">{meta.emoji}</span>
                                       <div>
-                                        <div className="fw-bold text-white small">{responderName}</div>
+                                        <div className="fw-bold small" style={{ color: 'var(--text-primary)' }}>{responderName}</div>
                                         <div className="text-secondary" style={{ fontSize: '11px' }}>{meta.label}</div>
                                       </div>
                                     </div>
@@ -1148,7 +1154,7 @@ export default function CoordinatorDashboard() {
                         <div className="cc-ops-card-header d-flex justify-content-between align-items-center">
                           <div className="d-flex align-items-center gap-2">
                             <i className="bi bi-truck-front-fill text-info fs-5" aria-hidden="true"></i>
-                            <h3 className="m-0 text-white fw-bold fs-6">Deployed Responders</h3>
+                            <h3 className="m-0 fw-bold fs-6" style={{ color: 'var(--text-primary)' }}>Deployed Responders</h3>
                           </div>
                           <span className="badge bg-dark border border-secondary text-secondary" style={{ fontSize: '11px' }}>
                             {assignedResponders.length} Active Unit{assignedResponders.length !== 1 ? 's' : ''}
@@ -1168,7 +1174,7 @@ export default function CoordinatorDashboard() {
                                     <div className="d-flex align-items-center gap-2">
                                       <span className="cc-responder-row-emoji">{meta.emoji}</span>
                                       <div>
-                                        <div className="fw-semibold text-white small">
+                                        <div className="fw-semibold small" style={{ color: 'var(--text-primary)' }}>
                                           {responder.name || responder.type || `Unit #${idx + 1}`}
                                         </div>
                                         <div className="text-secondary" style={{ fontSize: '11px' }}>

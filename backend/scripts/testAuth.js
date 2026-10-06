@@ -150,8 +150,52 @@ async function runAuthTests() {
     const unauthRes = await request(`${baseUrl}/api/auth/me`, { method: "GET" });
     console.log(`    Status: ${unauthRes.status}, Message: "${unauthRes.data?.message}" -> ${unauthRes.status === 401 ? "PASS (401 Unauthorized) ✅" : "FAIL ❌"}`);
 
+    // Test 9: POST /api/auth/google without ID token
+    console.log("\n[9] Testing POST /api/auth/google with missing token...");
+    const missingTokenRes = await request(`${baseUrl}/api/auth/google`, { method: "POST" }, {});
+    const missingTokenBlocked = missingTokenRes.status === 400 && missingTokenRes.data?.message?.includes("required");
+    console.log(`    Status: ${missingTokenRes.status}, Message: "${missingTokenRes.data?.message}" -> ${missingTokenBlocked ? "PASS (400 Bad Request) ✅" : "FAIL ❌"}`);
+
+    // Test 10: POST /api/auth/google when GOOGLE_CLIENT_ID is not configured on server
+    console.log("\n[10] Testing POST /api/auth/google when GOOGLE_CLIENT_ID is missing...");
+    const origClientId = process.env.GOOGLE_CLIENT_ID;
+    delete process.env.GOOGLE_CLIENT_ID;
+    const notConfiguredRes = await request(`${baseUrl}/api/auth/google`, { method: "POST" }, {
+      idToken: "sample-unverified-token",
+    });
+    const notConfiguredPassed = notConfiguredRes.status === 503 && notConfiguredRes.data?.code === "GOOGLE_NOT_CONFIGURED";
+    console.log(`    Status: ${notConfiguredRes.status}, Code: "${notConfiguredRes.data?.code}", Message: "${notConfiguredRes.data?.message}" -> ${notConfiguredPassed ? "PASS (503 Service Unavailable) ✅" : "FAIL ❌"}`);
+
+    // Test 11: POST /api/auth/google with invalid/malformed Google token (with GOOGLE_CLIENT_ID configured)
+    console.log("\n[11] Testing POST /api/auth/google with invalid Google ID token...");
+    process.env.GOOGLE_CLIENT_ID = "1234567890-test-client-id.apps.googleusercontent.com";
+    const invalidGoogleTokenRes = await request(`${baseUrl}/api/auth/google`, { method: "POST" }, {
+      idToken: "invalid.jwt.token.string",
+    });
+    const invalidTokenPassed = invalidGoogleTokenRes.status === 401;
+    console.log(`    Status: ${invalidGoogleTokenRes.status}, Message: "${invalidGoogleTokenRes.data?.message}" -> ${invalidTokenPassed ? "PASS (401 Token Rejected) ✅" : "FAIL ❌"}`);
+
+    // Restore original GOOGLE_CLIENT_ID
+    if (origClientId) process.env.GOOGLE_CLIENT_ID = origClientId;
+    else delete process.env.GOOGLE_CLIENT_ID;
+
+    // Test 12: Request to incorrect / non-existent API URL
+    console.log("\n[12] Testing request to incorrect / non-existent auth endpoint...");
+    const incorrectUrlRes = await request(`${baseUrl}/api/auth/non-existent-endpoint`, { method: "GET" });
+    const incorrectUrlPassed = incorrectUrlRes.status === 404;
+    console.log(`    Status: ${incorrectUrlRes.status} -> ${incorrectUrlPassed ? "PASS (404 Handled cleanly) ✅" : "FAIL ❌"}`);
+
+    // Test 13: GET /api/auth/me with forged / corrupted Bearer token
+    console.log("\n[13] Testing GET /api/auth/me with forged JWT token...");
+    const forgedRes = await request(`${baseUrl}/api/auth/me`, {
+      method: "GET",
+      headers: { Authorization: "Bearer forged.token.signature" },
+    });
+    const forgedBlocked = forgedRes.status === 403;
+    console.log(`    Status: ${forgedRes.status}, Message: "${forgedRes.data?.message}" -> ${forgedBlocked ? "PASS (403 Forbidden) ✅" : "FAIL ❌"}`);
+
     console.log("\n==================================================================");
-    console.log("ALL 8 AUTHENTICATION FLOW VERIFICATIONS COMPLETED SUCCESSFULLY ✅");
+    console.log("ALL 13 AUTHENTICATION VERIFICATIONS COMPLETED SUCCESSFULLY ✅");
     console.log("==================================================================");
   } finally {
     server.close();

@@ -5,6 +5,7 @@ const { analyzeEmergency } = require("./services/aiService");
 const hindsightService = require("./services/hindsightService");
 const initDatabase = require("./services/databaseInit");
 const authRoutes = require("./routes/authRoutes");
+const { optionalAuthenticate, requireRole } = require("./services/authService");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -18,6 +19,14 @@ const ALLOWED_ORIGINS = [
   "http://localhost",
   "https://localhost",
 ];
+
+// Dynamically include FRONTEND_URL environment variable if configured
+if (process.env.FRONTEND_URL) {
+  const cleanFrontend = process.env.FRONTEND_URL.trim().replace(/\/+$/, "");
+  if (cleanFrontend && !ALLOWED_ORIGINS.includes(cleanFrontend)) {
+    ALLOWED_ORIGINS.push(cleanFrontend);
+  }
+}
 
 const corsOptions = {
   origin: function (origin, callback) {
@@ -52,6 +61,33 @@ app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 // ==========================================
+// HTTP SECURITY HEADERS & OPTIONAL AUTH
+// ==========================================
+app.use((req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("X-XSS-Protection", "1; mode=block");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  if (process.env.NODE_ENV === "production" || req.secure || req.headers["x-forwarded-proto"] === "https") {
+    res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  }
+  next();
+});
+
+app.use(optionalAuthenticate);
+
+// Allowed evidence media MIME types whitelist
+const ALLOWED_MIME_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/jpg",
+  "video/mp4",
+  "video/webm",
+  "video/quicktime",
+];
+
+// ==========================================
 // AUTHENTICATION ROUTES
 // ==========================================
 app.use("/api/auth", authRoutes);
@@ -74,6 +110,9 @@ app.get("/api/health", (req, res) => {
     service: "Emergency Response Coordinator",
     auth: {
       status: "ready",
+      googleAuth: {
+        configured: Boolean(process.env.GOOGLE_CLIENT_ID),
+      },
       endpoints: [
         "/api/auth/mobile/send-otp",
         "/api/auth/mobile/verify-otp",
@@ -148,14 +187,35 @@ app.post("/api/emergencies", async (req, res) => {
       });
     }
 
-    const maxResult = await pool.query(
-      "SELECT COALESCE(MAX(id), 0) + 1 AS next_id FROM emergencies"
-    );
+    // Atomic concurrency-safe ID and code generation
+    let emergencyCode;
+    try {
+      const seqResult = await pool.query("SELECT nextval('emergencies_id_seq') AS next_id");
+      const nextNum = 1000 + Number(seqResult.rows[0].next_id);
+      emergencyCode = `ER-${nextNum}`;
+    } catch {
+      const maxResult = await pool.query(
+        "SELECT COALESCE(MAX(id), 0) + 1 AS next_id FROM emergencies"
+      );
+      const nextNum = 1000 + Number(maxResult.rows[0].next_id);
+      emergencyCode = `ER-${nextNum}`;
+    }
 
-    const nextNumber =
-      1000 + Number(maxResult.rows[0].next_id);
-
-    const emergencyCode = `ER-${nextNumber}`;
+    // Ensure collision-free uniqueness if code exists
+    let codeCandidate = emergencyCode;
+    let attempts = 0;
+    while (attempts < 5) {
+      const existing = await pool.query(
+        "SELECT 1 FROM emergencies WHERE emergency_code = $1 LIMIT 1",
+        [codeCandidate]
+      );
+      if (existing.rows.length === 0) {
+        emergencyCode = codeCandidate;
+        break;
+      }
+      attempts++;
+      emergencyCode = `ER-${Number(codeCandidate.replace(/\D/g, "")) + attempts}`;
+    }
 
     // Accept locationText, location_text, or location (string or object with address)
     const resolvedLocationText =
@@ -164,6 +224,9 @@ app.post("/api/emergencies", async (req, res) => {
       (location && typeof location === "string" && location.trim()) ||
       (location?.address && typeof location.address === "string" && location.address.trim()) ||
       "Unknown";
+
+    const parsedLat = (latitude !== undefined && latitude !== null && !isNaN(Number(latitude))) ? Number(latitude) : null;
+    const parsedLng = (longitude !== undefined && longitude !== null && !isNaN(Number(longitude))) ? Number(longitude) : null;
 
     const result = await pool.query(
       `INSERT INTO emergencies
@@ -185,8 +248,8 @@ app.post("/api/emergencies", async (req, res) => {
         type,
         description,
         resolvedLocationText,
-        latitude || null,
-        longitude || null,
+        parsedLat,
+        parsedLng,
         "Pending",
         "Pending",
         "REPORTED"
@@ -201,11 +264,14 @@ app.post("/api/emergencies", async (req, res) => {
       for (const m of req.body.media.slice(0, 3)) {
         if (m && (m.data_url || m.dataUrl)) {
           const mediaType = m.media_type || m.mediaType || (m.mime_type?.startsWith("video") ? "video" : "image");
-          const fileName = m.file_name || m.fileName || (mediaType === "video" ? "evidence.mp4" : "evidence.jpg");
-          const mimeType = m.mime_type || m.mimeType || (mediaType === "video" ? "video/mp4" : "image/jpeg");
+          const rawFileName = m.file_name || m.fileName || (mediaType === "video" ? "evidence.mp4" : "evidence.jpg");
+          const fileName = String(rawFileName).replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 100);
+          const mimeType = (m.mime_type || m.mimeType || (mediaType === "video" ? "video/mp4" : "image/jpeg")).toLowerCase().trim();
           const fileSize = Number(m.file_size || m.fileSize || 0);
           const dataUrl = m.data_url || m.dataUrl;
 
+          // MIME type and size validation
+          if (!ALLOWED_MIME_TYPES.includes(mimeType)) continue;
           if (mediaType === "image" && fileSize > 10 * 1024 * 1024) continue;
           if (mediaType === "video" && fileSize > 50 * 1024 * 1024) continue;
 
@@ -300,11 +366,15 @@ app.post("/api/emergencies/:id/media", async (req, res) => {
       if (!dataUrl) continue;
 
       const mediaType = m.media_type || m.mediaType || (m.mime_type?.startsWith("video") ? "video" : "image");
-      const fileName = m.file_name || m.fileName || (mediaType === "video" ? "evidence.mp4" : "evidence.jpg");
-      const mimeType = m.mime_type || m.mimeType || (mediaType === "video" ? "video/mp4" : "image/jpeg");
+      const rawFileName = m.file_name || m.fileName || (mediaType === "video" ? "evidence.mp4" : "evidence.jpg");
+      const fileName = String(rawFileName).replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 100);
+      const mimeType = (m.mime_type || m.mimeType || (mediaType === "video" ? "video/mp4" : "image/jpeg")).toLowerCase().trim();
       const fileSize = Number(m.file_size || m.fileSize || 0);
 
-      // Validate constraints: Images <= 10MB, Videos <= 50MB
+      // Validate constraints: Whitelist MIME types, Images <= 10MB, Videos <= 50MB
+      if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
+        return res.status(400).json({ message: `Unsupported file type (${mimeType}). Allowed: JPG, PNG, WEBP, MP4, WEBM.` });
+      }
       if (mediaType === "image" && fileSize > 10 * 1024 * 1024) {
         return res.status(400).json({ message: "Image exceeds 10MB limit." });
       }
@@ -563,7 +633,7 @@ app.get("/api/emergencies/:id/memory-context", async (req, res) => {
 // ==========================================
 // UPDATE EMERGENCY STATUS (Coordinator / Lifecycle)
 // ==========================================
-app.patch("/api/emergencies/:id/status", async (req, res) => {
+app.patch("/api/emergencies/:id/status", requireRole("coordinator"), async (req, res) => {
   try {
     const { status, reason } = req.body;
     const allowedStatuses = [
@@ -593,6 +663,21 @@ app.patch("/api/emergencies/:id/status", async (req, res) => {
     }
 
     const emergency = emergencyResult.rows[0];
+
+    // State Transition Integrity: Prevent impossible or accidental transitions
+    const currentStatus = emergency.status;
+    if (currentStatus === "RESOLVED" && status !== "RESOLVED") {
+      return res.status(400).json({
+        message: `Cannot transition a RESOLVED incident to ${status}. Closed emergencies cannot be reopened accidentally.`,
+        currentStatus,
+      });
+    }
+    if (currentStatus === "CANCELLED" && status !== "CANCELLED") {
+      return res.status(400).json({
+        message: `Cannot transition a CANCELLED incident to ${status}.`,
+        currentStatus,
+      });
+    }
 
     await pool.query(
       `UPDATE emergencies SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`,
@@ -797,7 +882,7 @@ app.post("/api/emergencies/:id/analyze", async (req, res) => {
 // ==========================================
 // DISPATCH RESPONDERS
 // ==========================================
-app.post("/api/emergencies/:id/dispatch", async (req, res) => {
+app.post("/api/emergencies/:id/dispatch", requireRole("coordinator"), async (req, res) => {
   try {
     const emergencyResult = await pool.query(
       `SELECT *
@@ -813,6 +898,13 @@ app.post("/api/emergencies/:id/dispatch", async (req, res) => {
     }
 
     const emergency = emergencyResult.rows[0];
+
+    // Ensure incident is active and not already closed
+    if (emergency.status === "RESOLVED" || emergency.status === "CANCELLED") {
+      return res.status(400).json({
+        message: `Cannot dispatch responders to an emergency that is already ${emergency.status}.`
+      });
+    }
 
     const responderNames =
       req.body.responders ||

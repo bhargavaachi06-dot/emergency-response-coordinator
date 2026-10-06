@@ -90,7 +90,7 @@ export default function EmergencyDetails() {
       <AppLayout title="Incident Not Found" subtitle={`No emergency matching "${id}"`}>
         <div className="clean-section-card text-center py-5">
           <i className="bi bi-exclamation-triangle text-danger" style={{ fontSize: 48 }}></i>
-          <h2 className="mt-3 fw-bold text-dark">Emergency Not Found</h2>
+          <h2 className="mt-3 fw-bold" style={{ color: 'var(--text-primary)' }}>Emergency Not Found</h2>
           <p className="text-secondary">{error || `Could not find incident #${id}`}</p>
           <button className="btn-emergency mt-3" style={{ maxWidth: '280px', margin: '0 auto' }} onClick={() => navigate('/coordinator')}>
             Back to Command Center
@@ -164,7 +164,18 @@ export default function EmergencyDetails() {
   };
 
   const mapMarkers = hasValidCoords ? [
-    { lat: emergencyLat, lng: emergencyLng, type: 'emergency', label: `#${emergencyCode}` },
+    {
+      lat: emergencyLat,
+      lng: emergencyLng,
+      type: 'emergency',
+      category: emergency.type,
+      emergency_code: emergencyCode,
+      label: `#${emergencyCode}: ${emergency.type || 'Incident'}`,
+      status: emergency.status,
+      severity: emergency.severity || emergency.priority,
+      location: emergency.location_text || emergency.location?.address,
+      createdAt: emergency.created_at,
+    },
     ...(emergency.responders || []).map((r, i) => ({
       lat: emergencyLat + (i + 1) * 0.003,
       lng: emergencyLng + (i + 1) * 0.002,
@@ -204,7 +215,7 @@ export default function EmergencyDetails() {
                 <span className="text-primary fw-bold font-monospace small text-uppercase">
                   Incident Reference #{emergencyCode}
                 </span>
-                <h1 className="text-dark fw-bold m-0 mt-1 fs-3" id="inc-header-title">
+                <h1 className="fw-bold m-0 mt-1 fs-3" style={{ color: 'var(--text-primary)' }} id="inc-header-title">
                   {emergency.type}
                 </h1>
                 <div className="d-flex align-items-center gap-2 mt-3 flex-wrap">
@@ -241,17 +252,24 @@ export default function EmergencyDetails() {
             <h2 className="clean-section-title" id="inc-location-title">Location</h2>
           </div>
           <div className="clean-section-body p-3">
-            <div className="mb-3 text-dark fw-bold" style={{ fontSize: '15px' }}>
+            <div className="mb-3 fw-bold" style={{ fontSize: '15px', color: 'var(--text-primary)' }}>
               <i className="bi bi-pin-map-fill text-danger me-2"></i>
               {emergency.location_text || emergency.location?.address || `${emergencyLat.toFixed(5)}, ${emergencyLng.toFixed(5)}`}
             </div>
-            <div className="rounded-3 overflow-hidden border border-secondary border-opacity-25" style={{ height: '340px' }}>
-              <MapView
-                markers={mapMarkers}
-                center={hasValidCoords ? [emergencyLat, emergencyLng] : null}
-                height={340}
-              />
-            </div>
+            {hasValidCoords ? (
+              <div className="rounded-3 overflow-hidden border border-secondary border-opacity-25" style={{ height: '340px' }}>
+                <MapView
+                  markers={mapMarkers}
+                  center={[emergencyLat, emergencyLng]}
+                  height={340}
+                />
+              </div>
+            ) : (
+              <div className="alert alert-warning py-4 text-center rounded-3 mb-0" role="status">
+                <i className="bi bi-geo-alt-slash fs-2 d-block mb-2 text-warning" aria-hidden="true" />
+                <div className="fw-semibold">Map location is unavailable for this incident.</div>
+              </div>
+            )}
           </div>
         </section>
 
@@ -264,7 +282,7 @@ export default function EmergencyDetails() {
             <h2 className="clean-section-title" id="inc-desc-title">Description</h2>
           </div>
           <div className="clean-section-body p-3">
-            <p className="text-dark m-0" style={{ fontSize: '15px', lineHeight: 1.65 }}>
+            <p className="m-0" style={{ fontSize: '15px', lineHeight: 1.65, color: 'var(--text-primary)' }}>
               {emergency.description || 'No detailed description provided by the reporting citizen.'}
             </p>
           </div>
@@ -293,7 +311,7 @@ export default function EmergencyDetails() {
                 {activeMedia && (
                   <div className="p-3 rounded-3 mb-3" style={{ background: '#F8FAFC', border: '1.5px solid #E2E8F0', boxShadow: 'var(--clay-shadow-sm)' }}>
                     <div className="d-flex align-items-center justify-content-between px-2 py-1 mb-2 text-secondary small">
-                      <span className="fw-bold text-dark text-truncate" style={{ maxWidth: '70%', fontSize: '13.5px' }}>
+                      <span className="fw-bold text-truncate" style={{ maxWidth: '70%', fontSize: '13.5px', color: 'var(--text-primary)' }}>
                         {activeMedia.media_type === 'video' ? '🎥 ' : '📷 '}
                         {activeMedia.file_name || `Evidence #${activeMediaIndex + 1}`}
                       </span>
@@ -398,7 +416,7 @@ export default function EmergencyDetails() {
                 <div className="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
                   <div>
                     <span className="text-secondary small d-block">Triage Evaluation</span>
-                    <span className="text-dark fw-bold fs-5">{ai.category || emergency.type}</span>
+                    <span className="fw-bold fs-5" style={{ color: 'var(--text-primary)' }}>{ai.category || emergency.type}</span>
                   </div>
                   {ai.confidence && (
                     <div>

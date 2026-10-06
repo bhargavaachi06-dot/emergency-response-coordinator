@@ -99,10 +99,10 @@ export default function EmergencyHistory() {
       {filteredEmergencies.length === 0 ? (
         <div className="clay-card text-center py-5">
           <i className="bi bi-shield-check text-muted" style={{ fontSize: '48px' }}></i>
-          <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A', marginTop: '16px', marginBottom: '8px' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', marginTop: '16px', marginBottom: '8px' }}>
             No emergency history available
           </h2>
-          <p style={{ color: '#64748B', fontSize: '14px', maxWidth: '420px', margin: '0 auto' }}>
+          <p style={{ color: 'var(--text-muted)', fontSize: '14px', maxWidth: '420px', margin: '0 auto' }}>
             {searchTerm ? 'No reports match your search criteria.' : 'You have not submitted any emergency reports yet.'}
           </p>
         </div>
@@ -138,7 +138,7 @@ export default function EmergencyHistory() {
                     <span style={{ fontSize: '12px', fontWeight: 800, color: '#0284C7', fontFamily: 'monospace' }}>
                       #{emergencyCode}
                     </span>
-                    <h3 style={{ fontSize: '17px', fontWeight: 800, color: '#0F172A', margin: '3px 0 0 0' }}>
+                    <h3 style={{ fontSize: '17px', fontWeight: 800, color: 'var(--text-primary)', margin: '3px 0 0 0' }}>
                       {e.type}
                     </h3>
                   </div>
@@ -152,14 +152,14 @@ export default function EmergencyHistory() {
 
                 <div className="row g-2 align-items-center mt-2 pt-2 border-top">
                   <div className="col-md-6 col-12">
-                    <div style={{ fontSize: '13px', color: '#475569', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div style={{ fontSize: '13px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <i className="bi bi-geo-alt-fill text-danger"></i>
                       <span>{e.location?.address || e.location_text || 'GPS Coordinates Provided'}</span>
                     </div>
                   </div>
 
                   <div className="col-md-3 col-6">
-                    <div style={{ fontSize: '12px', color: '#64748B', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <i className="bi bi-calendar3"></i>
                       <span>{dateStr}</span>
                     </div>
