@@ -10,6 +10,10 @@ backend/.env
 frontend/.env
 *.env
 *.env.local
+*.jks
+*.keystore
+keystore.properties
+**/keystore.properties
 
 # Node modules
 node_modules/
@@ -40,3 +44,6 @@ Thumbs.db
 backend/find_unused.js
 
 .vercel/
+
+# Android generated release outputs
+frontend/android/app/release/
