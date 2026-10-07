@@ -1687,6 +1687,52 @@ html[data-theme="dark"] .btn-hero-secondary:hover {
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45), 0 0 16px rgba(37, 99, 235, 0.12);
 }
 
+/* Voice Input Button in Dark Mode */
+html[data-theme="dark"] .btn-voice-input,
+body.dark .btn-voice-input,
+.dark .btn-voice-input {
+  background: var(--surface-elevated, #132B45) !important;
+  border: 1.5px solid var(--border-color, #1E4668) !important;
+  color: var(--text-primary, #F8FAFC) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+}
+
+html[data-theme="dark"] .btn-voice-input i,
+body.dark .btn-voice-input i,
+.dark .btn-voice-input i {
+  color: var(--accent-blue-bright, #38BDF8) !important;
+}
+
+html[data-theme="dark"] .btn-voice-input:hover,
+body.dark .btn-voice-input:hover,
+.dark .btn-voice-input:hover {
+  background: #19385C !important;
+  border-color: var(--accent-blue-bright, #38BDF8) !important;
+  color: #FFFFFF !important;
+}
+
+html[data-theme="dark"] .btn-voice-input:hover i,
+body.dark .btn-voice-input:hover i,
+.dark .btn-voice-input:hover i {
+  color: #FFFFFF !important;
+}
+
+html[data-theme="dark"] .btn-voice-input.listening,
+body.dark .btn-voice-input.listening,
+.dark .btn-voice-input.listening {
+  background: rgba(220, 38, 38, 0.22) !important;
+  border-color: #EF4444 !important;
+  color: #FCA5A5 !important;
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.4) !important;
+}
+
+html[data-theme="dark"] .btn-voice-input.listening i,
+body.dark .btn-voice-input.listening i,
+.dark .btn-voice-input.listening i {
+  color: #EF4444 !important;
+}
+
+
 /* --------------------------------------------------
    Modals & Dropdowns in Dark Mode
    -------------------------------------------------- */

@@ -352,25 +352,58 @@
    STEP 3: Description & Voice
    ===================================================== */
 .btn-voice-input {
-  background: #FFFFFF;
-  border: 1.5px solid var(--er-border, #E2E8F0);
-  color: var(--er-navy, #0F172A);
+  background: var(--surface, #FFFFFF);
+  border: 1.5px solid var(--border-color, #E2E8F0);
+  color: var(--text-primary, #0F172A);
   border-radius: var(--radius-sm, 12px);
   padding: 8px 14px;
   font-size: 13px;
   font-weight: 600;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 7px;
   cursor: pointer;
   box-shadow: var(--clay-shadow-sm);
   transition: all 0.16s ease;
+  user-select: none;
+}
+
+.btn-voice-input i {
+  font-size: 14.5px;
+  color: var(--accent-blue, #0284C7);
+  transition: color 0.16s ease, transform 0.16s ease;
 }
 
 .btn-voice-input:hover {
-  background: #F8FAFC;
-  border-color: var(--er-red, #DC2626);
-  color: var(--er-red, #DC2626);
+  background: var(--surface-elevated, #F8FAFC);
+  border-color: var(--accent-blue, #0284C7);
+  color: var(--accent-blue, #0284C7);
+  transform: translateY(-1px);
+  box-shadow: var(--clay-shadow-md);
+}
+
+.btn-voice-input:hover i {
+  color: var(--accent-blue, #0284C7);
+  transform: scale(1.1);
+}
+
+.btn-voice-input:active {
+  transform: translateY(0);
+  box-shadow: var(--clay-shadow-pressed);
+}
+
+.btn-voice-input:focus-visible {
+  outline: none;
+  border-color: var(--accent-blue, #0284C7);
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.2);
+}
+
+.btn-voice-input:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+  pointer-events: none;
 }
 
 .btn-voice-input.listening {
@@ -378,6 +411,22 @@
   background: var(--er-red-light, #FEF2F2);
   color: var(--er-red, #DC2626);
   box-shadow: 0 0 10px rgba(220, 38, 38, 0.25);
+}
+
+.btn-voice-input.listening i {
+  color: var(--er-red, #DC2626);
+  animation: pulse-mic 1.2s infinite ease-in-out;
+}
+
+@keyframes pulse-mic {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.7;
+  }
 }
 
 .voice-transcript-banner {
@@ -804,6 +853,14 @@
   }
 }
 
+@media (max-width: 480px) {
+  .btn-voice-input {
+    padding: 7px 12px;
+    font-size: 12px;
+    gap: 5px;
+  }
+}
+
 /* =====================================================
    Report Emergency — Midnight Blue Dark Theme Overrides
    ===================================================== */
@@ -950,11 +1007,117 @@ html[data-theme="dark"] .voice-record-card {
   border-color: var(--border-color) !important;
 }
 
-html[data-theme="dark"] .voice-transcript-box {
+html[data-theme="dark"] .voice-transcript-box,
+body.dark .voice-transcript-box,
+.dark .voice-transcript-box {
   background: var(--surface-input) !important;
   border-color: var(--border-color) !important;
   color: var(--text-secondary) !important;
 }
+
+/* Voice Input Button in Dark Mode */
+html[data-theme="dark"] .btn-voice-input,
+body.dark .btn-voice-input,
+.dark .btn-voice-input {
+  background: var(--surface-elevated, #132B45) !important;
+  border: 1.5px solid var(--border-color, #1E4668) !important;
+  color: var(--text-primary, #F8FAFC) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+}
+
+html[data-theme="dark"] .btn-voice-input i,
+body.dark .btn-voice-input i,
+.dark .btn-voice-input i {
+  color: var(--accent-blue-bright, #38BDF8) !important;
+}
+
+html[data-theme="dark"] .btn-voice-input:hover,
+body.dark .btn-voice-input:hover,
+.dark .btn-voice-input:hover {
+  background: #19385C !important;
+  border-color: var(--accent-blue-bright, #38BDF8) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5), 0 0 14px rgba(56, 189, 248, 0.25) !important;
+  transform: translateY(-1px);
+}
+
+html[data-theme="dark"] .btn-voice-input:hover i,
+body.dark .btn-voice-input:hover i,
+.dark .btn-voice-input:hover i {
+  color: #FFFFFF !important;
+}
+
+html[data-theme="dark"] .btn-voice-input:active,
+body.dark .btn-voice-input:active,
+.dark .btn-voice-input:active {
+  transform: translateY(0);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.5) !important;
+}
+
+html[data-theme="dark"] .btn-voice-input:focus-visible,
+body.dark .btn-voice-input:focus-visible,
+.dark .btn-voice-input:focus-visible {
+  outline: none !important;
+  border-color: var(--accent-blue-bright, #38BDF8) !important;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.35) !important;
+}
+
+html[data-theme="dark"] .btn-voice-input:disabled,
+body.dark .btn-voice-input:disabled,
+.dark .btn-voice-input:disabled {
+  opacity: 0.5 !important;
+  background: var(--surface-input, #0A1B2E) !important;
+  border-color: var(--border-color, #1E4668) !important;
+  color: var(--text-muted, #64748B) !important;
+  box-shadow: none !important;
+  pointer-events: none !important;
+}
+
+html[data-theme="dark"] .btn-voice-input:disabled i,
+body.dark .btn-voice-input:disabled i,
+.dark .btn-voice-input:disabled i {
+  color: var(--text-muted, #64748B) !important;
+}
+
+html[data-theme="dark"] .btn-voice-input.listening,
+body.dark .btn-voice-input.listening,
+.dark .btn-voice-input.listening {
+  background: rgba(220, 38, 38, 0.22) !important;
+  border-color: #EF4444 !important;
+  color: #FCA5A5 !important;
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.08) !important;
+}
+
+html[data-theme="dark"] .btn-voice-input.listening i,
+body.dark .btn-voice-input.listening i,
+.dark .btn-voice-input.listening i {
+  color: #EF4444 !important;
+}
+
+/* Voice Transcript Banner & Button in Dark Mode */
+html[data-theme="dark"] .voice-transcript-banner,
+body.dark .voice-transcript-banner,
+.dark .voice-transcript-banner {
+  background: rgba(217, 119, 6, 0.16) !important;
+  border-color: rgba(245, 158, 11, 0.35) !important;
+  color: #FDE68A !important;
+}
+
+html[data-theme="dark"] .btn-use-voice,
+body.dark .btn-use-voice,
+.dark .btn-use-voice {
+  background: #16A34A !important;
+  color: #FFFFFF !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+html[data-theme="dark"] .btn-use-voice:hover,
+body.dark .btn-use-voice:hover,
+.dark .btn-use-voice:hover {
+  background: #15803D !important;
+  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.4) !important;
+}
+
 
 html[data-theme="dark"] .triage-card {
   background: var(--surface) !important;

@@ -1006,9 +1006,11 @@ export default function ReportEmergency() {
 
                   <button
                     type="button"
+                    id="voice-input-btn"
                     className={`btn-voice-input ${isListening ? 'listening' : ''}`}
                     onClick={isListening ? handleStopListening : handleStartListening}
                     aria-label={isListening ? 'Stop recording voice' : 'Start speaking'}
+                    title={isListening ? (t.listening || 'Listening...') : (t.startSpeaking || 'Tap to Speak')}
                   >
                     <i className={`bi ${isListening ? 'bi-mic-fill text-danger' : 'bi-mic'}`} aria-hidden="true"></i>
                     <span>{isListening ? (t.listening || 'Listening...') : (t.startSpeaking || 'Tap to Speak')}</span>
