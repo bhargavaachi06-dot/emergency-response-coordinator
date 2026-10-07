@@ -6,7 +6,7 @@ import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
 
 export default function EmergencyHistory() {
-  const { emergencies } = useApp();
+  const { emergencies, t = {} } = useApp();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
@@ -30,12 +30,12 @@ export default function EmergencyHistory() {
   }, [emergencies, searchTerm, statusFilter]);
 
   return (
-    <AppLayout title="Emergency History" subtitle="All your past emergency reports">
+    <AppLayout title={t.historyPageTitle || "Emergency History"} subtitle={t.historyPageSubtitle || "All your past emergency reports"}>
       <BackButton fallback="/citizen" />
 
       <div className="page-header">
-        <h1 className="page-title">My Emergency History</h1>
-        <p className="page-subtitle">A verified record of all emergency reports submitted by you.</p>
+        <h1 className="page-title">{t.historyPageTitle || "My Emergency History"}</h1>
+        <p className="page-subtitle">{t.historyPageSubtitle || "A verified record of all emergency reports submitted by you."}</p>
       </div>
 
       {/* Clay Search & Filter Bar */}
@@ -53,8 +53,8 @@ export default function EmergencyHistory() {
               <input
                 type="text"
                 className="w-100 border-0 bg-transparent"
-                style={{ outline: 'none', fontSize: '14px', color: 'var(--er-navy, #0F172A)' }}
-                placeholder="Search by incident code, type, location..."
+                style={{ outline: 'none', fontSize: '14px', color: 'var(--text-primary, #0F172A)' }}
+                placeholder={t.historySearchPlaceholder || "Search by incident code, type, location..."}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -71,24 +71,28 @@ export default function EmergencyHistory() {
           </div>
 
           <div className="col-md-5 col-12 d-flex gap-2 justify-content-md-end flex-wrap">
-            {['ALL', 'ACTIVE', 'RESOLVED'].map((tab) => (
+            {[
+              { id: 'ALL', label: t.historyAll || 'All' },
+              { id: 'ACTIVE', label: t.historyActive || 'Active' },
+              { id: 'RESOLVED', label: t.historyResolved || 'Resolved' },
+            ].map((tab) => (
               <button
-                key={tab}
+                key={tab.id}
                 type="button"
-                className={`clay-button ${statusFilter === tab ? 'active' : ''}`}
+                className={`clay-button ${statusFilter === tab.id ? 'active' : ''}`}
                 style={{
                   fontSize: '12.5px',
                   padding: '7px 16px',
                   minHeight: '38px',
                   borderRadius: '12px',
-                  background: statusFilter === tab ? 'var(--er-blue-light, #F0F9FF)' : 'var(--er-surface, #FFFFFF)',
-                  borderColor: statusFilter === tab ? 'var(--er-blue, #0284C7)' : 'var(--er-border, #E2E8F0)',
-                  color: statusFilter === tab ? 'var(--er-blue, #0284C7)' : 'var(--er-slate, #475569)',
+                  background: statusFilter === tab.id ? 'var(--er-blue-light, #F0F9FF)' : 'var(--er-surface, #FFFFFF)',
+                  borderColor: statusFilter === tab.id ? 'var(--er-blue, #0284C7)' : 'var(--er-border, #E2E8F0)',
+                  color: statusFilter === tab.id ? 'var(--er-blue, #0284C7)' : 'var(--text-secondary, #475569)',
                   fontWeight: 700,
                 }}
-                onClick={() => setStatusFilter(tab)}
+                onClick={() => setStatusFilter(tab.id)}
               >
-                {tab}
+                {tab.label}
               </button>
             ))}
           </div>
@@ -100,10 +104,10 @@ export default function EmergencyHistory() {
         <div className="clay-card text-center py-5">
           <i className="bi bi-shield-check text-muted" style={{ fontSize: '48px' }}></i>
           <h2 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', marginTop: '16px', marginBottom: '8px' }}>
-            No emergency history available
+            {t.historyEmptyTitle || "No emergency history available"}
           </h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '14px', maxWidth: '420px', margin: '0 auto' }}>
-            {searchTerm ? 'No reports match your search criteria.' : 'You have not submitted any emergency reports yet.'}
+            {searchTerm ? (t.historyNoSearchResults || 'No reports match your search criteria.') : (t.historyNoReports || 'You have not submitted any emergency reports yet.')}
           </p>
         </div>
       ) : (

@@ -4,54 +4,54 @@ import { TopNavbar } from '../components/Navigation';
 import EmergencyContactsSection from '../components/EmergencyContacts';
 import './LandingPage.css';
 
-const EMERGENCY_TYPES = [
-  {
-    key: 'medical',
-    label: 'Medical',
-    icon: 'bi-heart-pulse-fill',
-    color: '#DC2626',
-    desc: 'Cardiac, injuries, acute health events',
-  },
-  {
-    key: 'road_accident',
-    label: 'Road Accident',
-    icon: 'bi-car-front-fill',
-    color: '#EA580C',
-    desc: 'Collisions, rollovers, highway pileups',
-  },
-  {
-    key: 'fire',
-    label: 'Fire',
-    icon: 'bi-fire',
-    color: '#F59E0B',
-    desc: 'Structural fires, smoke, gas leaks',
-  },
-  {
-    key: 'crime',
-    label: 'Crime / Safety',
-    icon: 'bi-shield-exclamation',
-    color: '#38BDF8',
-    desc: 'Assault, threats, security emergencies',
-  },
-  {
-    key: 'natural_disaster',
-    label: 'Flood / Disaster',
-    icon: 'bi-cloud-rain-heavy-fill',
-    color: '#0284C7',
-    desc: 'Flooding, storm damage, severe collapse',
-  },
-  {
-    key: 'other',
-    label: 'Other',
-    icon: 'bi-question-circle-fill',
-    color: '#94A3B8',
-    desc: 'Unclassified urgent assistance',
-  },
-];
-
 export default function LandingPage() {
   const navigate = useNavigate();
-  const { switchRole, isAuthenticated } = useApp();
+  const { switchRole, isAuthenticated, t = {} } = useApp();
+
+  const emergencyTypes = [
+    {
+      key: 'medical',
+      label: t.typeMedicalTitle || t.types?.medical?.label || 'Medical',
+      desc: t.typeMedicalDesc || t.types?.medical?.sublabel || 'Cardiac, injuries, acute health events',
+      icon: 'bi-heart-pulse-fill',
+      color: '#DC2626',
+    },
+    {
+      key: 'road_accident',
+      label: t.typeAccidentTitle || t.types?.road_accident?.label || 'Road Accident',
+      desc: t.typeAccidentDesc || t.types?.road_accident?.sublabel || 'Collisions, rollovers, highway pileups',
+      icon: 'bi-car-front-fill',
+      color: '#EA580C',
+    },
+    {
+      key: 'fire',
+      label: t.typeFireTitle || t.types?.fire?.label || 'Fire',
+      desc: t.typeFireDesc || t.types?.fire?.sublabel || 'Structural fires, smoke, gas leaks',
+      icon: 'bi-fire',
+      color: '#F59E0B',
+    },
+    {
+      key: 'crime',
+      label: t.typeCrimeTitle || t.types?.crime?.label || 'Crime / Safety',
+      desc: t.typeCrimeDesc || t.types?.crime?.sublabel || 'Assault, threats, security emergencies',
+      icon: 'bi-shield-exclamation',
+      color: '#38BDF8',
+    },
+    {
+      key: 'natural_disaster',
+      label: t.typeDisasterTitle || t.types?.natural_disaster?.label || 'Flood / Disaster',
+      desc: t.typeDisasterDesc || t.types?.natural_disaster?.sublabel || 'Flooding, storm damage, severe collapse',
+      icon: 'bi-cloud-rain-heavy-fill',
+      color: '#0284C7',
+    },
+    {
+      key: 'other',
+      label: t.typeOtherTitle || t.types?.other?.label || 'Other Help',
+      desc: t.typeOtherDesc || t.types?.other?.sublabel || 'Unclassified urgent assistance',
+      icon: 'bi-question-circle-fill',
+      color: '#94A3B8',
+    },
+  ];
 
   const handleReportEmergency = (typeKey) => {
     switchRole('citizen');
@@ -81,15 +81,15 @@ export default function LandingPage() {
           <section className="landing-hero" aria-labelledby="hero-title">
             <div className="hero-kicker">
               <i className="bi bi-shield-shaded me-2 text-danger" aria-hidden="true"></i>
-              <span>Intelligent Operations & Coordination Platform</span>
+              <span>{t.heroKicker || 'Intelligent Operations & Coordination Platform'}</span>
             </div>
 
             <h1 className="hero-title" id="hero-title">
-              Emergency Response Coordinator
+              {t.heroTitle || t.appName || 'Emergency Response Coordinator'}
             </h1>
 
             <p className="hero-description">
-              Report emergencies, understand incidents, and coordinate responders from one intelligent command center.
+              {t.heroDesc || 'Report emergencies, understand incidents, and coordinate responders from one intelligent command center.'}
             </p>
 
             {/* Primary Action Buttons */}
@@ -98,20 +98,20 @@ export default function LandingPage() {
                 type="button"
                 className="btn-hero-primary"
                 onClick={() => handleReportEmergency()}
-                aria-label="Report an Emergency"
+                aria-label={t.heroReportBtn || 'Report an Emergency'}
               >
                 <i className="bi bi-exclamation-octagon-fill" aria-hidden="true"></i>
-                <span>Report Emergency</span>
+                <span>{t.heroReportBtn || 'Report Emergency'}</span>
               </button>
 
               <button
                 type="button"
                 className="btn-hero-secondary"
                 onClick={handleOpenCommandCenter}
-                aria-label="Open Command Center"
+                aria-label={t.heroCommandBtn || 'Open Command Center'}
               >
                 <i className="bi bi-speedometer2" aria-hidden="true"></i>
-                <span>Open Command Center</span>
+                <span>{t.heroCommandBtn || 'Open Command Center'}</span>
               </button>
             </div>
 
@@ -121,10 +121,10 @@ export default function LandingPage() {
                 <div className="auth-card-info">
                   <span className="auth-card-title">
                     <i className="bi bi-shield-check text-success me-2"></i>
-                    Secure Citizen &amp; Responder Access
+                    {t.authCardTitle || 'Secure Citizen & Responder Access'}
                   </span>
                   <span className="auth-card-sub">
-                    Sign in to track reports, receive dispatch notifications, and access response history.
+                    {t.authCardSub || 'Sign in to track reports, receive dispatch notifications, and access response history.'}
                   </span>
                 </div>
                 <div className="auth-card-buttons">
@@ -134,7 +134,7 @@ export default function LandingPage() {
                     onClick={() => navigate("/login")}
                   >
                     <i className="bi bi-box-arrow-in-right me-1"></i>
-                    <span>Login</span>
+                    <span>{t.authCardLogin || t.login || 'Login'}</span>
                   </button>
                   <button
                     type="button"
@@ -142,7 +142,7 @@ export default function LandingPage() {
                     onClick={() => navigate("/signup")}
                   >
                     <i className="bi bi-person-plus-fill me-1"></i>
-                    <span>Create Account</span>
+                    <span>{t.authCardSignup || t.signUp || 'Create Account'}</span>
                   </button>
                 </div>
               </div>
@@ -152,15 +152,15 @@ export default function LandingPage() {
             <div className="hero-supporting-points" aria-label="Core Capabilities">
               <div className="supporting-point-pill">
                 <i className="bi bi-cpu-fill text-info" aria-hidden="true"></i>
-                <span>AI Decision Support</span>
+                <span>{t.pointAiDecision || 'AI Decision Support'}</span>
               </div>
               <div className="supporting-point-pill">
                 <i className="bi bi-database-fill-check text-primary" aria-hidden="true"></i>
-                <span>Persistent Memory</span>
+                <span>{t.pointMemory || 'Persistent Memory'}</span>
               </div>
               <div className="supporting-point-pill">
                 <i className="bi bi-person-check-fill text-success" aria-hidden="true"></i>
-                <span>Human-in-the-Loop</span>
+                <span>{t.pointHitl || 'Human-in-the-Loop'}</span>
               </div>
             </div>
           </section>
@@ -172,13 +172,15 @@ export default function LandingPage() {
             <div className="section-head-compact">
               <h2 className="section-head-title" id="types-section-title">
                 <i className="bi bi-grid-fill text-danger me-2" aria-hidden="true"></i>
-                Select Emergency Category
+                {t.typesSectionTitle || 'Select Emergency Category'}
               </h2>
-              <span className="section-head-sub">Instant citizen reporting with triage categorization</span>
+              <span className="section-head-sub">
+                {t.typesSectionSubtitle || 'Instant citizen reporting with triage categorization'}
+              </span>
             </div>
 
             <div className="types-grid-compact" role="list">
-              {EMERGENCY_TYPES.map((type) => (
+              {emergencyTypes.map((type) => (
                 <div
                   key={type.key}
                   className="type-card-compact"
@@ -186,7 +188,7 @@ export default function LandingPage() {
                   onClick={() => handleReportEmergency(type.key)}
                   tabIndex={0}
                   onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && handleReportEmergency(type.key)}
-                  aria-label={`Report ${type.label} emergency`}
+                  aria-label={`${type.label} emergency`}
                 >
                   <div
                     className="type-icon-box"
@@ -223,7 +225,7 @@ export default function LandingPage() {
                 <i className="bi bi-shield-check"></i>
               </div>
               <p className="hitl-text">
-                AI supports emergency decisions. Final response actions remain under human coordinator control.
+                {t.hitlBannerText || t.hitlNotice || 'AI supports emergency decisions. Final response actions remain under human coordinator control.'}
               </p>
             </div>
           </section>
@@ -236,10 +238,10 @@ export default function LandingPage() {
           <div className="footer-inner-compact">
             <div className="footer-brand">
               <i className="bi bi-broadcast text-danger me-2" aria-hidden="true"></i>
-              <span>Emergency Response Coordinator</span>
+              <span>{t.footerBrand || t.appName || 'Emergency Response Coordinator'}</span>
             </div>
             <div className="footer-meta">
-              <span>Mission-Critical Public Safety Platform</span>
+              <span>{t.footerTagline || 'Mission-Critical Public Safety Platform'}</span>
             </div>
           </div>
         </div>

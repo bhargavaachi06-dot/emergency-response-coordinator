@@ -12,6 +12,7 @@ export default function CitizenDashboard() {
     currentUser,
     emergencies = [],
     openLangModal,
+    t = {},
   } = useApp();
 
   const myEmergencies = emergencies.slice(0, 3);
@@ -27,15 +28,15 @@ export default function CitizenDashboard() {
   const latestStatus = myEmergencies[0]?.status || null;
 
   return (
-    <AppLayout title="Citizen Dashboard">
+    <AppLayout title={t.userRoleCitizen ? `${t.userRoleCitizen} Dashboard` : "Citizen Dashboard"}>
       {/* Welcome Header */}
       <div className="page-header d-flex justify-content-between align-items-center flex-wrap gap-3">
         <div>
           <h1 className="page-title">
-            Welcome, {currentUser?.name?.split(" ")[0] || "Citizen"} 👋
+            {t.dashWelcome || "Welcome"}, {currentUser?.name?.split(" ")[0] || (t.userRoleCitizen || "Citizen")} 👋
           </h1>
           <p className="page-subtitle">
-            Report an emergency, check response status, or view past records.
+            {t.dashSubtitle || "Report an emergency, check response status, or view past records."}
           </p>
         </div>
 
@@ -46,7 +47,7 @@ export default function CitizenDashboard() {
           onClick={openLangModal}
         >
           <i className="bi bi-translate text-primary"></i>
-          Language Settings
+          {t.dashLangSettings || "Language Settings"}
         </button>
       </div>
 
@@ -76,7 +77,7 @@ export default function CitizenDashboard() {
               marginBottom: 4,
             }}
           >
-            🚨 Immediate Assistance
+            🚨 {t.helplineSectionTag || "Immediate Assistance"}
           </div>
 
           <div
@@ -87,7 +88,7 @@ export default function CitizenDashboard() {
               marginBottom: 4,
             }}
           >
-            Need to report an emergency?
+            {t.dashQuickReportTitle || "Need to report an emergency?"}
           </div>
 
           <div
@@ -97,14 +98,14 @@ export default function CitizenDashboard() {
               lineHeight: 1.5,
             }}
           >
-            Responders and emergency coordinators are notified immediately upon report verification.
+            {t.dashQuickReportDesc || "Responders and emergency coordinators are notified immediately upon report verification."}
           </div>
         </div>
 
         <Link
           to="/citizen/report"
           id="report-emergency-btn"
-          aria-label="Report a new emergency"
+          aria-label={t.dashReportNowBtn || "Report a new emergency"}
           className="btn-emergency"
           style={{
             fontSize: 16,
@@ -113,7 +114,7 @@ export default function CitizenDashboard() {
           }}
         >
           <i className="bi bi-exclamation-octagon-fill"></i>
-          REPORT EMERGENCY
+          {t.dashReportNowBtn || t.heroReportBtn || "REPORT EMERGENCY"}
         </Link>
       </div>
 
@@ -122,7 +123,7 @@ export default function CitizenDashboard() {
         <div className="col-sm-4">
           <StatCard
             value={active}
-            label="Active Emergencies"
+            label={t.dashActiveEmergencies || "Active Emergencies"}
             icon="bi-exclamation-circle-fill"
             color="red"
           />
@@ -131,7 +132,7 @@ export default function CitizenDashboard() {
         <div className="col-sm-4">
           <StatCard
             value={resolved}
-            label="Resolved"
+            label={t.dashResolvedEmergencies || "Resolved"}
             icon="bi-check-circle-fill"
             color="green"
           />
@@ -144,7 +145,7 @@ export default function CitizenDashboard() {
                 ? String(latestStatus).replaceAll("_", " ")
                 : "—"
             }
-            label="Latest Status"
+            label={t.status || "Latest Status"}
             icon="bi-broadcast"
             color="blue"
           />
@@ -164,7 +165,7 @@ export default function CitizenDashboard() {
         >
           <h2 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
             <i className="bi bi-clock-history text-primary me-2"></i>
-            Recent Emergency Reports
+            {t.dashRecentIncidents || "Recent Emergency Reports"}
           </h2>
 
           <button
@@ -177,15 +178,15 @@ export default function CitizenDashboard() {
             }}
             onClick={() => navigate("/citizen/history")}
           >
-            View All History
+            {t.dashViewAll || "View All History"}
           </button>
         </div>
 
         {myEmergencies.length === 0 ? (
           <EmptyState
             icon="bi-shield-check"
-            title="No active emergencies"
-            description="You have no emergency reports. Stay safe!"
+            title={t.dashNoEmergencies || "No active emergencies"}
+            description={t.dashNoEmergencies || "You have no emergency reports. Stay safe!"}
           />
         ) : (
           <div className="table-responsive">
@@ -193,10 +194,10 @@ export default function CitizenDashboard() {
               <thead>
                 <tr>
                   <th className="ps-4 py-3 border-0">ID</th>
-                  <th className="py-3 border-0">Type</th>
+                  <th className="py-3 border-0">{t.summaryType || "Type"}</th>
                   <th className="py-3 border-0">Priority</th>
-                  <th className="py-3 border-0">Status</th>
-                  <th className="py-3 border-0">Reported</th>
+                  <th className="py-3 border-0">{t.status || "Status"}</th>
+                  <th className="py-3 border-0">{t.reportedAt || "Reported"}</th>
                 </tr>
               </thead>
               <tbody>

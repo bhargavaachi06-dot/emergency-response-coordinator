@@ -68,3 +68,38 @@
     border-width: 1.5px;
   }
 }
+
+/* =====================================================
+   Dark Mode Support for OTP Inputs
+   ===================================================== */
+html[data-theme="dark"] .otp-digit-box,
+body.dark .otp-digit-box,
+.dark .otp-digit-box {
+  background: #10243A;
+  border-color: #1E4668;
+  color: #F8FAFC;
+  box-shadow: inset 1px 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+html[data-theme="dark"] .otp-digit-box:focus,
+body.dark .otp-digit-box:focus,
+.dark .otp-digit-box:focus {
+  border-color: #38BDF8;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.25);
+}
+
+html[data-theme="dark"] .otp-digit-box.filled,
+body.dark .otp-digit-box.filled,
+.dark .otp-digit-box.filled {
+  border-color: #38BDF8;
+  background-color: #163653;
+}
+
+html[data-theme="dark"] .otp-digit-box:disabled,
+body.dark .otp-digit-box:disabled,
+.dark .otp-digit-box:disabled {
+  background-color: #0A1B2E;
+  border-color: #163653;
+  color: #64748B;
+}
+

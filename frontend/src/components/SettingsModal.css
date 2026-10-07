@@ -668,8 +668,39 @@ html[data-theme="dark"] .settings-done-btn:hover {
   background: #3B82F6;
 }
 
-html[data-theme="dark"] .settings-confirm-reset {
+html[data-theme="dark"] .settings-confirm-reset,
+body.dark .settings-confirm-reset,
+.dark .settings-confirm-reset {
   background: rgba(220, 38, 38, 0.12);
   border-color: rgba(239, 68, 68, 0.35);
   color: #FCA5A5;
+}
+
+html[data-theme="dark"] .settings-modal-body,
+body.dark .settings-modal-body,
+.dark .settings-modal-body {
+  background: #071322;
+}
+
+html[data-theme="dark"] .settings-cancel-btn,
+body.dark .settings-cancel-btn,
+.dark .settings-cancel-btn {
+  background: #10243A;
+  border-color: #1E4668;
+  color: #F8FAFC;
+}
+
+html[data-theme="dark"] .settings-cancel-btn:hover,
+body.dark .settings-cancel-btn:hover,
+.dark .settings-cancel-btn:hover {
+  background: #163653;
+  border-color: #38BDF8;
+}
+
+html[data-theme="dark"] .settings-privacy-note,
+body.dark .settings-privacy-note,
+.dark .settings-privacy-note {
+  background: rgba(30, 58, 95, 0.25);
+  border-color: #1E4668;
+  color: #94A3B8;
 }

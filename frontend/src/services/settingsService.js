@@ -104,12 +104,27 @@ export const settingsService = {
       systemMediaListener = null;
     }
 
+    const applyState = (isDark) => {
+      const mode = isDark ? 'dark' : 'light';
+      root.setAttribute('data-theme', mode);
+      if (document.body) {
+        document.body.setAttribute('data-theme', mode);
+      }
+      if (isDark) {
+        root.classList.add('dark');
+        if (document.body) document.body.classList.add('dark');
+      } else {
+        root.classList.remove('dark');
+        if (document.body) document.body.classList.remove('dark');
+      }
+    };
+
     if (theme === 'system' && typeof window !== 'undefined') {
       const mql = window.matchMedia('(prefers-color-scheme: dark)');
       const updateSystemTheme = (e) => {
-        root.setAttribute('data-theme', e.matches ? 'dark' : 'light');
+        applyState(e.matches);
       };
-      root.setAttribute('data-theme', mql.matches ? 'dark' : 'light');
+      applyState(mql.matches);
 
       systemMediaListener = updateSystemTheme;
       try {
@@ -118,7 +133,7 @@ export const settingsService = {
         // legacy fallback
       }
     } else {
-      root.setAttribute('data-theme', theme === 'dark' ? 'dark' : 'light');
+      applyState(theme === 'dark');
     }
   },
 

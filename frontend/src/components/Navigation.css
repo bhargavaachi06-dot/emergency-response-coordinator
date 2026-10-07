@@ -382,37 +382,49 @@
 /* =====================================================
    Top Navigation — Midnight Blue Dark Mode Overrides
    ===================================================== */
-html[data-theme="dark"] .top-navbar-root {
+html[data-theme="dark"] .top-navbar-root,
+body.dark .top-navbar-root,
+.dark .top-navbar-root {
   background: #081522;
   border-bottom-color: #1E4668;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 }
 
-html[data-theme="dark"] .top-nav-brand-name {
+html[data-theme="dark"] .top-nav-brand-name,
+body.dark .top-nav-brand-name,
+.dark .top-nav-brand-name {
   color: #F8FAFC;
 }
 
-html[data-theme="dark"] .top-nav-role-badge {
+html[data-theme="dark"] .top-nav-role-badge,
+body.dark .top-nav-role-badge,
+.dark .top-nav-role-badge {
   background: #10243A;
   border-color: #1E4668;
   color: #CBD5E1;
 }
 
-html[data-theme="dark"] .nav-link-btn {
+html[data-theme="dark"] .nav-link-btn,
+body.dark .nav-link-btn,
+.dark .nav-link-btn {
   background: #10243A;
   border: 1px solid #1E4668;
   color: #CBD5E1;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
 }
 
-html[data-theme="dark"] .nav-link-btn:hover {
+html[data-theme="dark"] .nav-link-btn:hover,
+body.dark .nav-link-btn:hover,
+.dark .nav-link-btn:hover {
   background: #132B45;
   border-color: #2563EB;
   color: #F8FAFC;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
 }
 
-html[data-theme="dark"] .nav-link-btn.active {
+html[data-theme="dark"] .nav-link-btn.active,
+body.dark .nav-link-btn.active,
+.dark .nav-link-btn.active {
   background: #132B45;
   border-color: #38BDF8;
   color: #38BDF8;
@@ -421,7 +433,11 @@ html[data-theme="dark"] .nav-link-btn.active {
 }
 
 html[data-theme="dark"] .top-nav-lang-btn,
-html[data-theme="dark"] .top-nav-settings-btn {
+html[data-theme="dark"] .top-nav-settings-btn,
+body.dark .top-nav-lang-btn,
+body.dark .top-nav-settings-btn,
+.dark .top-nav-lang-btn,
+.dark .top-nav-settings-btn {
   background: #10243A;
   border: 1.5px solid #1E4668;
   color: #F8FAFC;
@@ -429,47 +445,65 @@ html[data-theme="dark"] .top-nav-settings-btn {
 }
 
 html[data-theme="dark"] .top-nav-lang-btn:hover,
-html[data-theme="dark"] .top-nav-settings-btn:hover {
+html[data-theme="dark"] .top-nav-settings-btn:hover,
+body.dark .top-nav-lang-btn:hover,
+body.dark .top-nav-settings-btn:hover,
+.dark .top-nav-lang-btn:hover,
+.dark .top-nav-settings-btn:hover {
   background: #132B45;
   border-color: #38BDF8;
   color: #FFFFFF;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45), 0 0 12px rgba(56, 189, 248, 0.18);
 }
 
-html[data-theme="dark"] .top-nav-settings-btn i {
+html[data-theme="dark"] .top-nav-settings-btn i,
+body.dark .top-nav-settings-btn i,
+.dark .top-nav-settings-btn i {
   color: #38BDF8;
 }
 
-html[data-theme="dark"] .top-nav-mobile-toggle {
+html[data-theme="dark"] .top-nav-mobile-toggle,
+body.dark .top-nav-mobile-toggle,
+.dark .top-nav-mobile-toggle {
   background: #10243A;
   border: 1.5px solid #1E4668;
   color: #F8FAFC;
 }
 
-html[data-theme="dark"] .top-nav-mobile-toggle:hover {
+html[data-theme="dark"] .top-nav-mobile-toggle:hover,
+body.dark .top-nav-mobile-toggle:hover,
+.dark .top-nav-mobile-toggle:hover {
   background: #132B45;
   border-color: #38BDF8;
 }
 
-html[data-theme="dark"] .top-nav-mobile-menu {
+html[data-theme="dark"] .top-nav-mobile-menu,
+body.dark .top-nav-mobile-menu,
+.dark .top-nav-mobile-menu {
   background: #081522;
   border-top-color: #1E4668;
   border-bottom-color: #1E4668;
   box-shadow: 0 14px 30px rgba(0, 0, 0, 0.65);
 }
 
-html[data-theme="dark"] .mobile-nav-item {
+html[data-theme="dark"] .mobile-nav-item,
+body.dark .mobile-nav-item,
+.dark .mobile-nav-item {
   background: #10243A;
   border-color: #1E4668;
   color: #F8FAFC;
 }
 
-html[data-theme="dark"] .mobile-nav-item:hover {
+html[data-theme="dark"] .mobile-nav-item:hover,
+body.dark .mobile-nav-item:hover,
+.dark .mobile-nav-item:hover {
   background: #132B45;
   border-color: #2563EB;
 }
 
-html[data-theme="dark"] .mobile-nav-item.active {
+html[data-theme="dark"] .mobile-nav-item.active,
+body.dark .mobile-nav-item.active,
+.dark .mobile-nav-item.active {
   background: #132B45;
   border-color: #38BDF8;
   color: #38BDF8;

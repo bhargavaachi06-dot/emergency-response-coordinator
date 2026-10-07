@@ -276,36 +276,51 @@
 }
 
 /* ─── Dark Mode Overrides ─── */
-html[data-theme="dark"] .leaflet-map-wrapper {
+html[data-theme="dark"] .leaflet-map-wrapper,
+body.dark .leaflet-map-wrapper,
+.dark .leaflet-map-wrapper {
   background: var(--surface, #10243A);
   border-color: var(--border-color, #1E4668);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
 
-html[data-theme="dark"] .leaflet-map-wrapper:hover {
+html[data-theme="dark"] .leaflet-map-wrapper:hover,
+body.dark .leaflet-map-wrapper:hover,
+.dark .leaflet-map-wrapper:hover {
   border-color: var(--accent-blue-bright, #38BDF8);
   box-shadow: 0 6px 24px rgba(56, 189, 248, 0.15);
 }
 
-html[data-theme="dark"] .leaflet-map-info-bar {
+html[data-theme="dark"] .leaflet-map-info-bar,
+body.dark .leaflet-map-info-bar,
+.dark .leaflet-map-info-bar {
   background: var(--bg-secondary, #0B1728);
   border-top-color: var(--border-color, #1E4668);
   color: var(--text-secondary, #CBD5E1);
 }
 
-html[data-theme="dark"] .leaflet-coords-mono {
+html[data-theme="dark"] .leaflet-coords-mono,
+body.dark .leaflet-coords-mono,
+.dark .leaflet-coords-mono {
   color: var(--accent-blue-bright, #38BDF8);
 }
 
-html[data-theme="dark"] .leaflet-info-hint {
+html[data-theme="dark"] .leaflet-info-hint,
+body.dark .leaflet-info-hint,
+.dark .leaflet-info-hint {
   color: var(--text-muted, #94A3B8);
 }
 
-html[data-theme="dark"] .leaflet-control-attribution {
+html[data-theme="dark"] .leaflet-control-attribution,
+body.dark .leaflet-control-attribution,
+.dark .leaflet-control-attribution {
   background: rgba(10, 27, 46, 0.88) !important;
   color: var(--text-muted, #94A3B8) !important;
 }
 
-html[data-theme="dark"] .leaflet-control-attribution a {
+html[data-theme="dark"] .leaflet-control-attribution a,
+body.dark .leaflet-control-attribution a,
+.dark .leaflet-control-attribution a {
   color: var(--accent-blue-bright, #38BDF8) !important;
 }
+

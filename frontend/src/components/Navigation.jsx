@@ -4,26 +4,35 @@ import { useApp, ROLES } from '../context/AppContext';
 import { useSettings } from '../context/SettingsContext';
 import './Navigation.css';
 
-const ROLE_LABELS = {
-  [ROLES.CITIZEN]:     { label: 'Citizen',               icon: 'bi-person-fill',           color: '#38BDF8' },
-  [ROLES.COORDINATOR]: { label: 'Coordinator',           icon: 'bi-person-badge-fill',      color: '#EF4444' },
-  [ROLES.RESPONDER]:   { label: 'Professional Responder',icon: 'bi-heart-pulse-fill',       color: '#22C55E' },
-  [ROLES.HELPER]:      { label: 'Community Helper',      icon: 'bi-people-fill',            color: '#F59E0B' },
-};
-
 /**
  * TopNavbar Component
- * Unified, professional top navigation bar for Emergency Response Coordinator
+ * Unified, responsive, multilingual top navigation bar for Emergency Response Coordinator
  */
 export function TopNavbar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { currentRole, switchRole, currentUser, openLangModal, currentLangMeta, isAuthenticated, logout } = useApp();
+  const {
+    currentRole,
+    switchRole,
+    currentUser,
+    openLangModal,
+    currentLangMeta,
+    isAuthenticated,
+    logout,
+    t = {},
+  } = useApp();
   const { openSettings } = useSettings();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const roleInfo = ROLE_LABELS[currentRole] || ROLE_LABELS[ROLES.COORDINATOR];
+  const roleLabels = {
+    [ROLES.CITIZEN]:     { label: t.userRoleCitizen || 'Citizen',                icon: 'bi-person-fill',            color: '#38BDF8' },
+    [ROLES.COORDINATOR]: { label: t.userRoleCoordinator || 'Coordinator',        icon: 'bi-person-badge-fill',       color: '#EF4444' },
+    [ROLES.RESPONDER]:   { label: t.userRoleResponder || 'Professional Responder',icon: 'bi-heart-pulse-fill',        color: '#22C55E' },
+    [ROLES.HELPER]:      { label: t.userRoleHelper || 'Community Helper',         icon: 'bi-people-fill',             color: '#F59E0B' },
+  };
+
+  const roleInfo = roleLabels[currentRole] || roleLabels[ROLES.COORDINATOR];
 
   // Helper to determine active state of navigation links
   const isActive = (path) => {
@@ -88,12 +97,12 @@ export function TopNavbar() {
           role="button"
           tabIndex={0}
           onKeyDown={(e) => e.key === 'Enter' && handleNavigate('/')}
-          aria-label="Emergency Response Coordinator Home"
+          aria-label={t.appName || "Emergency Response Coordinator"}
         >
           <div className="top-nav-brand-icon" aria-hidden="true">
             <i className="bi bi-shield-shaded"></i>
           </div>
-          <span className="top-nav-brand-name">Emergency Response Coordinator</span>
+          <span className="top-nav-brand-name">{t.appName || "Emergency Response Coordinator"}</span>
         </div>
 
         {/* Center: Desktop Navigation Links */}
@@ -102,44 +111,44 @@ export function TopNavbar() {
             type="button"
             className={`nav-link-btn ${isActive('/') ? 'active' : ''}`}
             onClick={() => handleNavigate('/')}
-            aria-label="Go to Home"
+            aria-label={t.navHome || "Home"}
           >
             <i className="bi bi-house-door-fill" aria-hidden="true"></i>
-            <span>Home</span>
+            <span>{t.navHome || "Home"}</span>
           </button>
 
           <button
             type="button"
             className={`nav-link-btn ${isActive('/citizen/report') ? 'active' : ''}`}
             onClick={() => handleNavigate('/citizen/report')}
-            aria-label="Go to Report Emergency"
+            aria-label={t.navReport || "Report Emergency"}
           >
             <i className="bi bi-exclamation-octagon-fill" aria-hidden="true"></i>
-            <span>Report Emergency</span>
+            <span>{t.navReport || "Report Emergency"}</span>
           </button>
 
           <button
             type="button"
             className={`nav-link-btn ${isActive('/coordinator') ? 'active' : ''}`}
             onClick={() => handleNavigate('/coordinator')}
-            aria-label="Go to Command Center"
+            aria-label={t.navCommand || "Command Center"}
           >
             <i className="bi bi-speedometer2" aria-hidden="true"></i>
-            <span>Command Center</span>
+            <span>{t.navCommand || "Command Center"}</span>
           </button>
 
           <button
             type="button"
             className={`nav-link-btn ${isActive('/citizen/history') ? 'active' : ''}`}
             onClick={() => handleNavigate('/citizen/history')}
-            aria-label="Go to Emergency History"
+            aria-label={t.navHistory || "Emergency History"}
           >
             <i className="bi bi-clock-history" aria-hidden="true"></i>
-            <span>Emergency History</span>
+            <span>{t.navHistory || "Emergency History"}</span>
           </button>
         </nav>
 
-        {/* Right: Language Switcher, Auth Buttons / Role Badge, Mobile Toggle */}
+        {/* Right: Language Switcher, Settings, Auth Cluster, Mobile Toggle */}
         <div className="top-nav-right">
           {/* Language Selector Button */}
           <button
@@ -147,7 +156,7 @@ export function TopNavbar() {
             className="top-nav-lang-btn"
             onClick={openLangModal}
             aria-label={`Current language: ${currentLangMeta?.nativeName || 'English'}. Click to change language.`}
-            title="Change Language / भाषा बदलें"
+            title={t.navLanguage || "Change Language / भाषा बदलें"}
           >
             <i className="bi bi-translate" aria-hidden="true"></i>
             <span>{currentLangMeta?.nativeName || 'English'}</span>
@@ -158,14 +167,14 @@ export function TopNavbar() {
             type="button"
             className="top-nav-settings-btn"
             onClick={openSettings}
-            aria-label="Settings"
-            title="Settings / प्राथमिकताएं"
+            aria-label={t.navSettings || "Settings"}
+            title={t.navSettings || "Settings"}
           >
             <i className="bi bi-gear-fill" aria-hidden="true"></i>
-            <span>Settings</span>
+            <span>{t.navSettings || "Settings"}</span>
           </button>
 
-          {/* Authentication State: User profile & Logout shown if logged in; no cluttering Login/Signup buttons in guest mode */}
+          {/* Authentication State */}
           {isAuthenticated && (
             <div className="top-nav-user-cluster">
               <div
@@ -182,14 +191,14 @@ export function TopNavbar() {
                 ) : (
                   <span className="top-nav-role-dot" aria-hidden="true"></span>
                 )}
-                <span>{currentUser?.name || currentUser?.email} ({roleInfo?.label || 'Citizen'})</span>
+                <span>{currentUser?.name || currentUser?.email} ({roleInfo?.label})</span>
               </div>
               <button
                 type="button"
                 className="top-nav-logout-btn"
                 onClick={handleLogout}
-                title="Logout"
-                aria-label="Logout"
+                title={t.navLogout || "Logout"}
+                aria-label={t.navLogout || "Logout"}
               >
                 <i className="bi bi-box-arrow-right"></i>
               </button>
@@ -201,7 +210,7 @@ export function TopNavbar() {
             type="button"
             className="top-nav-mobile-toggle"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label={mobileMenuOpen ? 'Close Navigation Menu' : 'Open Navigation Menu'}
+            aria-label={mobileMenuOpen ? (t.closeMenu || 'Close Navigation Menu') : (t.openMenu || 'Open Navigation Menu')}
             aria-expanded={mobileMenuOpen}
           >
             <i className={`bi ${mobileMenuOpen ? 'bi-x-lg' : 'bi-list'}`} aria-hidden="true"></i>
@@ -211,7 +220,7 @@ export function TopNavbar() {
 
       {/* Mobile Menu Dropdown */}
       {mobileMenuOpen && (
-        <div className="top-nav-mobile-menu" role="dialog" aria-label="Mobile Navigation Menu">
+        <div className="top-nav-mobile-menu" role="dialog" aria-label={t.navMenu || "Mobile Navigation Menu"}>
           <div className="top-nav-mobile-links">
             <button
               type="button"
@@ -219,7 +228,7 @@ export function TopNavbar() {
               onClick={() => handleNavigate('/')}
             >
               <i className="bi bi-house-door-fill me-2" aria-hidden="true"></i>
-              <span>Home</span>
+              <span>{t.navHome || "Home"}</span>
             </button>
 
             <button
@@ -228,7 +237,7 @@ export function TopNavbar() {
               onClick={() => handleNavigate('/citizen/report')}
             >
               <i className="bi bi-exclamation-octagon-fill me-2 text-danger" aria-hidden="true"></i>
-              <span>Report Emergency</span>
+              <span>{t.navReport || "Report Emergency"}</span>
             </button>
 
             <button
@@ -237,7 +246,7 @@ export function TopNavbar() {
               onClick={() => handleNavigate('/coordinator')}
             >
               <i className="bi bi-speedometer2 me-2 text-primary" aria-hidden="true"></i>
-              <span>Command Center</span>
+              <span>{t.navCommand || "Command Center"}</span>
             </button>
 
             <button
@@ -246,7 +255,7 @@ export function TopNavbar() {
               onClick={() => handleNavigate('/citizen/history')}
             >
               <i className="bi bi-clock-history me-2 text-info" aria-hidden="true"></i>
-              <span>Emergency History</span>
+              <span>{t.navHistory || "Emergency History"}</span>
             </button>
 
             <button
@@ -258,7 +267,7 @@ export function TopNavbar() {
               }}
             >
               <i className="bi bi-translate me-2 text-warning" aria-hidden="true"></i>
-              <span>Language ({currentLangMeta?.nativeName || 'English'})</span>
+              <span>{(t.navLanguage || 'Language')} ({currentLangMeta?.nativeName || 'English'})</span>
             </button>
 
             <button
@@ -270,7 +279,7 @@ export function TopNavbar() {
               }}
             >
               <i className="bi bi-gear-fill me-2 text-primary" aria-hidden="true"></i>
-              <span>Settings</span>
+              <span>{t.navSettings || "Settings"}</span>
             </button>
 
             {isAuthenticated && (
@@ -280,7 +289,7 @@ export function TopNavbar() {
                 onClick={handleLogout}
               >
                 <i className="bi bi-box-arrow-right me-2" aria-hidden="true"></i>
-                <span>Logout ({currentUser?.name || currentUser?.email})</span>
+                <span>{(t.navLogout || "Logout")} ({currentUser?.name || currentUser?.email})</span>
               </button>
             )}
           </div>
@@ -290,10 +299,6 @@ export function TopNavbar() {
   );
 }
 
-/**
- * Legacy Sidebar export stub.
- * Permanently removes the large left sidebar from layout while preserving backwards compatibility.
- */
 export function Sidebar() {
   return null;
 }

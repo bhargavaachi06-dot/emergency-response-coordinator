@@ -113,3 +113,42 @@
     transform: rotate(360deg);
   }
 }
+
+/* =====================================================
+   Dark Mode Support for Splash Screen
+   ===================================================== */
+html[data-theme="dark"] .splash-screen-root,
+body.dark .splash-screen-root,
+.dark .splash-screen-root {
+  background-color: #07111F;
+  color: #F8FAFC;
+}
+
+html[data-theme="dark"] .splash-brand-title,
+body.dark .splash-brand-title,
+.dark .splash-brand-title {
+  color: #F8FAFC;
+}
+
+html[data-theme="dark"] .splash-brand-tagline,
+body.dark .splash-brand-tagline,
+.dark .splash-brand-tagline {
+  color: #94A3B8;
+}
+
+html[data-theme="dark"] .splash-loader-wrap,
+body.dark .splash-loader-wrap,
+.dark .splash-loader-wrap {
+  background: #10243A;
+  border-color: #1E4668;
+  color: #CBD5E1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+html[data-theme="dark"] .splash-spinner,
+body.dark .splash-spinner,
+.dark .splash-spinner {
+  border-color: #1E4668;
+  border-top-color: #DC2626;
+}
+

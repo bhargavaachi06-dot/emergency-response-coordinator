@@ -3423,6 +3423,7 @@ export function speakText(text, langCode = 'en') {
 }
 
 import { AUTH_TRANSLATIONS } from './authTranslations';
+import { UI_TRANSLATIONS } from './uiTranslations';
 
 // Merge authentication translations into existing TRANSLATIONS objects
 for (const langCode in AUTH_TRANSLATIONS) {
@@ -3431,5 +3432,13 @@ for (const langCode in AUTH_TRANSLATIONS) {
   }
 }
 
-export { AUTH_TRANSLATIONS };
+// Merge UI translations into existing TRANSLATIONS objects
+for (const langCode in UI_TRANSLATIONS) {
+  if (TRANSLATIONS[langCode]) {
+    Object.assign(TRANSLATIONS[langCode], UI_TRANSLATIONS[langCode]);
+  }
+}
+
+export { AUTH_TRANSLATIONS, UI_TRANSLATIONS };
+
 

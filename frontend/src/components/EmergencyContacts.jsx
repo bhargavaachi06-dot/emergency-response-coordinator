@@ -9,51 +9,63 @@ import './EmergencyContacts.css';
 export const EMERGENCY_CONTACTS = [
   {
     id: 'national',
-    name: 'National Emergency',
+    nameKey: 'contactNational',
+    descKey: 'contactNationalDesc',
+    defaultName: 'National Emergency',
+    defaultDesc: 'All-in-one emergency helpline across India',
     number: '112',
     icon: 'bi-shield-fill-exclamation',
     color: '#DC2626',
-    desc: 'All-in-one emergency helpline across India',
   },
   {
     id: 'police',
-    name: 'Police',
+    nameKey: 'contactPolice',
+    descKey: 'contactPoliceDesc',
+    defaultName: 'Police',
+    defaultDesc: 'Law enforcement, crime & immediate safety',
     number: '100',
     icon: 'bi-shield-lock-fill',
     color: '#2563EB',
-    desc: 'Law enforcement, crime & immediate safety',
   },
   {
     id: 'fire',
-    name: 'Fire & Rescue',
+    nameKey: 'contactFire',
+    descKey: 'contactFireDesc',
+    defaultName: 'Fire & Rescue',
+    defaultDesc: 'Fire outbreaks, hazards & rescue operations',
     number: '101',
     icon: 'bi-fire',
     color: '#EA580C',
-    desc: 'Fire outbreaks, hazards & rescue operations',
   },
   {
     id: 'ambulance',
-    name: 'Ambulance / Emergency Medical',
+    nameKey: 'contactAmbulance',
+    descKey: 'contactAmbulanceDesc',
+    defaultName: 'Ambulance / Emergency Medical',
+    defaultDesc: 'Critical medical transport & trauma response',
     number: '108',
     icon: 'bi-hospital-fill',
     color: '#059669',
-    desc: 'Critical medical transport & trauma response',
   },
   {
     id: 'child',
-    name: 'Child Helpline',
+    nameKey: 'contactChild',
+    descKey: 'contactChildDesc',
+    defaultName: 'Child Helpline',
+    defaultDesc: '24/7 care & protection for children in distress',
     number: '1098',
     icon: 'bi-people-fill',
     color: '#7C3AED',
-    desc: '24/7 care & protection for children in distress',
   },
   {
     id: 'women',
-    name: 'Women Helpline',
+    nameKey: 'contactWomen',
+    descKey: 'contactWomenDesc',
+    defaultName: 'Women Helpline',
+    defaultDesc: 'Support & rescue for women in crisis',
     number: '181',
     icon: 'bi-gender-female',
     color: '#DB2777',
-    desc: 'Support & rescue for women in crisis',
   },
 ];
 
@@ -62,7 +74,7 @@ export const EMERGENCY_CONTACTS = [
  * Polished claymorphism modal showing official emergency contacts with click-to-call.
  */
 export function EmergencyContactsModal({ isOpen, onClose }) {
-  const { isRtl } = useApp();
+  const { isRtl, t = {} } = useApp();
   const closeBtnRef = useRef(null);
 
   // Close on Escape key press
@@ -116,10 +128,10 @@ export function EmergencyContactsModal({ isOpen, onClose }) {
             </div>
             <div>
               <h2 id="emergency-contacts-modal-title" className="emergency-contacts-modal-title">
-                Emergency Contacts
+                {t.helplineModalTitle || t.helplineSectionTitle || 'Emergency Contacts'}
               </h2>
               <p className="emergency-contacts-modal-subtitle">
-                Quick access to important emergency services.
+                {t.helplineModalSubtitle || t.helplineSectionDesc || 'Quick access to important emergency services.'}
               </p>
             </div>
           </div>
@@ -129,7 +141,7 @@ export function EmergencyContactsModal({ isOpen, onClose }) {
             type="button"
             className="emergency-contacts-close-btn"
             onClick={onClose}
-            aria-label="Close emergency contacts modal"
+            aria-label={t.helplineDoneBtn || 'Close emergency contacts modal'}
             title="Close (Esc)"
           >
             <i className="bi bi-x-lg" aria-hidden="true"></i>
@@ -139,67 +151,72 @@ export function EmergencyContactsModal({ isOpen, onClose }) {
         {/* Notice Banner */}
         <div className="emergency-contacts-notice" role="note">
           <i className="bi bi-info-circle-fill text-primary" aria-hidden="true"></i>
-          <span>Calls connect immediately to the official helpline through your device dialer.</span>
+          <span>{t.helplineImmediateNotice || 'Calls connect immediately to the official helpline through your device dialer.'}</span>
         </div>
 
         {/* Contacts List */}
         <div className="emergency-contacts-list" role="list">
-          {EMERGENCY_CONTACTS.map((contact) => (
-            <div
-              key={contact.id}
-              className="emergency-contact-row"
-              role="listitem"
-              onClick={() => handleInitiateCall(contact.number)}
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  handleInitiateCall(contact.number);
-                }
-              }}
-              aria-label={`Call ${contact.name} at ${contact.number}`}
-            >
+          {EMERGENCY_CONTACTS.map((contact) => {
+            const contactName = t[contact.nameKey] || contact.defaultName;
+            const contactDesc = t[contact.descKey] || contact.defaultDesc;
+
+            return (
               <div
-                className="emergency-contact-icon-badge"
-                style={{
-                  color: contact.color,
-                  backgroundColor: `${contact.color}15`,
-                  borderColor: `${contact.color}35`,
+                key={contact.id}
+                className="emergency-contact-row"
+                role="listitem"
+                onClick={() => handleInitiateCall(contact.number)}
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleInitiateCall(contact.number);
+                  }
                 }}
-                aria-hidden="true"
+                aria-label={`Call ${contactName} at ${contact.number}`}
               >
-                <i className={`bi ${contact.icon}`}></i>
-              </div>
-
-              <div className="emergency-contact-info">
-                <div className="emergency-contact-name-row">
-                  <h3 className="emergency-contact-name">{contact.name}</h3>
+                <div
+                  className="emergency-contact-icon-badge"
+                  style={{
+                    color: contact.color,
+                    backgroundColor: `${contact.color}15`,
+                    borderColor: `${contact.color}35`,
+                  }}
+                  aria-hidden="true"
+                >
+                  <i className={`bi ${contact.icon}`}></i>
                 </div>
-                <div className="emergency-contact-subline">
-                  <a
-                    href={`tel:${contact.number}`}
-                    className="emergency-contact-number-link"
-                    onClick={(e) => e.stopPropagation()}
-                    aria-label={`Call ${contact.name} at ${contact.number}`}
-                    dir="ltr"
-                  >
-                    {contact.number}
-                  </a>
-                  <span className="emergency-contact-desc">{contact.desc}</span>
-                </div>
-              </div>
 
-              <a
-                href={`tel:${contact.number}`}
-                className="emergency-contact-call-btn"
-                onClick={(e) => e.stopPropagation()}
-                aria-label={`Call ${contact.name} at ${contact.number}`}
-              >
-                <i className="bi bi-telephone-fill" aria-hidden="true"></i>
-                <span className="call-btn-text">Call</span>
-              </a>
-            </div>
-          ))}
+                <div className="emergency-contact-info">
+                  <div className="emergency-contact-name-row">
+                    <h3 className="emergency-contact-name">{contactName}</h3>
+                  </div>
+                  <div className="emergency-contact-subline">
+                    <a
+                      href={`tel:${contact.number}`}
+                      className="emergency-contact-number-link"
+                      onClick={(e) => e.stopPropagation()}
+                      aria-label={`Call ${contactName} at ${contact.number}`}
+                      dir="ltr"
+                    >
+                      {contact.number}
+                    </a>
+                    <span className="emergency-contact-desc">{contactDesc}</span>
+                  </div>
+                </div>
+
+                <a
+                  href={`tel:${contact.number}`}
+                  className="emergency-contact-call-btn"
+                  onClick={(e) => e.stopPropagation()}
+                  aria-label={`Call ${contactName} at ${contact.number}`}
+                >
+                  <i className="bi bi-telephone-fill" aria-hidden="true"></i>
+                  <span className="call-btn-text">{t.helplineCallBtn || 'Call'}</span>
+                </a>
+              </div>
+            );
+          })}
         </div>
 
         {/* Modal Footer */}
@@ -214,7 +231,7 @@ export function EmergencyContactsModal({ isOpen, onClose }) {
             onClick={onClose}
             aria-label="Done reviewing emergency contacts"
           >
-            Close
+            {t.helplineDoneBtn || 'Close'}
           </button>
         </div>
       </div>
@@ -228,7 +245,7 @@ export function EmergencyContactsModal({ isOpen, onClose }) {
  */
 export default function EmergencyContactsSection() {
   const [isOpen, setIsOpen] = useState(false);
-  const { isRtl } = useApp();
+  const { isRtl, t = {} } = useApp();
 
   return (
     <>
@@ -245,13 +262,13 @@ export default function EmergencyContactsSection() {
             <div className="emergency-contacts-card-text">
               <div className="emergency-contacts-tag">
                 <span className="pulse-indicator" aria-hidden="true"></span>
-                <span>Direct Dial Helplines</span>
+                <span>{t.helplineSectionTag || 'Direct Dial Helplines'}</span>
               </div>
               <h2 id="emergency-contacts-section-title" className="emergency-contacts-card-title">
-                Emergency Contacts
+                {t.helplineSectionTitle || 'Emergency Contacts'}
               </h2>
               <p className="emergency-contacts-card-subtitle">
-                Quick access to important emergency services.
+                {t.helplineSectionDesc || 'Quick access to important emergency services.'}
               </p>
             </div>
           </div>
@@ -261,10 +278,10 @@ export default function EmergencyContactsSection() {
               type="button"
               className="btn-view-emergency-contacts"
               onClick={() => setIsOpen(true)}
-              aria-label="View Emergency Contacts"
+              aria-label={t.helplineViewBtn || 'View Emergency Contacts'}
             >
               <i className="bi bi-telephone-outbound-fill" aria-hidden="true"></i>
-              <span>View Emergency Contacts</span>
+              <span>{t.helplineViewBtn || 'View Emergency Contacts'}</span>
             </button>
           </div>
         </div>

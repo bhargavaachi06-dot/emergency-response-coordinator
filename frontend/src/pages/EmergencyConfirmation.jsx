@@ -116,16 +116,16 @@ export default function EmergencyConfirmation() {
   const isResolved = normalizedStatus === "RESOLVED";
 
   const timelineSteps = [
-    { label: "Emergency Reported", done: true },
-    { label: "AI Analysis", done: !isAnalyzing && Boolean(ai), active: isAnalyzing },
-    { label: "Coordinator Review", done: isDispatched, active: !isDispatched && !isAnalyzing },
-    { label: "Responders Dispatched", done: isDispatched },
-    { label: "Response", done: isResponding || isResolved, active: isResponding },
-    { label: "Resolved", done: isResolved, active: false },
+    { label: t.timelineReported || "Emergency Reported", done: true },
+    { label: t.timelineAi || "AI Analysis", done: !isAnalyzing && Boolean(ai), active: isAnalyzing },
+    { label: t.timelineReview || "Coordinator Review", done: isDispatched, active: !isDispatched && !isAnalyzing },
+    { label: t.timelineDispatched || "Responders Dispatched", done: isDispatched },
+    { label: t.timelineResponse || "Response", done: isResponding || isResolved, active: isResponding },
+    { label: t.timelineResolved || "Resolved", done: isResolved, active: false },
   ];
 
   return (
-    <AppLayout title="Emergency Confirmation" subtitle="Your report has been received">
+    <AppLayout title={t.emergencyConfirmation || "Emergency Confirmation"} subtitle={t.confirmedSubtitle || "Your report has been received"}>
       <div className="row justify-content-center">
         <div className="col-lg-7 col-xl-6">
           <BackButton fallback="/citizen" />
@@ -164,10 +164,10 @@ export default function EmergencyConfirmation() {
               </div>
 
               <div>
-                <h1 style={{ fontSize: '22px', fontWeight: 800, color: '#0F172A', margin: 0 }}>
-                  Emergency report submitted
+                <h1 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                  {t.confirmedTitle || "Emergency report submitted"}
                 </h1>
-                <p style={{ fontSize: '14px', color: '#64748B', margin: '4px 0 0 0' }}>
+                <p style={{ fontSize: '14px', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
                   {t.confirmedSubtitle || "Your emergency report has been received and routed for response."}
                 </p>
               </div>
@@ -178,17 +178,17 @@ export default function EmergencyConfirmation() {
               style={{
                 textAlign: 'center',
                 padding: '16px',
-                background: '#F8FAFC',
-                border: '1px solid #E2E8F0',
+                background: 'var(--surface-input, #F8FAFC)',
+                border: '1px solid var(--border-color, #E2E8F0)',
                 borderRadius: '16px',
                 marginBottom: '24px',
                 boxShadow: 'var(--clay-shadow-inset)',
               }}
             >
-              <div style={{ fontSize: '11.5px', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>
+              <div style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>
                 {t.emergencyReference || "Incident Reference"}
               </div>
-              <div style={{ fontSize: '32px', fontWeight: 800, color: '#0F172A', fontFamily: 'monospace', letterSpacing: '-0.5px' }}>
+              <div style={{ fontSize: '32px', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'monospace', letterSpacing: '-0.5px' }}>
                 #{emergencyCode}
               </div>
             </div>
@@ -196,32 +196,32 @@ export default function EmergencyConfirmation() {
             {/* Incident Summary Rows */}
             <div className="d-flex flex-column gap-3 mb-4">
               <div className="d-flex justify-content-between align-items-center pb-2 border-bottom">
-                <span style={{ fontSize: '13px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
-                  Emergency Type
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                  {t.summaryType || "Emergency Type"}
                 </span>
-                <span style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A' }}>
+                <span style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
                   {emergencyType}
                 </span>
               </div>
 
               <div className="d-flex justify-content-between align-items-start pb-2 border-bottom">
-                <span style={{ fontSize: '13px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
-                  Location
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                  {t.emergencyLocation || "Location"}
                 </span>
-                <span style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', textAlign: 'right', maxWidth: '65%' }}>
+                <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', textAlign: 'right', maxWidth: '65%' }}>
                   {locationText}
                 </span>
               </div>
 
               <div className="d-flex justify-content-between align-items-center pb-2 border-bottom">
-                <span style={{ fontSize: '13px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
-                  Evidence Status
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                  {t.evidenceStatus || "Evidence Status"}
                 </span>
                 <span
                   style={{
-                    background: totalMedia > 0 ? '#F0FDF4' : '#F1F5F9',
-                    border: totalMedia > 0 ? '1px solid #BBF7D0' : '1px solid #CBD5E1',
-                    color: totalMedia > 0 ? '#166534' : '#64748B',
+                    background: totalMedia > 0 ? 'var(--er-green-light, #F0FDF4)' : 'var(--surface-input, #F1F5F9)',
+                    border: totalMedia > 0 ? '1px solid var(--er-green-border, #BBF7D0)' : '1px solid var(--border-color, #CBD5E1)',
+                    color: totalMedia > 0 ? 'var(--er-green, #166534)' : 'var(--text-muted, #64748B)',
                     padding: '4px 12px',
                     borderRadius: '9999px',
                     fontSize: '12.5px',
@@ -233,14 +233,14 @@ export default function EmergencyConfirmation() {
               </div>
 
               <div className="d-flex justify-content-between align-items-center pb-2 border-bottom">
-                <span style={{ fontSize: '13px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>
-                  Submission Status
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                  {t.status || "Submission Status"}
                 </span>
                 <span
                   style={{
-                    background: '#EFF6FF',
-                    border: '1px solid #BFDBFE',
-                    color: '#1D4ED8',
+                    background: 'var(--er-blue-light, #EFF6FF)',
+                    border: '1px solid var(--er-blue-border, #BFDBFE)',
+                    color: 'var(--er-blue, #1D4ED8)',
                     padding: '4px 12px',
                     borderRadius: '9999px',
                     fontSize: '12px',
@@ -256,15 +256,15 @@ export default function EmergencyConfirmation() {
             {/* Human in the loop assurance */}
             <div
               style={{
-                background: '#F0FDF4',
-                border: '1px solid #BBF7D0',
+                background: 'var(--er-green-light, #F0FDF4)',
+                border: '1px solid var(--er-green-border, #BBF7D0)',
                 borderRadius: '14px',
                 padding: '14px 18px',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '12px',
                 fontSize: '13px',
-                color: '#166534',
+                color: 'var(--er-green, #166534)',
                 lineHeight: 1.45,
               }}
             >
