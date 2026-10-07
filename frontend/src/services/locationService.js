@@ -4,6 +4,9 @@
 // Reliable, API-Key-Free Primary Map Service
 // =====================================================
 
+import { Capacitor } from '@capacitor/core';
+import { Geolocation } from '@capacitor/geolocation';
+
 // In-memory LRU-like cache for reverse geocoded coordinates
 const _geocodeCache = new Map();
 const MAX_CACHE_SIZE = 100;
@@ -29,13 +32,26 @@ export const LOCATION_ERROR_CODES = {
   TIMEOUT: 'TIMEOUT',
 };
 
+
 /**
  * Get current device/browser GPS location.
  * Uses high accuracy where supported.
  *
  * @returns {Promise<{latitude: number, longitude: number, accuracy: number|null}>}
  */
-export function getCurrentPosition() {
+export async function getCurrentPosition() {
+  // If running inside native Android app, ensure Android runtime permissions are requested
+  if (typeof Capacitor !== 'undefined' && Capacitor.isNativePlatform()) {
+    try {
+      const perm = await Geolocation.checkPermissions();
+      if (perm.location === 'prompt' || perm.location === 'prompt-with-rationale') {
+        await Geolocation.requestPermissions();
+      }
+    } catch (permErr) {
+      console.warn('[locationService] Native permission check warning:', permErr);
+    }
+  }
+
   return new Promise((resolve, reject) => {
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
       reject({
@@ -59,7 +75,7 @@ export function getCurrentPosition() {
 
         if (err.code === err.PERMISSION_DENIED) {
           code = LOCATION_ERROR_CODES.GEOLOCATION_DENIED;
-          message = 'Location permission was denied. You can enter the location manually.';
+          message = 'Location permission was denied. Location is required to pinpoint your emergency scene and dispatch nearby responders, but you can also enter the location manually.';
         } else if (err.code === err.TIMEOUT) {
           code = LOCATION_ERROR_CODES.TIMEOUT;
           message = 'Location detection timed out. Please enter your address manually or try again.';

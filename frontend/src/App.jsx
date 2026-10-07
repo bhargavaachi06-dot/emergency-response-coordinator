@@ -5,6 +5,7 @@ import AppRoutes from './routes/AppRoutes';
 import { LanguageModal } from './components/LanguageModal';
 import { SettingsModal } from './components/SettingsModal';
 import { SplashScreen } from './components/SplashScreen';
+import { useMobileLifecycle } from './services/mobileLifecycle';
 
 /**
  * Inner Application Wrapper
@@ -20,6 +21,13 @@ function AppContent() {
     isLangModalOpen,
     closeLangModal,
   } = useApp();
+
+  // Mobile Lifecycle (Status bar, native splash, hardware back-button)
+  useMobileLifecycle({
+    isLangModalOpen,
+    closeLangModal,
+    hasLanguageSet,
+  });
 
   // 1. Startup Splash: Displayed while session validation runs
   if (isAuthLoading) {

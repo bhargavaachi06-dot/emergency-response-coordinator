@@ -1,15 +1,21 @@
-/**
- * Central API Configuration
- * Emergency Response Coordinator
- *
- * Ensures safe and deterministic backend API URL resolution across:
- * - Local Vite Development (defaults to http://localhost:5000)
- * - Vercel Production Web (defaults to https://emergency-response-coordinator-api.onrender.com)
- * - Capacitor Android APK (defaults to https://emergency-response-coordinator-api.onrender.com)
- */
+import { Capacitor } from '@capacitor/core';
+ 
+ /**
+  * Central API Configuration
+  * Emergency Response Coordinator
+  *
+  * Ensures safe and deterministic backend API URL resolution across:
+  * - Local Vite Development (defaults to http://localhost:5000)
+  * - Vercel Production Web (defaults to https://emergency-response-coordinator-api.onrender.com)
+  * - Capacitor Android APK (defaults to https://emergency-response-coordinator-api.onrender.com)
+  */
 
 const PRODUCTION_API_ROOT = "https://emergency-response-coordinator-api.onrender.com";
 const LOCAL_DEV_API_ROOT = "http://localhost:5000";
+
+export const isNativePlatform = () => {
+  return typeof Capacitor !== 'undefined' && Capacitor.isNativePlatform();
+};
 
 /**
  * Determine the root API URL without trailing slash or /api suffix
@@ -29,7 +35,13 @@ export function getApiRootUrl() {
     return clean;
   }
 
-  // Detect local development environment
+  // On Native Android mobile, localhost resolves to the Android device loopback rather than the host/server.
+  // Unless an explicit VITE_API_URL is configured (e.g. 10.0.2.2 for emulator), use production deployed API.
+  if (isNativePlatform()) {
+    return PRODUCTION_API_ROOT;
+  }
+
+  // Detect local development environment for web browser
   const isBrowser = typeof window !== "undefined";
   const hostname = isBrowser ? window.location.hostname : "";
   const isLocalHost =
@@ -40,7 +52,7 @@ export function getApiRootUrl() {
 
   const isViteDev = Boolean(typeof import.meta !== "undefined" && import.meta.env && import.meta.env.DEV);
 
-  // If running locally in Vite dev mode on localhost, use local backend
+  // If running locally in Vite dev mode on localhost in web browser, use local backend
   if (isLocalHost && isViteDev) {
     return LOCAL_DEV_API_ROOT;
   }
