@@ -300,12 +300,22 @@
 
 /* Mobile Dropdown Menu */
 .top-nav-mobile-menu {
-  background: #FFFFFF;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  width: 100%;
+  max-height: calc(100dvh - 64px - env(safe-area-inset-top, 0px));
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  background: var(--er-surface, #FFFFFF);
   border-top: 1px solid var(--er-border);
   border-bottom: 2px solid var(--er-border);
-  padding: 14px 18px;
-  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+  padding: 14px 18px calc(24px + env(safe-area-inset-bottom, 0px));
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.12);
   animation: slide-down 0.18s ease-out;
+  z-index: 1055;
+  box-sizing: border-box;
 }
 
 @keyframes slide-down {
@@ -320,7 +330,7 @@
 }
 
 .mobile-nav-item {
-  background: #FFFFFF;
+  background: var(--er-surface, #FFFFFF);
   border: 1px solid var(--er-border-subtle, #EDF2F7);
   color: var(--er-navy, #0F172A);
   font-size: 15px;
@@ -338,12 +348,12 @@
 }
 
 .mobile-nav-item:hover {
-  background: #F8FAFC;
+  background: var(--er-bg-subtle, #F8FAFC);
   border-color: #CBD5E1;
 }
 
 .mobile-nav-item.active {
-  background: #FFFFFF;
+  background: var(--er-surface, #FFFFFF);
   border-color: var(--er-blue, #0284C7);
   color: var(--er-blue, #0284C7);
   font-weight: 700;
@@ -368,14 +378,64 @@
 
 @media (max-width: 768px) {
   .top-navbar-container {
-    padding: 8px 16px;
+    padding: 8px 14px;
     min-height: 58px;
+    gap: 8px;
+  }
+  .top-nav-brand {
+    gap: 8px;
+    min-width: 0;
+    flex-shrink: 1;
   }
   .top-nav-brand-name {
-    font-size: 14.5px;
+    font-size: 14px;
+    max-width: clamp(120px, 34vw, 200px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .top-nav-role-badge {
     display: none;
+  }
+  .top-nav-right {
+    gap: 6px;
+  }
+  .top-nav-lang-btn,
+  .top-nav-settings-btn {
+    padding: 8px 10px;
+    min-width: 42px;
+    width: 42px;
+    height: 42px;
+    justify-content: center;
+    border-radius: var(--radius-sm, 12px);
+  }
+  .top-nav-lang-btn span,
+  .top-nav-settings-btn span {
+    display: none;
+  }
+}
+
+@media (max-width: 360px) {
+  .top-navbar-container {
+    padding: 6px 10px;
+  }
+  .top-nav-brand-name {
+    max-width: 110px;
+    font-size: 13px;
+  }
+  .top-nav-brand-icon {
+    width: 34px;
+    height: 34px;
+    font-size: 17px;
+  }
+  .top-nav-lang-btn,
+  .top-nav-settings-btn,
+  .top-nav-mobile-toggle {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    min-height: 38px;
+    padding: 0;
   }
 }
 

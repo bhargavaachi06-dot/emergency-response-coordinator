@@ -13,8 +13,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1rem;
+  padding: clamp(8px, 2.5vw, 16px);
+  padding-top: max(clamp(8px, 2.5vw, 16px), env(safe-area-inset-top, 0px));
+  padding-bottom: max(clamp(8px, 2.5vw, 16px), env(safe-area-inset-bottom, 0px));
+  padding-left: max(clamp(8px, 2.5vw, 16px), env(safe-area-inset-left, 0px));
+  padding-right: max(clamp(8px, 2.5vw, 16px), env(safe-area-inset-right, 0px));
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   animation: liveCamFadeIn 0.2s ease-out;
 }
 
@@ -30,14 +35,18 @@
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
   width: 100%;
   max-width: 640px;
-  overflow: hidden;
+  max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 24px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   display: flex;
   flex-direction: column;
   color: var(--text-primary, #0F172A);
   transition: all 0.25s ease;
 }
 
-[data-theme="dark"] .live-cam-container {
+html[data-theme="dark"] .live-cam-container,
+body.dark .live-cam-container,
+.dark .live-cam-container {
   background: #0f172a;
   border-color: #334155;
   color: #f8fafc;

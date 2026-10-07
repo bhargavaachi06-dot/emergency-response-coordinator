@@ -9,12 +9,15 @@
   z-index: 3000;
   background: rgba(15, 23, 42, 0.5);
   backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   animation: settingsFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
 }
 
 @keyframes settingsFadeIn {
@@ -36,7 +39,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  max-height: 90vh;
+  max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 24px);
   margin: auto;
   animation: settingsCardSlide 0.24s cubic-bezier(0.16, 1, 0.3, 1);
   color: var(--er-navy, #0F172A);
@@ -596,19 +599,31 @@ html[data-theme="dark"] .settings-segmented-btn.active {
   box-shadow: 0 2px 10px rgba(37, 99, 235, 0.4);
 }
 
-html[data-theme="dark"] .settings-toggle {
-  background: #0A1B2E;
+html[data-theme="dark"] .settings-toggle-slider,
+body.dark .settings-toggle-slider,
+.dark .settings-toggle-slider {
+  background-color: #0A1B2E;
   border-color: #1E4668;
 }
 
-html[data-theme="dark"] .settings-toggle.active {
-  background: #2563EB;
+html[data-theme="dark"] .settings-toggle-slider::before,
+body.dark .settings-toggle-slider::before,
+.dark .settings-toggle-slider::before {
+  background-color: #CBD5E1;
+}
+
+html[data-theme="dark"] .settings-toggle-switch input:checked + .settings-toggle-slider,
+body.dark .settings-toggle-switch input:checked + .settings-toggle-slider,
+.dark .settings-toggle-switch input:checked + .settings-toggle-slider {
+  background-color: #2563EB;
   border-color: #3B82F6;
   box-shadow: 0 0 12px rgba(37, 99, 235, 0.35);
 }
 
-html[data-theme="dark"] .settings-toggle-knob {
-  background: #F8FAFC;
+html[data-theme="dark"] .settings-toggle-switch input:checked + .settings-toggle-slider::before,
+body.dark .settings-toggle-switch input:checked + .settings-toggle-slider::before,
+.dark .settings-toggle-switch input:checked + .settings-toggle-slider::before {
+  background-color: #FFFFFF;
 }
 
 html[data-theme="dark"] .settings-action-btn {
@@ -647,15 +662,16 @@ html[data-theme="dark"] .settings-footer-info {
   color: #94A3B8;
 }
 
-html[data-theme="dark"] .settings-reset-btn {
-  background: #10243A;
-  border-color: #1E4668;
-  color: #CBD5E1;
+html[data-theme="dark"] .settings-reset-link-btn,
+body.dark .settings-reset-link-btn,
+.dark .settings-reset-link-btn {
+  color: #94A3B8;
 }
 
-html[data-theme="dark"] .settings-reset-btn:hover {
-  background: rgba(220, 38, 38, 0.15);
-  border-color: #EF4444;
+html[data-theme="dark"] .settings-reset-link-btn:hover,
+body.dark .settings-reset-link-btn:hover,
+.dark .settings-reset-link-btn:hover {
+  background: rgba(220, 38, 38, 0.2);
   color: #F87171;
 }
 
@@ -671,8 +687,14 @@ html[data-theme="dark"] .settings-done-btn:hover {
 html[data-theme="dark"] .settings-confirm-reset,
 body.dark .settings-confirm-reset,
 .dark .settings-confirm-reset {
-  background: rgba(220, 38, 38, 0.12);
-  border-color: rgba(239, 68, 68, 0.35);
+  background: rgba(220, 38, 38, 0.15);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #FCA5A5;
+}
+
+html[data-theme="dark"] .settings-confirm-text,
+body.dark .settings-confirm-text,
+.dark .settings-confirm-text {
   color: #FCA5A5;
 }
 

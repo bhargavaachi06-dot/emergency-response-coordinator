@@ -33,6 +33,15 @@ html[data-theme="light"] {
   --map-bg:             #F1F5F9;
   --map-border:         #CBD5E1;
 
+  /* Aliased standard theme variables */
+  --bg-surface:         var(--surface);
+  --bg-card:            var(--card-bg);
+  --bg-input:           var(--surface-input);
+  --overlay-color:      var(--modal-overlay);
+  --purple-badge-bg:    #FAF5FF;
+  --purple-badge-border:#E9D5FF;
+  --purple-badge-text:  #7E22CE;
+
   /* Core White Backgrounds & Surfaces */
   --er-bg:              var(--bg-primary);
   --er-bg-subtle:       var(--bg-secondary);
@@ -262,15 +271,18 @@ a {
   flex-direction: column;
   width: 100%;
   max-width: 100%;
-  padding-bottom: 32px;
+  padding-bottom: calc(32px + env(safe-area-inset-bottom, 0px));
+  min-width: 0;
 }
 
 .page-content {
   flex: 1;
-  padding: 24px;
+  padding: 16px clamp(12px, 3.5vw, 24px);
   max-width: 1440px;
   margin: 0 auto;
   width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
 }
 
 .page-header {
@@ -1181,6 +1193,15 @@ body.dark,
   --map-bg:             #07111F;
   --map-border:         #1E4668;
 
+  /* Aliased standard theme variables */
+  --bg-surface:         var(--surface);
+  --bg-card:            var(--card-bg);
+  --bg-input:           var(--surface-input);
+  --overlay-color:      var(--modal-overlay);
+  --purple-badge-bg:    rgba(147, 51, 234, 0.16);
+  --purple-badge-border:rgba(168, 85, 247, 0.35);
+  --purple-badge-text:  #D8B4FE;
+
   /* Core Surfaces Mapped to Midnight Blue */
   --er-bg:              var(--bg-primary);
   --er-bg-subtle:       var(--bg-secondary);
@@ -1347,6 +1368,42 @@ html[data-theme="dark"] .border-light {
 
 html[data-theme="dark"] .border-dark {
   border-color: var(--border-color) !important;
+}
+
+/* Safety overrides for inline/stray pastel backgrounds in dark mode */
+html[data-theme="dark"] [style*="background: #eff6ff" i],
+html[data-theme="dark"] [style*="background:#eff6ff" i],
+html[data-theme="dark"] [style*="background: #EFF6FF"],
+html[data-theme="dark"] [style*="background:#EFF6FF"] {
+  background: var(--er-blue-light) !important;
+}
+
+html[data-theme="dark"] [style*="background: #faf5ff" i],
+html[data-theme="dark"] [style*="background:#faf5ff" i],
+html[data-theme="dark"] [style*="background: #FAF5FF"],
+html[data-theme="dark"] [style*="background:#FAF5FF"] {
+  background: var(--purple-badge-bg) !important;
+}
+
+html[data-theme="dark"] [style*="background: #fffbeb" i],
+html[data-theme="dark"] [style*="background:#fffbeb" i],
+html[data-theme="dark"] [style*="background: #FFFBEB"],
+html[data-theme="dark"] [style*="background:#FFFBEB"] {
+  background: var(--er-amber-light) !important;
+}
+
+html[data-theme="dark"] [style*="background: #f0fdf4" i],
+html[data-theme="dark"] [style*="background:#f0fdf4" i],
+html[data-theme="dark"] [style*="background: #F0FDF4"],
+html[data-theme="dark"] [style*="background:#F0FDF4"] {
+  background: var(--er-green-light) !important;
+}
+
+html[data-theme="dark"] [style*="background: #fef2f2" i],
+html[data-theme="dark"] [style*="background:#fef2f2" i],
+html[data-theme="dark"] [style*="background: #FEF2F2"],
+html[data-theme="dark"] [style*="background:#FEF2F2"] {
+  background: var(--er-red-light) !important;
 }
 
 /* Priority & Severity Badges in Dark Mode */

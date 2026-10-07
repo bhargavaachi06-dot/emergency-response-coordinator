@@ -10,23 +10,26 @@
   z-index: 3000;
   background: rgba(15, 23, 42, 0.45);
   backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  box-sizing: border-box;
 }
 
 /* First-launch screen overlay */
 .lang-modal-first-launch {
-  background: #FFFFFF;
-  padding: 24px 16px;
+  background: var(--bg-primary, #FFFFFF);
+  padding: max(20px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(20px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
   align-items: center;
 }
 
 /* Main card */
 .lang-modal-card {
-  background: #FFFFFF;
+  background: var(--er-surface, #FFFFFF);
   border: 1px solid var(--er-border-subtle, #EDF2F7);
   border-radius: var(--radius-surface, 28px);
   width: 100%;
@@ -35,7 +38,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  max-height: 90vh;
+  max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 24px);
   margin: auto;
 }
 

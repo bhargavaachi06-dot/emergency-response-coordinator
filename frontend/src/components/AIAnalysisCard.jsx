@@ -1,3 +1,5 @@
+import { PriorityBadge } from './Badges';
+
 export function AIAnalysisCard({ ai, compact = false }) {
   if (!ai) return null;
 
@@ -34,15 +36,6 @@ export function AIAnalysisCard({ ai, compact = false }) {
     Low:      '#16A34A',
   };
 
-  const priorityColors = {
-    CRITICAL: { bg: '#FEE2E2', text: '#991B1B', border: '#FECACA' },
-    HIGH:     { bg: '#FFEDD5', text: '#9A3412', border: '#FED7AA' },
-    MEDIUM:   { bg: '#FEF9C3', text: '#854D0E', border: '#FEF08A' },
-    LOW:      { bg: '#DCFCE7', text: '#166534', border: '#BBF7D0' },
-  };
-
-  const currentPriorityStyle = priorityColors[priority] || priorityColors.MEDIUM;
-
   const responderIcons = {
     Ambulance:              { icon: 'bi-heart-pulse-fill', emoji: '🚑', color: '#DC2626' },
     Police:                 { icon: 'bi-shield-fill',       emoji: '👮', color: '#0284C7' },
@@ -58,11 +51,11 @@ export function AIAnalysisCard({ ai, compact = false }) {
     <div
       className="clay-card ai-card"
       style={{
-        background: 'var(--er-surface, #FFFFFF)',
-        border: '1.5px solid rgba(2, 132, 199, 0.2)',
+        background: 'var(--surface, #FFFFFF)',
+        border: '1.5px solid var(--border-color, rgba(2, 132, 199, 0.2))',
         borderRadius: '24px',
         padding: compact ? '18px 20px' : '24px 26px',
-        color: 'var(--er-navy, #0F172A)',
+        color: 'var(--text-primary, #0F172A)',
         boxShadow: 'var(--clay-shadow-card)',
         position: 'relative',
         overflow: 'hidden',
@@ -77,14 +70,14 @@ export function AIAnalysisCard({ ai, compact = false }) {
           fontSize: '13px',
           fontWeight: 700,
           letterSpacing: '0.3px',
-          color: '#0284C7',
-          background: '#F0F9FF',
+          color: 'var(--accent-blue-bright, #0284C7)',
+          background: 'var(--er-blue-light, #F0F9FF)',
           padding: '6px 14px',
           borderRadius: '9999px',
-          border: '1px solid #BAE6FD',
+          border: '1px solid var(--er-blue-border, #BAE6FD)',
           boxShadow: 'var(--clay-shadow-sm)',
         }}>
-          <i className="bi bi-cpu-fill" style={{ color: '#0284C7' }}></i>
+          <i className="bi bi-cpu-fill" style={{ color: 'var(--accent-blue-bright, #0284C7)' }}></i>
           <span>AI Decision Support</span>
         </div>
 
@@ -96,9 +89,9 @@ export function AIAnalysisCard({ ai, compact = false }) {
               fontWeight: 700,
               padding: '5px 12px',
               borderRadius: '9999px',
-              background: '#FAF5FF',
-              border: '1px solid #E9D5FF',
-              color: '#7E22CE',
+              background: 'var(--purple-badge-bg, rgba(147, 51, 234, 0.12))',
+              border: '1px solid var(--purple-badge-border, rgba(168, 85, 247, 0.35))',
+              color: 'var(--purple-badge-text, #A855F7)',
               display: 'inline-flex',
               alignItems: 'center',
               gap: 5,
@@ -116,9 +109,9 @@ export function AIAnalysisCard({ ai, compact = false }) {
               fontWeight: 700,
               padding: '5px 12px',
               borderRadius: '9999px',
-              background: '#FFFBEB',
-              border: '1px solid #FDE68A',
-              color: '#B45309',
+              background: 'var(--er-amber-light, #FFFBEB)',
+              border: '1px solid var(--er-amber-border, #FDE68A)',
+              color: 'var(--er-amber, #B45309)',
               display: 'inline-flex',
               alignItems: 'center',
               gap: 5,
@@ -133,9 +126,9 @@ export function AIAnalysisCard({ ai, compact = false }) {
               fontWeight: 700,
               padding: '5px 12px',
               borderRadius: '9999px',
-              background: '#F0FDF4',
-              border: '1px solid #BBF7D0',
-              color: '#15803D',
+              background: 'var(--er-green-light, #F0FDF4)',
+              border: '1px solid var(--er-green-border, #BBF7D0)',
+              color: 'var(--er-green, #15803D)',
               display: 'inline-flex',
               alignItems: 'center',
               gap: 5,
@@ -179,19 +172,7 @@ export function AIAnalysisCard({ ai, compact = false }) {
           <div style={{ fontSize: '11px', color: 'var(--text-muted, #64748B)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600, marginBottom: 2 }}>
             PRIORITY
           </div>
-          <span style={{
-            display: 'inline-block',
-            padding: '4px 10px',
-            borderRadius: '9999px',
-            fontSize: '11.5px',
-            fontWeight: 800,
-            background: currentPriorityStyle.bg,
-            color: currentPriorityStyle.text,
-            border: `1px solid ${currentPriorityStyle.border}`,
-            boxShadow: 'var(--clay-shadow-sm)',
-          }}>
-            {priority}
-          </span>
+          <PriorityBadge priority={priority} />
         </div>
       </div>
 

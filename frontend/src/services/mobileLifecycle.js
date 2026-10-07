@@ -24,7 +24,7 @@ export function useMobileLifecycle({
 } = {}) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isSettingsOpen, closeSettings } = useSettings();
+  const { isSettingsOpen, closeSettings, settings } = useSettings();
 
   // Keep latest state in refs to avoid stale closures in Capacitor event listener
   const stateRef = useRef({
@@ -47,21 +47,33 @@ export function useMobileLifecycle({
     };
   }, [isLangModalOpen, closeLangModal, hasLanguageSet, isSettingsOpen, closeSettings, location.pathname]);
 
+  // 1. Sync native Android status bar with current theme
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) {
+      return;
+    }
+
+    (async () => {
+      try {
+        const isDark = (settings?.theme || document.documentElement.getAttribute('data-theme')) === 'dark';
+        if (isDark) {
+          await StatusBar.setStyle({ style: Style.Dark });
+          await StatusBar.setBackgroundColor({ color: '#07111F' });
+        } else {
+          await StatusBar.setStyle({ style: Style.Light });
+          await StatusBar.setBackgroundColor({ color: '#FFFFFF' });
+        }
+      } catch (err) {
+        console.warn('[mobileLifecycle] StatusBar styling warning:', err);
+      }
+    })();
+  }, [settings?.theme]);
+
   useEffect(() => {
     // Only execute on native Capacitor mobile platforms (Android/iOS)
     if (!Capacitor.isNativePlatform()) {
       return;
     }
-
-    // 1. Initialize native status bar
-    (async () => {
-      try {
-        await StatusBar.setStyle({ style: Style.Dark });
-        await StatusBar.setBackgroundColor({ color: '#0b1329' });
-      } catch (err) {
-        console.warn('[mobileLifecycle] StatusBar initialization warning:', err);
-      }
-    })();
 
     // 2. Hide native splash screen once React UI has mounted
     (async () => {

@@ -6,18 +6,17 @@
 
 .splash-screen-root {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   height: 100dvh;
-  background-color: #FFFFFF;
+  background-color: var(--bg-primary, #FFFFFF);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 99999;
   color: var(--er-navy, #0F172A);
-  padding: 24px;
+  padding: max(24px, env(safe-area-inset-top, 0px)) max(24px, env(safe-area-inset-right, 0px)) max(24px, env(safe-area-inset-bottom, 0px)) max(24px, env(safe-area-inset-left, 0px));
   box-sizing: border-box;
 }
 

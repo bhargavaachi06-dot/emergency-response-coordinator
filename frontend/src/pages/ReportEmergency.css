@@ -6,9 +6,11 @@
 .report-page-wrapper {
   background-color: var(--er-bg, #FFFFFF);
   min-height: calc(100vh - 65px);
-  padding: 24px 20px;
+  min-height: calc(100dvh - 65px);
+  padding: 20px clamp(12px, 3.5vw, 24px) calc(32px + env(safe-area-inset-bottom, 0px));
   font-family: var(--font-family);
   color: var(--er-navy, #0F172A);
+  box-sizing: border-box;
 }
 
 /* RTL Support for Urdu and Sindhi */
@@ -268,6 +270,12 @@
 .type-visual-btn:active {
   transform: translateY(0);
   box-shadow: var(--clay-shadow-pressed);
+}
+
+.type-visual-btn.selected {
+  border-color: var(--er-blue, #0284C7);
+  background: var(--er-blue-light, #F0F9FF);
+  box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.25), var(--clay-shadow-sm);
 }
 
 .type-emoji {

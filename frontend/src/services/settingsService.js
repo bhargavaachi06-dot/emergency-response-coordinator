@@ -107,8 +107,11 @@ export const settingsService = {
     const applyState = (isDark) => {
       const mode = isDark ? 'dark' : 'light';
       root.setAttribute('data-theme', mode);
+      root.setAttribute('data-bs-theme', mode);
+      root.style.colorScheme = mode;
       if (document.body) {
         document.body.setAttribute('data-theme', mode);
+        document.body.setAttribute('data-bs-theme', mode);
       }
       if (isDark) {
         root.classList.add('dark');

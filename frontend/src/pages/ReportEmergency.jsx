@@ -823,11 +823,7 @@ export default function ReportEmergency() {
                         className={`type-visual-btn ${isSelected ? 'selected' : ''}`}
                         onClick={() => setField('type', card.key)}
                         role="radio"
-                        aria-checked={isSelected}
-                        style={{
-                          borderColor: isSelected ? card.color : '#26344D',
-                          backgroundColor: isSelected ? '#18243B' : '#151F35',
-                        }}
+                        style={isSelected && card.color ? { borderColor: card.color } : undefined}
                       >
                         <span className="type-emoji" aria-hidden="true">{card.iconEmoji}</span>
                         <span className="type-title-text">{typeData.label || card.key}</span>

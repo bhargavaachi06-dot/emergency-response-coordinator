@@ -184,9 +184,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 16px;
+  padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   animation: ec-fade-in 0.2s ease-out;
+  box-sizing: border-box;
 }
 
 @keyframes ec-fade-in {
@@ -208,7 +210,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  max-height: 92vh;
+  max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 24px);
   margin: auto;
   animation: ec-card-in 0.24s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -532,149 +534,207 @@
 /* --------------------------------------------------
    3. Dark Mode Overrides (Midnight Blue Command Center)
    -------------------------------------------------- */
-html[data-theme="dark"] .emergency-contacts-card {
-  background: #10243A;
-  border-color: #1E4668;
+html[data-theme="dark"] .emergency-contacts-card,
+body.dark .emergency-contacts-card,
+.dark .emergency-contacts-card {
+  background: var(--surface, #10243A);
+  border-color: var(--border-color, #1E4668);
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45), 0 0 20px rgba(37, 99, 235, 0.08);
 }
 
-html[data-theme="dark"] .emergency-contacts-card:hover {
-  background: #132B45;
+html[data-theme="dark"] .emergency-contacts-card:hover,
+body.dark .emergency-contacts-card:hover,
+.dark .emergency-contacts-card:hover {
+  background: var(--surface-elevated, #132B45);
   border-color: #2563EB;
   box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55), 0 0 24px rgba(37, 99, 235, 0.15);
 }
 
-html[data-theme="dark"] .emergency-contacts-card-badge {
+html[data-theme="dark"] .emergency-contacts-card-badge,
+body.dark .emergency-contacts-card-badge,
+.dark .emergency-contacts-card-badge {
   background: rgba(37, 99, 235, 0.18);
   border-color: rgba(56, 189, 248, 0.35);
   color: #38BDF8;
 }
 
-html[data-theme="dark"] .emergency-contacts-card-title {
+html[data-theme="dark"] .emergency-contacts-card-title,
+body.dark .emergency-contacts-card-title,
+.dark .emergency-contacts-card-title {
   color: #F8FAFC;
 }
 
-html[data-theme="dark"] .emergency-contacts-card-subtitle {
+html[data-theme="dark"] .emergency-contacts-card-subtitle,
+body.dark .emergency-contacts-card-subtitle,
+.dark .emergency-contacts-card-subtitle {
   color: #94A3B8;
 }
 
-html[data-theme="dark"] .btn-view-emergency-contacts {
-  background: #132B45;
-  border-color: #1E4668;
+html[data-theme="dark"] .btn-view-emergency-contacts,
+body.dark .btn-view-emergency-contacts,
+.dark .btn-view-emergency-contacts {
+  background: var(--surface-elevated, #132B45);
+  border-color: var(--border-color, #1E4668);
   color: #F8FAFC;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
 }
 
-html[data-theme="dark"] .btn-view-emergency-contacts:hover {
+html[data-theme="dark"] .btn-view-emergency-contacts:hover,
+body.dark .btn-view-emergency-contacts:hover,
+.dark .btn-view-emergency-contacts:hover {
   background: #19385C;
   border-color: #38BDF8;
   color: #FFFFFF;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45), 0 0 16px rgba(56, 189, 248, 0.2);
 }
 
-html[data-theme="dark"] .btn-view-emergency-contacts i {
+html[data-theme="dark"] .btn-view-emergency-contacts i,
+body.dark .btn-view-emergency-contacts i,
+.dark .btn-view-emergency-contacts i {
   color: #38BDF8;
 }
 
-html[data-theme="dark"] .emergency-contacts-modal-card {
-  background: #0B1728;
-  border-color: #1E4668;
+html[data-theme="dark"] .emergency-contacts-modal-card,
+body.dark .emergency-contacts-modal-card,
+.dark .emergency-contacts-modal-card {
+  background: var(--bg-secondary, #0B1728);
+  border-color: var(--border-color, #1E4668);
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.75), inset 0 1px 2px rgba(255, 255, 255, 0.06);
 }
 
-html[data-theme="dark"] .emergency-contacts-modal-header {
-  background: #0B1728;
-  border-bottom-color: #1E4668;
+html[data-theme="dark"] .emergency-contacts-modal-header,
+body.dark .emergency-contacts-modal-header,
+.dark .emergency-contacts-modal-header {
+  background: var(--bg-secondary, #0B1728);
+  border-bottom-color: var(--border-color, #1E4668);
 }
 
-html[data-theme="dark"] .emergency-contacts-modal-title {
+html[data-theme="dark"] .emergency-contacts-modal-title,
+body.dark .emergency-contacts-modal-title,
+.dark .emergency-contacts-modal-title {
   color: #F8FAFC;
 }
 
-html[data-theme="dark"] .emergency-contacts-modal-subtitle {
+html[data-theme="dark"] .emergency-contacts-modal-subtitle,
+body.dark .emergency-contacts-modal-subtitle,
+.dark .emergency-contacts-modal-subtitle {
   color: #CBD5E1;
 }
 
-html[data-theme="dark"] .emergency-contacts-header-icon {
+html[data-theme="dark"] .emergency-contacts-header-icon,
+body.dark .emergency-contacts-header-icon,
+.dark .emergency-contacts-header-icon {
   background: rgba(37, 99, 235, 0.2);
   border-color: rgba(56, 189, 248, 0.35);
   color: #38BDF8;
 }
 
-html[data-theme="dark"] .emergency-contacts-close-btn {
-  background: #10243A;
-  border-color: #1E4668;
+html[data-theme="dark"] .emergency-contacts-close-btn,
+body.dark .emergency-contacts-close-btn,
+.dark .emergency-contacts-close-btn {
+  background: var(--surface, #10243A);
+  border-color: var(--border-color, #1E4668);
   color: #CBD5E1;
 }
 
-html[data-theme="dark"] .emergency-contacts-close-btn:hover {
+html[data-theme="dark"] .emergency-contacts-close-btn:hover,
+body.dark .emergency-contacts-close-btn:hover,
+.dark .emergency-contacts-close-btn:hover {
   background: rgba(220, 38, 38, 0.2);
   border-color: #EF4444;
   color: #F87171;
 }
 
-html[data-theme="dark"] .emergency-contacts-notice {
+html[data-theme="dark"] .emergency-contacts-notice,
+body.dark .emergency-contacts-notice,
+.dark .emergency-contacts-notice {
   background: rgba(37, 99, 235, 0.14);
   border-color: rgba(56, 189, 248, 0.3);
   color: #93C5FD;
 }
 
-html[data-theme="dark"] .emergency-contact-row {
-  background: #10243A;
-  border-color: #1E4668;
+html[data-theme="dark"] .emergency-contact-row,
+body.dark .emergency-contact-row,
+.dark .emergency-contact-row {
+  background: var(--surface, #10243A);
+  border-color: var(--border-color, #1E4668);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
 }
 
 html[data-theme="dark"] .emergency-contact-row:hover,
-html[data-theme="dark"] .emergency-contact-row:focus-visible {
-  background: #132B45;
+html[data-theme="dark"] .emergency-contact-row:focus-visible,
+body.dark .emergency-contact-row:hover,
+body.dark .emergency-contact-row:focus-visible,
+.dark .emergency-contact-row:hover,
+.dark .emergency-contact-row:focus-visible {
+  background: var(--surface-elevated, #132B45);
   border-color: #2563EB;
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45), 0 0 16px rgba(37, 99, 235, 0.14);
 }
 
-html[data-theme="dark"] .emergency-contact-name {
+html[data-theme="dark"] .emergency-contact-name,
+body.dark .emergency-contact-name,
+.dark .emergency-contact-name {
   color: #F8FAFC;
 }
 
-html[data-theme="dark"] .emergency-contact-number-link {
+html[data-theme="dark"] .emergency-contact-number-link,
+body.dark .emergency-contact-number-link,
+.dark .emergency-contact-number-link {
   color: #F87171;
   text-shadow: 0 0 12px rgba(239, 68, 68, 0.3);
 }
 
-html[data-theme="dark"] .emergency-contact-number-link:hover {
+html[data-theme="dark"] .emergency-contact-number-link:hover,
+body.dark .emergency-contact-number-link:hover,
+.dark .emergency-contact-number-link:hover {
   background: rgba(220, 38, 38, 0.2);
   color: #FCA5A5;
 }
 
-html[data-theme="dark"] .emergency-contact-desc {
+html[data-theme="dark"] .emergency-contact-desc,
+body.dark .emergency-contact-desc,
+.dark .emergency-contact-desc {
   color: #94A3B8;
 }
 
-html[data-theme="dark"] .emergency-contact-call-btn {
+html[data-theme="dark"] .emergency-contact-call-btn,
+body.dark .emergency-contact-call-btn,
+.dark .emergency-contact-call-btn {
   background: linear-gradient(145deg, #16A34A 0%, #15803D 100%);
   box-shadow: 0 4px 14px rgba(22, 163, 74, 0.35);
 }
 
-html[data-theme="dark"] .emergency-contact-call-btn:hover {
+html[data-theme="dark"] .emergency-contact-call-btn:hover,
+body.dark .emergency-contact-call-btn:hover,
+.dark .emergency-contact-call-btn:hover {
   box-shadow: 0 6px 20px rgba(22, 163, 74, 0.5), 0 0 12px rgba(34, 197, 94, 0.3);
 }
 
-html[data-theme="dark"] .emergency-contacts-modal-footer {
-  background: #0B1728;
-  border-top-color: #1E4668;
+html[data-theme="dark"] .emergency-contacts-modal-footer,
+body.dark .emergency-contacts-modal-footer,
+.dark .emergency-contacts-modal-footer {
+  background: var(--bg-secondary, #0B1728);
+  border-top-color: var(--border-color, #1E4668);
 }
 
-html[data-theme="dark"] .emergency-contacts-footer-tip {
+html[data-theme="dark"] .emergency-contacts-footer-tip,
+body.dark .emergency-contacts-footer-tip,
+.dark .emergency-contacts-footer-tip {
   color: #94A3B8;
 }
 
-html[data-theme="dark"] .emergency-contacts-done-btn {
-  background: #10243A;
-  border-color: #1E4668;
+html[data-theme="dark"] .emergency-contacts-done-btn,
+body.dark .emergency-contacts-done-btn,
+.dark .emergency-contacts-done-btn {
+  background: var(--surface, #10243A);
+  border-color: var(--border-color, #1E4668);
   color: #E2E8F0;
 }
 
-html[data-theme="dark"] .emergency-contacts-done-btn:hover {
+html[data-theme="dark"] .emergency-contacts-done-btn:hover,
+body.dark .emergency-contacts-done-btn:hover,
+.dark .emergency-contacts-done-btn:hover {
   background: #163653;
   color: #FFFFFF;
 }
@@ -820,187 +880,3 @@ html[data-theme="dark"] .emergency-contacts-done-btn:hover {
   }
 }
 
-/* =====================================================
-   Emergency Contacts — Dark Theme Overrides
-   ===================================================== */
-html[data-theme="dark"] .emergency-contacts-card,
-body.dark .emergency-contacts-card,
-.dark .emergency-contacts-card {
-  background: #0A1B2E;
-  border-color: #1E3A5F;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-}
-
-html[data-theme="dark"] .emergency-contacts-card:hover,
-body.dark .emergency-contacts-card:hover,
-.dark .emergency-contacts-card:hover {
-  border-color: #2D5888;
-  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.55);
-}
-
-html[data-theme="dark"] .emergency-contacts-card-title,
-body.dark .emergency-contacts-card-title,
-.dark .emergency-contacts-card-title {
-  color: #F8FAFC;
-}
-
-html[data-theme="dark"] .emergency-contacts-card-subtitle,
-body.dark .emergency-contacts-card-subtitle,
-.dark .emergency-contacts-card-subtitle {
-  color: #94A3B8;
-}
-
-html[data-theme="dark"] .emergency-contacts-card-badge,
-body.dark .emergency-contacts-card-badge,
-.dark .emergency-contacts-card-badge {
-  background: rgba(220, 38, 38, 0.18);
-  border-color: rgba(220, 38, 38, 0.35);
-  color: #F87171;
-}
-
-html[data-theme="dark"] .btn-view-emergency-contacts,
-body.dark .btn-view-emergency-contacts,
-.dark .btn-view-emergency-contacts {
-  background: #10243A;
-  border-color: #1E4668;
-  color: #F8FAFC;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-html[data-theme="dark"] .btn-view-emergency-contacts:hover,
-body.dark .btn-view-emergency-contacts:hover,
-.dark .btn-view-emergency-contacts:hover {
-  background: #163653;
-  border-color: #38BDF8;
-  color: #FFFFFF;
-}
-
-html[data-theme="dark"] .emergency-contacts-modal-card,
-body.dark .emergency-contacts-modal-card,
-.dark .emergency-contacts-modal-card {
-  background: #0B1728;
-  border-color: #1E4668;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.75);
-}
-
-html[data-theme="dark"] .emergency-contacts-modal-header,
-body.dark .emergency-contacts-modal-header,
-.dark .emergency-contacts-modal-header {
-  background: #0B1728;
-  border-bottom-color: #1E4668;
-}
-
-html[data-theme="dark"] .emergency-contacts-modal-title,
-body.dark .emergency-contacts-modal-title,
-.dark .emergency-contacts-modal-title {
-  color: #F8FAFC;
-}
-
-html[data-theme="dark"] .emergency-contacts-modal-subtitle,
-body.dark .emergency-contacts-modal-subtitle,
-.dark .emergency-contacts-modal-subtitle {
-  color: #94A3B8;
-}
-
-html[data-theme="dark"] .emergency-contacts-header-icon,
-body.dark .emergency-contacts-header-icon,
-.dark .emergency-contacts-header-icon {
-  background: rgba(220, 38, 38, 0.18);
-  border-color: rgba(220, 38, 38, 0.35);
-  color: #F87171;
-}
-
-html[data-theme="dark"] .emergency-contacts-close-btn,
-body.dark .emergency-contacts-close-btn,
-.dark .emergency-contacts-close-btn {
-  background: #10243A;
-  border-color: #1E4668;
-  color: #CBD5E1;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-}
-
-html[data-theme="dark"] .emergency-contacts-close-btn:hover,
-body.dark .emergency-contacts-close-btn:hover,
-.dark .emergency-contacts-close-btn:hover {
-  background: rgba(220, 38, 38, 0.2);
-  border-color: #EF4444;
-  color: #F87171;
-}
-
-html[data-theme="dark"] .emergency-contacts-notice,
-body.dark .emergency-contacts-notice,
-.dark .emergency-contacts-notice {
-  background: rgba(2, 132, 199, 0.15);
-  border-color: rgba(56, 189, 248, 0.3);
-  color: #38BDF8;
-}
-
-html[data-theme="dark"] .emergency-contact-row,
-body.dark .emergency-contact-row,
-.dark .emergency-contact-row {
-  background: #10243A;
-  border-color: #1E4668;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-html[data-theme="dark"] .emergency-contact-row:hover,
-body.dark .emergency-contact-row:hover,
-.dark .emergency-contact-row:hover {
-  background: #163653;
-  border-color: #38BDF8;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
-}
-
-html[data-theme="dark"] .emergency-contact-name,
-body.dark .emergency-contact-name,
-.dark .emergency-contact-name {
-  color: #F8FAFC;
-}
-
-html[data-theme="dark"] .emergency-contact-number-link,
-body.dark .emergency-contact-number-link,
-.dark .emergency-contact-number-link {
-  color: #F87171;
-}
-
-html[data-theme="dark"] .emergency-contact-number-link:hover,
-body.dark .emergency-contact-number-link:hover,
-.dark .emergency-contact-number-link:hover {
-  color: #EF4444;
-  background: rgba(220, 38, 38, 0.2);
-}
-
-html[data-theme="dark"] .emergency-contact-desc,
-body.dark .emergency-contact-desc,
-.dark .emergency-contact-desc {
-  color: #94A3B8;
-}
-
-html[data-theme="dark"] .emergency-contacts-modal-footer,
-body.dark .emergency-contacts-modal-footer,
-.dark .emergency-contacts-modal-footer {
-  background: #0B1728;
-  border-top-color: #1E4668;
-}
-
-html[data-theme="dark"] .emergency-contacts-footer-tip,
-body.dark .emergency-contacts-footer-tip,
-.dark .emergency-contacts-footer-tip {
-  color: #94A3B8;
-}
-
-html[data-theme="dark"] .emergency-contacts-done-btn,
-body.dark .emergency-contacts-done-btn,
-.dark .emergency-contacts-done-btn {
-  background: #10243A;
-  border-color: #1E4668;
-  color: #F8FAFC;
-}
-
-html[data-theme="dark"] .emergency-contacts-done-btn:hover,
-body.dark .emergency-contacts-done-btn:hover,
-.dark .emergency-contacts-done-btn:hover {
-  background: #163653;
-  border-color: #38BDF8;
-  color: #FFFFFF;
-}
